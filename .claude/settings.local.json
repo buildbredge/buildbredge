@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(cat:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(npm install)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next lint:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

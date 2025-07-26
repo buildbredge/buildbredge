@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Structure
 
-This is **BuildBridge** - a marketplace platform connecting homeowners with tradespeople (tradies). The application is built as a Next.js 15 full-stack application with TypeScript, located in the `buildbridge-platform/` directory.
+This is **BuildBridge** - a marketplace platform connecting homeowners with tradespeople (tradies). The application is built as a Next.js 15 full-stack application with TypeScript.
 
 ### Key Architecture Components
 
@@ -30,19 +30,19 @@ All entities support geographic queries using a `calculate_distance()` function 
 
 ```bash
 # Development server with Turbopack (runs on all interfaces)
-bun run dev
+npm run dev
 
 # Build for production
-bun run build
+npm run build
 
 # Start production server
-bun run start
+npm run start
 
 # Type checking and linting
-bun run lint
+npm run lint
 
 # Code formatting
-bun run format
+npm run format
 ```
 
 ## Code Style & Linting
@@ -66,11 +66,57 @@ bun run format
 - Service radius matching for tradies
 - Location-based project recommendations
 
+### Project Structure
+The project follows Next.js 15 App Router structure:
+
+**Main Application Pages:**
+- `/` - Homepage with hero section and service overview
+- `/about` - About page
+- `/auth/login` - User login page
+- `/auth/register` - User registration page
+- `/browse-tradies` - Browse available tradespeople with category filtering
+- `/post-job` - Job posting form for homeowners
+- `/dashboard` - User dashboard (both owners and tradies)
+- `/my-projects` - Project management for users
+- `/messages` - Messaging system
+- `/reviews` - Review management
+- `/payment` - Payment processing
+- `/subscription` - Subscription management
+
+**Admin Panel:**
+- `/admin` - Admin dashboard
+- `/admin/complaints` - Complaint management
+- `/admin/database` - Database administration
+- `/admin/reviews` - Review moderation
+- `/admin/suppliers` - Supplier management
+- `/admin/tradies` - Tradie management
+- `/admin/users` - User management
+- `/admin/support` - Support ticket management
+
+**Content Pages:**
+- `/blog` - Blog listing
+- `/contact` - Contact form
+- `/cost-estimator` - Cost estimation tool
+- `/faq` - Frequently asked questions
+- `/how-it-works` - Platform explanation
+- `/privacy` - Privacy policy
+- `/terms` - Terms of service
+- `/trades` - Trade categories
+- `/services` - Service listings
+- `/suppliers/*` - Regional supplier directories (Australia, Canada, New Zealand, USA)
+
+**API Routes:**
+- `/api/auth/send-verification` - Email verification
+- `/api/autocomplete` - Google Places autocomplete
+- `/api/database/init` - Database initialization
+- `/api/database/test` - Database testing
+
 ### Component Architecture
-- shadcn/ui components in `src/components/ui/`
-- Custom components like `Navigation.tsx` and Google Maps components
+- shadcn/ui components in `src/components/ui/` (comprehensive UI library)
+- Custom components: `Navigation.tsx`, `GooglePlacesAutocomplete.tsx`, `ServerGooglePlacesAutocomplete.tsx`
 - Context-based auth state management (`AuthContext.tsx`)
 - Responsive design with mobile-first approach
+- Shared client-side wrapper (`ClientBody.tsx`)
 
 ### Database Integration
 - Comprehensive TypeScript types exported from `lib/supabase.ts`

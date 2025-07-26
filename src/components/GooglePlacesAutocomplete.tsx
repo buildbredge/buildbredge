@@ -233,7 +233,7 @@ export default function GooglePlacesAutocomplete({
 
   return (
     <div className="space-y-2 relative">
-      {label && <Label>{label}</Label>}
+      {label && <Label className="text-lg font-medium">{label}</Label>}
 
       <div className="relative">
         <Input
