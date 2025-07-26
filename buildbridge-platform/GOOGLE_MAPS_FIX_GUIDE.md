@@ -18,7 +18,7 @@ BuildBridge项目的Google Places自动完成功能遇到CORS错误，需要更�
 ### 第二步：导航到API凭据
 1. 点击左侧菜单 **"APIs & Services"**
 2. 选择 **"Credentials"**
-3. 找到API密钥：`AIzaSyBvDahXC6buvL3yjj40K9b-3goxSQtmzBw`
+3. 找到API密钥：
 4. 点击编辑图标（铅笔图标）
 
 ### 第三步：配置应用程序限制

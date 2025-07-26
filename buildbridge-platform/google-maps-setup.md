@@ -14,7 +14,7 @@
 1. 打开 [Google Cloud Console](https://console.cloud.google.com/)
 2. 确保选择了正确的项目
 3. 转到 **"APIs & Services"** > **"Credentials"**
-4. 找到并点击编辑API密钥：`AIzaSyBvDahXC6buvL3yjj40K9b-3goxSQtmzBw`
+4. 找到并点击编辑API密钥：
 
 ### 第二步：配置应用程序限制
 1. 在 **"Application restrictions"** 部分
