@@ -357,3 +357,31 @@ https://nextjs.org/docs/messages/module-not-found
  GET /api/autocomplete/?input=220 200 in 341ms
  GET /api/autocomplete/?input=220%20que%20e 200 in 190ms
  GET /api/autocomplete/?input=220%20quee 200 in 191ms
+ GET / 200 in 155ms
+ GET /post-job/ 200 in 37ms
+ ✓ Compiled in 185ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 145ms
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+=== POST JOB PAGE LOADED === 2025-07-26T05:29:34.323Z
+ ⨯ ReferenceError: isFormValid is not defined
+    at PostJobPage (src/app/post-job/page.tsx:603:31)
+  601 |                     className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
+  602 |                     size="lg"
+> 603 |                     disabled={!isFormValid()}
+      |                               ^
+  604 |                   >
+  605 |                     发布需求
+  606 |                   </Button> {
+  digest: '1930201766'
+}
+ GET /post-job/ 500 in 545ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 191ms
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+=== POST JOB PAGE LOADED === 2025-07-26T05:29:52.018Z
+ GET /post-job/ 200 in 496ms
+=== POST JOB PAGE LOADED === 2025-07-26T05:31:15.447Z
+ GET /post-job/ 200 in 120ms
+ GET / 200 in 51ms
+ GET /post-job/ 200 in 38ms
