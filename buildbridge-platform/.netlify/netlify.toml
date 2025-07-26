@@ -1,0 +1,47 @@
+functionsDirectory = "/Users/neil/workspace/frontend/buildbridge/buildbridge-platform/netlify/functions"
+functionsDirectoryOrigin = "ui"
+headersOrigin = "config"
+redirects = []
+
+[images]
+remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
+
+[functions]
+
+[functions."*"]
+node_bundler = "esbuild"
+
+[[plugins]]
+origin = "config"
+package = "@netlify/plugin-nextjs"
+
+[plugins.inputs]
+
+[build]
+publish = "/Users/neil/workspace/frontend/buildbridge/buildbridge-platform/.next"
+publishOrigin = "config"
+commandOrigin = "config"
+base = "/Users/neil/workspace/frontend/buildbridge/buildbridge-platform"
+command = "bun install && bun run build"
+functions = "/Users/neil/workspace/frontend/buildbridge/buildbridge-platform/netlify/functions"
+
+[build.environment]
+NODE_VERSION = "20"
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[headers]]
+for = "/_next/static/*"
+
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
