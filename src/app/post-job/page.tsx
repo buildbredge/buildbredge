@@ -10,6 +10,7 @@ import { X, FileImage, Video } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
+import { uploadProjectImages, uploadProjectVideo, validateFile, formatFileSize } from "@/lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 
 interface JobForm {
@@ -37,45 +38,63 @@ export default function PostJobPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [videoPreview, setVideoPreview] = useState<string>("")
+  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [videoUrl, setVideoUrl] = useState<string>("")
+  const [isUploading, setIsUploading] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
 
 
   const handleSubmit = async () => {
-    if (jobForm.detailedDescription && jobForm.email) {
-      try {
-        console.log('开始提交项目到数据库...')
-
-        // 构建位置信息
-        const locationString = jobForm.googlePlace
-          ? jobForm.googlePlace.address
-          : ''
-
-        const projectData = {
-          description: jobForm.detailedDescription,
-          location: locationString,
-          detailed_description: jobForm.detailedDescription,
-          email: jobForm.email,
-          phone: jobForm.phone || null,
-          images: imagePreviews,
-          video: videoPreview || null,
-          status: 'published' as const,
-          user_id: 'demo-user'
-        }
-
-        // 使用真实API创建项目
-        const createdProject = await projectsApi.create(projectData)
-        console.log('项目创建成功:', createdProject)
-
-        setIsSubmitted(true)
-
-      } catch (error) {
-        console.error('发布项目时出错:', error)
-        alert('发布项目时出错，请检查网络连接后重试。')
-      }
-    } else {
+    if (!isFormValid()) {
       alert("请填写所有必需信息")
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      console.log('🚀 开始提交项目到数据库...')
+
+      // 获取地理位置信息
+      const locationString = jobForm.googlePlace?.address || ''
+      const latitude = jobForm.googlePlace?.coordinates?.lat || null
+      const longitude = jobForm.googlePlace?.coordinates?.lng || null
+
+      console.log('📍 位置信息:', {
+        location: locationString,
+        coordinates: { latitude, longitude }
+      })
+
+      // 构建项目数据
+      const projectData = {
+        description: jobForm.detailedDescription.substring(0, 100), // 简短描述
+        location: locationString,
+        latitude,
+        longitude,
+        detailed_description: jobForm.detailedDescription,
+        email: jobForm.email,
+        phone: jobForm.phone || null,
+        images: imagePreviews, // 暂时使用预览URL
+        video: videoPreview || null,
+        status: 'published' as const,
+        user_id: `user_${Date.now()}` // 临时用户ID
+      }
+
+      console.log('📋 项目数据:', projectData)
+
+      // 使用API创建项目
+      const createdProject = await projectsApi.create(projectData)
+      console.log('✅ 项目创建成功:', createdProject)
+
+      setIsSubmitted(true)
+
+    } catch (error) {
+      console.error('❌ 发布项目时出错:', error)
+      alert(`发布项目时出错: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -92,39 +111,64 @@ export default function PostJobPage() {
   }
 
 
-  const handleImageUpload = (files: FileList | null) => {
-    if (!files) return
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || isUploading) return
 
     const newFiles = Array.from(files).slice(0, 5 - jobForm.images.length)
-    const validFiles = newFiles.filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp']
-      return validTypes.includes(file.type) && file.size <= 10 * 1024 * 1024
-    })
+    
+    // 验证文件
+    const validFiles: File[] = []
+    const errors: string[] = []
 
-    if (validFiles.length > 0) {
-      const newPreviews = validFiles.map(file => URL.createObjectURL(file))
-      setImagePreviews(prev => [...prev, ...newPreviews])
-      setJobForm(prev => ({ ...prev, images: [...prev.images, ...validFiles] }))
+    for (const file of newFiles) {
+      const validation = validateFile(file, 'image')
+      if (validation.valid) {
+        validFiles.push(file)
+      } else {
+        errors.push(`${file.name}: ${validation.error}`)
+      }
     }
+
+    if (errors.length > 0) {
+      alert(`以下文件无法上传:\n${errors.join('\n')}`)
+    }
+
+    if (validFiles.length === 0) {
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
+      return
+    }
+
+    // 创建预览
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file))
+    setImagePreviews(prev => [...prev, ...newPreviews])
+    setJobForm(prev => ({ ...prev, images: [...prev.images, ...validFiles] }))
 
     if (imageInputRef.current) {
       imageInputRef.current.value = ''
     }
   }
 
-  const handleVideoUpload = (files: FileList | null) => {
-    if (!files || files.length === 0) return
+  const handleVideoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || isUploading) return
 
     const file = files[0]
-    const validTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv']
-
-    if (validTypes.includes(file.type) && file.size <= 100 * 1024 * 1024) {
-      const videoUrl = URL.createObjectURL(file)
-      setVideoPreview(videoUrl)
-      setJobForm(prev => ({ ...prev, video: file }))
-    } else {
-      alert('请上传有效的视频文件（MP4, MOV, AVI, WMV），大小不超过100MB')
+    
+    // 验证文件
+    const validation = validateFile(file, 'video')
+    if (!validation.valid) {
+      alert(validation.error)
+      if (videoInputRef.current) {
+        videoInputRef.current.value = ''
+      }
+      return
     }
+
+    // 创建预览
+    const videoUrl = URL.createObjectURL(file)
+    setVideoPreview(videoUrl)
+    setJobForm(prev => ({ ...prev, video: file }))
 
     if (videoInputRef.current) {
       videoInputRef.current.value = ''
@@ -284,7 +328,6 @@ export default function PostJobPage() {
                         placeholder="输入您的详细地址..."
                         label="项目位置 *"
                         className="h-12 text-lg"
-                        countries={['nz', 'au', 'us', 'ca']}
                       />
                     ) : (
                       <SelectedAddressDisplay
@@ -431,9 +474,9 @@ export default function PostJobPage() {
                         onClick={handleSubmit}
                         className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
                         size="lg"
-                        disabled={!isFormValid()}
+                        disabled={!isFormValid() || isUploading}
                       >
-                        发布需求
+                        {isUploading ? '发布中...' : '发布需求'}
                       </Button>
                     </div>
                   </div>

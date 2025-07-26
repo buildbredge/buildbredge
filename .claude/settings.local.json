@@ -10,7 +10,10 @@
       "Bash(npm run lint)",
       "Bash(npx tsc:*)",
       "Bash(npx next lint:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node:*)",
+      "Bash(kill:*)",
+      "Bash(open http://localhost:3000/post-job)"
     ],
     "deny": []
   }

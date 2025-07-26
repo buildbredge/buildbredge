@@ -10,14 +10,15 @@ import { MapPin, Loader2, CheckCircle } from 'lucide-react'
 export interface PlaceResult {
   address: string
   placeId: string
+  name: string
   country: string
   state: string
   city: string
   district: string
   postalCode: string
-  coordinates?: {
-    lat: number
-    lng: number
+  coordinates: {
+    lat: number | null
+    lng: number | null
   }
 }
 
@@ -36,15 +37,13 @@ interface GooglePlacesAutocompleteProps {
   placeholder?: string
   label?: string
   className?: string
-  countries?: string[]
 }
 
 export default function GooglePlacesAutocomplete({
   onPlaceSelect,
   placeholder = "输入地址...",
   label = "地址",
-  className = "",
-  countries = ['nz', 'au', 'us', 'ca']
+  className = ""
 }: GooglePlacesAutocompleteProps) {
   const [input, setInput] = useState("")
   const [predictions, setPredictions] = useState<PlacePrediction[]>([])
@@ -129,20 +128,62 @@ export default function GooglePlacesAutocomplete({
 
     setInput(prediction.description)
     setShowSuggestions(false)
+    setIsLoading(true)
 
-    // 创建地址结果
-    const placeResult: PlaceResult = {
-      address: prediction.description,
-      placeId: prediction.place_id,
-      country: extractFromDescription(prediction.description, 'country'),
-      state: extractFromDescription(prediction.description, 'state'),
-      city: extractFromDescription(prediction.description, 'city'),
-      district: "",
-      postalCode: ""
+    try {
+      // 调用地点详情API获取完整信息，包括坐标
+      const response = await fetch(`/api/place-details?place_id=${encodeURIComponent(prediction.place_id)}`)
+      const data = await response.json()
+
+      if (!response.ok || data.status !== 'OK') {
+        throw new Error(data.error || '获取地点详情失败')
+      }
+
+      const placeDetails = data.result
+      const placeResult: PlaceResult = {
+        address: placeDetails.address,
+        placeId: placeDetails.placeId,
+        name: placeDetails.name,
+        country: placeDetails.country,
+        state: placeDetails.state,
+        city: placeDetails.city,
+        district: placeDetails.district,
+        postalCode: placeDetails.postalCode,
+        coordinates: {
+          lat: placeDetails.coordinates.lat,
+          lng: placeDetails.coordinates.lng
+        }
+      }
+
+      console.log('✅ 地点详情获取成功:', placeResult)
+      setSelectedPlace(placeResult)
+      onPlaceSelect(placeResult)
+
+    } catch (err) {
+      console.error('❌ 获取地点详情失败:', err)
+      setError(err instanceof Error ? err.message : '获取地点详情失败')
+      
+      // 回退：使用基本信息创建结果（不含坐标）
+      const fallbackResult: PlaceResult = {
+        address: prediction.description,
+        placeId: prediction.place_id,
+        name: "",
+        country: extractFromDescription(prediction.description, 'country'),
+        state: extractFromDescription(prediction.description, 'state'),
+        city: extractFromDescription(prediction.description, 'city'),
+        district: "",
+        postalCode: "",
+        coordinates: {
+          lat: null,
+          lng: null
+        }
+      }
+
+      setSelectedPlace(fallbackResult)
+      onPlaceSelect(fallbackResult)
+    } finally {
+      setIsLoading(false)
     }
-
-    setSelectedPlace(placeResult)
-    onPlaceSelect(placeResult)
   }
 
   // 简单的地址解析
@@ -334,6 +375,9 @@ export function SelectedAddressDisplay({ place, onEdit }: SelectedAddressDisplay
               {place.city && <p><strong>城市:</strong> {place.city}</p>}
               {place.district && <p><strong>区域:</strong> {place.district}</p>}
               {place.postalCode && <p><strong>邮编:</strong> {place.postalCode}</p>}
+              {place.coordinates.lat && place.coordinates.lng && (
+                <p><strong>坐标:</strong> {place.coordinates.lat.toFixed(6)}, {place.coordinates.lng.toFixed(6)}</p>
+              )}
             </div>
           </div>
           <button

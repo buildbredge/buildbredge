@@ -10,8 +10,7 @@ export async function GET() {
     // 测试基本连接
     const { data: connectionTest, error: connectionError } = await supabase
       .from('projects')
-      .select('count(*)')
-      .limit(1)
+      .select('*', { count: 'exact', head: true })
 
     if (connectionError) {
       console.error("❌ 数据库连接失败:", connectionError)
@@ -31,8 +30,7 @@ export async function GET() {
         // 基本表存在性检查
         const { data, error } = await supabase
           .from(table)
-          .select('count(*)')
-          .limit(1)
+          .select('*', { count: 'exact', head: true })
 
         if (error) {
           tableStatus[table] = { exists: false, error: error.message }
