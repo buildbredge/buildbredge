@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, ChevronLeft, MapPin, FileImage, Video } from "lucide-react"
+import { X, MapPin, FileImage, Video } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
@@ -37,7 +37,6 @@ interface LocationData {
 export default function PostJobPage() {
   console.log("=== POST JOB PAGE LOADED ===", new Date().toISOString())
 
-  const [currentStep, setCurrentStep] = useState(1)
   const [jobForm, setJobForm] = useState<JobForm>({
     description: "",
     country: "",
@@ -85,28 +84,6 @@ export default function PostJobPage() {
     }
   }
 
-  const handleNext = () => {
-    if (currentStep === 1 && jobForm.description.trim()) {
-      setCurrentStep(2)
-    } else if (currentStep === 2) {
-      // 检查是否使用Google Places或手动选择完成
-      const isLocationComplete = jobForm.useGooglePlace
-        ? jobForm.googlePlace
-        : (jobForm.country && jobForm.city && jobForm.district)
-
-      if (isLocationComplete) {
-        setCurrentStep(3)
-      }
-    } else if (currentStep === 3) {
-      handleSubmit()
-    }
-  }
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
 
   const handleSubmit = async () => {
     if (jobForm.detailedDescription && jobForm.email) {
@@ -238,9 +215,24 @@ export default function PostJobPage() {
     setJobForm(prev => ({ ...prev, video: null }))
   }
 
-  const getProgressWidth = () => {
-    return `${(currentStep / 3) * 100}%`
+  // 表单验证函数
+  const isFormValid = () => {
+    // 基本描述必须填写
+    if (!jobForm.description.trim()) return false
+    
+    // 位置信息必须完整
+    const isLocationComplete = jobForm.useGooglePlace
+      ? jobForm.googlePlace
+      : (jobForm.country && jobForm.city && jobForm.district)
+    
+    if (!isLocationComplete) return false
+    
+    // 详细描述和邮箱必须填写
+    if (!jobForm.detailedDescription.trim() || !jobForm.email.trim()) return false
+    
+    return true
   }
+
 
   // 如果已提交，显示成功页面
   if (isSubmitted) {
@@ -309,69 +301,42 @@ export default function PostJobPage() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-gray-200 h-1">
-        <div className="bg-green-600 h-1 transition-all duration-300" style={{ width: getProgressWidth() }}></div>
-      </div>
 
       {/* Main content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-normal text-green-600 mb-6">
+              专属客服为您服务
+            </h1>
+            <p className="text-xl text-gray-600">
+              填写您的需求信息，我们为您匹配当地的专业人士。
+            </p>
+          </div>
 
-          {/* Step 1: 描述需求 */}
-          {currentStep === 1 && (
-            <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-normal text-green-600 mb-6">
-                专属客服为您服务
-              </h1>
-              <p className="text-xl text-gray-600 mb-12">
-                简单描述一下您的需求，点击下一步，我们为您匹配当地的专业人士。
+          <form className="space-y-12">
+            {/* 第一部分：基本需求描述 */}
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">描述您的需求</h2>
+              <div>
+                <Textarea
+                  placeholder="比如我想更换水管或我想装修房子。"
+                  value={jobForm.description}
+                  onChange={(e) => updateJobForm('description', e.target.value)}
+                  className="min-h-[120px] text-lg p-4 border-2 border-gray-300 focus:border-green-500 rounded-lg resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {/* 第二部分：位置信息 */}
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">您的位置在哪里？</h2>
+              <p className="text-gray-600 mb-6">
+                根据位置信息将您与您所在地区的技工联系起来
               </p>
 
               <div className="space-y-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-8">描述您的需求</h2>
-
-                <div className="max-w-lg mx-auto">
-                  <Textarea
-                    placeholder="比如我想更换水管或我想装修房子。"
-                    value={jobForm.description}
-                    onChange={(e) => updateJobForm('description', e.target.value)}
-                    className="min-h-[120px] text-lg p-4 border-2 border-gray-300 focus:border-green-500 rounded-lg resize-none"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex justify-center mt-8">
-                  <Button
-                    onClick={handleNext}
-                    disabled={!jobForm.description.trim()}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    size="lg"
-                  >
-                    下一步
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: 位置选择 */}
-          {currentStep === 2 && (
-            <div>
-              <div className="flex items-center space-x-4 mb-8">
-                <Button variant="ghost" onClick={handleBack} className="p-2">
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">您的位置在哪里？</h1>
-                  <p className="text-gray-600">
-                    根据位置信息将您与您所在地区的技工联系起来
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-
                 {/* 输入模式切换 */}
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between">
@@ -412,7 +377,7 @@ export default function PostJobPage() {
                   </div>
                 ) : (
                   // 手动选择模式
-                  <div className="grid gap-6">
+                  <div className="grid gap-6 md:grid-cols-3">
                     {/* 国家选择 */}
                     <div>
                       <Label className="text-lg font-medium mb-3 block">选择国家 *</Label>
@@ -429,87 +394,65 @@ export default function PostJobPage() {
                     </div>
 
                     {/* 城市选择 */}
-                    {jobForm.country && (
-                      <div>
-                        <Label className="text-lg font-medium mb-3 block">选择城市 *</Label>
-                        <Select value={jobForm.city} onValueChange={(value) => updateJobForm('city', value)}>
-                          <SelectTrigger className="h-12 text-lg">
-                            <SelectValue placeholder="请选择城市" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.keys(locationData[jobForm.country] || {}).map((city) => (
-                              <SelectItem key={city} value={city}>{city}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    <div>
+                      <Label className="text-lg font-medium mb-3 block">选择城市 *</Label>
+                      <Select 
+                        value={jobForm.city} 
+                        onValueChange={(value) => updateJobForm('city', value)}
+                        disabled={!jobForm.country}
+                      >
+                        <SelectTrigger className="h-12 text-lg">
+                          <SelectValue placeholder="请选择城市" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(locationData[jobForm.country] || {}).map((city) => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* 区域选择 */}
-                    {jobForm.country && jobForm.city && (
-                      <div>
-                        <Label className="text-lg font-medium mb-3 block">选择区域 *</Label>
-                        <Select value={jobForm.district} onValueChange={(value) => updateJobForm('district', value)}>
-                          <SelectTrigger className="h-12 text-lg">
-                            <SelectValue placeholder="请选择区域" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(locationData[jobForm.country]?.[jobForm.city] || []).map((district) => (
-                              <SelectItem key={district} value={district}>{district}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* 手动选择位置预览 */}
-                    {!jobForm.useGooglePlace && jobForm.country && jobForm.city && jobForm.district && (
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-5 h-5 text-green-600" />
-                          <span className="text-lg font-medium text-green-800">
-                            {jobForm.country} - {jobForm.city} - {jobForm.district}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div>
+                      <Label className="text-lg font-medium mb-3 block">选择区域 *</Label>
+                      <Select 
+                        value={jobForm.district} 
+                        onValueChange={(value) => updateJobForm('district', value)}
+                        disabled={!jobForm.country || !jobForm.city}
+                      >
+                        <SelectTrigger className="h-12 text-lg">
+                          <SelectValue placeholder="请选择区域" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(locationData[jobForm.country]?.[jobForm.city] || []).map((district) => (
+                            <SelectItem key={district} value={district}>{district}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 )}
 
-                <div className="flex justify-between mt-8">
-                  <Button variant="outline" onClick={handleBack}>
-                    上一步
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    disabled={
-                      jobForm.useGooglePlace
-                        ? !jobForm.googlePlace
-                        : (!jobForm.country || !jobForm.city || !jobForm.district)
-                    }
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    下一步
-                  </Button>
-                </div>
+                {/* 手动选择位置预览 */}
+                {!jobForm.useGooglePlace && jobForm.country && jobForm.city && jobForm.district && (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-5 h-5 text-green-600" />
+                      <span className="text-lg font-medium text-green-800">
+                        {jobForm.country} - {jobForm.city} - {jobForm.district}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Step 3: 详细信息 */}
-          {currentStep === 3 && (
-            <div>
-              <div className="flex items-center space-x-4 mb-8">
-                <Button variant="ghost" onClick={handleBack} className="p-2">
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">提供更多信息</h1>
-                  <p className="text-gray-600">
-                    如果方便的话，您可以为我们提供更多信息，让我们更精准更快的为您匹配技师计算报价。
-                  </p>
-                </div>
-              </div>
+            {/* 第三部分：详细信息 */}
+            <div className="bg-white rounded-lg border p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">详细项目信息</h2>
+              <p className="text-gray-600 mb-6">
+                如果方便的话，您可以为我们提供更多信息，让我们更精准更快的为您匹配技师计算报价。
+              </p>
 
               <div className="space-y-6">
                 {/* 需求描述 */}
@@ -528,156 +471,161 @@ export default function PostJobPage() {
                   />
                 </div>
 
-                {/* 邮箱 */}
-                <div>
-                  <Label htmlFor="email" className="text-lg font-medium">邮箱地址 *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your.email@example.com"
-                    value={jobForm.email}
-                    onChange={(e) => updateJobForm('email', e.target.value)}
-                    className="mt-2"
-                  />
+                {/* 联系信息 */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* 邮箱 */}
+                  <div>
+                    <Label htmlFor="email" className="text-lg font-medium">邮箱地址 *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={jobForm.email}
+                      onChange={(e) => updateJobForm('email', e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  {/* 联系方式 */}
+                  <div>
+                    <Label htmlFor="phone" className="text-lg font-medium">联系方式（电话）</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+64 21 123 4567"
+                      value={jobForm.phone}
+                      onChange={(e) => updateJobForm('phone', e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
                 </div>
 
-                {/* 联系方式 */}
-                <div>
-                  <Label htmlFor="phone" className="text-lg font-medium">联系方式（电话）</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+64 21 123 4567"
-                    value={jobForm.phone}
-                    onChange={(e) => updateJobForm('phone', e.target.value)}
-                    className="mt-2"
-                  />
-                </div>
+                {/* 媒体上传 */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* 图片上传 */}
+                  <div>
+                    <Label className="text-lg font-medium">上传相关图片（最多5张）</Label>
 
-                {/* 图片上传 */}
-                <div>
-                  <Label className="text-lg font-medium">上传相关图片（最多5张）</Label>
-
-                  {/* 图片预览 */}
-                  {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3 mb-4">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
-                            <Image
-                              src={preview}
-                              alt={`预览图片 ${index + 1}`}
-                              width={200}
-                              height={200}
-                              className="w-full h-full object-cover"
-                            />
+                    {/* 图片预览 */}
+                    {imagePreviews.length > 0 && (
+                      <div className="grid grid-cols-2 gap-4 mt-3 mb-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
+                              <Image
+                                src={preview}
+                                alt={`预览图片 ${index + 1}`}
+                                width={200}
+                                height={200}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
                           </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {imagePreviews.length < 5 && (
+                      <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
+                        <CardContent className="p-6">
+                          <div
+                            className="text-center cursor-pointer"
+                            onClick={() => imageInputRef.current?.click()}
+                          >
+                            <FileImage className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-700 font-medium mb-2">点击上传图片</p>
+                            <p className="text-sm text-gray-500">
+                              支持 JPG、PNG、WebP 格式，单张最大 10MB
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handleImageUpload(e.target.files)}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* 视频上传 */}
+                  <div>
+                    <Label className="text-lg font-medium">上传视频（可选）</Label>
+
+                    {videoPreview && (
+                      <div className="mt-3 mb-4">
+                        <div className="relative group">
+                          <video
+                            src={videoPreview}
+                            controls
+                            className="w-full max-h-64 rounded-lg bg-gray-100"
+                          />
                           <Button
                             variant="destructive"
                             size="sm"
                             className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeImage(index)}
+                            onClick={removeVideo}
                           >
                             <X className="w-3 h-3" />
                           </Button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {imagePreviews.length < 5 && (
-                    <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
-                      <CardContent className="p-6">
-                        <div
-                          className="text-center cursor-pointer"
-                          onClick={() => imageInputRef.current?.click()}
-                        >
-                          <FileImage className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-700 font-medium mb-2">点击上传图片</p>
-                          <p className="text-sm text-gray-500">
-                            支持 JPG、PNG、WebP 格式，单张最大 10MB
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => handleImageUpload(e.target.files)}
-                    className="hidden"
-                  />
-                </div>
-
-                {/* 视频上传 */}
-                <div>
-                  <Label className="text-lg font-medium">上传视频（可选）</Label>
-
-                  {videoPreview && (
-                    <div className="mt-3 mb-4">
-                      <div className="relative group">
-                        <video
-                          src={videoPreview}
-                          controls
-                          className="w-full max-h-64 rounded-lg bg-gray-100"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={removeVideo}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {!videoPreview && (
-                    <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
-                      <CardContent className="p-6">
-                        <div
-                          className="text-center cursor-pointer"
-                          onClick={() => videoInputRef.current?.click()}
-                        >
-                          <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-700 font-medium mb-2">点击上传视频</p>
-                          <p className="text-sm text-gray-500">
-                            支持 MP4、MOV、AVI、WMV 格式，最大 100MB
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                    {!videoPreview && (
+                      <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
+                        <CardContent className="p-6">
+                          <div
+                            className="text-center cursor-pointer"
+                            onClick={() => videoInputRef.current?.click()}
+                          >
+                            <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-700 font-medium mb-2">点击上传视频</p>
+                            <p className="text-sm text-gray-500">
+                              支持 MP4、MOV、AVI、WMV 格式，最大 100MB
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
-                  <input
-                    ref={videoInputRef}
-                    type="file"
-                    accept="video/mp4,video/mov,video/avi,video/wmv"
-                    onChange={(e) => handleVideoUpload(e.target.files)}
-                    className="hidden"
-                  />
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/mp4,video/mov,video/avi,video/wmv"
+                      onChange={(e) => handleVideoUpload(e.target.files)}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
 
                 {/* 提交按钮 */}
-                <div className="flex justify-between pt-6">
-                  <Button variant="outline" onClick={handleBack}>
-                    上一步
-                  </Button>
+                <div className="flex justify-center pt-6">
                   <Button
-                    onClick={handleNext}
-                    className="bg-green-600 hover:bg-green-700 px-8"
-                    disabled={!jobForm.detailedDescription || !jobForm.email}
+                    type="button"
+                    onClick={handleSubmit}
+                    className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
+                    size="lg"
+                    disabled={!isFormValid()}
                   >
                     发布需求
                   </Button>
                 </div>
               </div>
             </div>
-          )}
+          </form>
         </div>
       </div>
 
