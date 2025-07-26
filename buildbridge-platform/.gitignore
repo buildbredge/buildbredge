@@ -42,3 +42,6 @@ next-env.d.ts
 
 dev.log
 node_modules/
+dist/
+build/
+coverage/
