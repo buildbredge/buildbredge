@@ -248,8 +248,8 @@ export default function AdminDashboard() {
   }
 
   // 获取评分显示
-  const getRatingDisplay = (rating: number, reviewCount: number) => {
-    if (reviewCount === 0) return "暂无评分"
+  const getRatingDisplay = (rating: number | null, reviewCount: number) => {
+    if (reviewCount === 0 || rating === null) return "暂无评分"
     return (
       <div className="flex items-center space-x-1">
         <Star className="w-3 h-3 text-yellow-400 fill-current" />
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editOwner?.id === owner.id ? (
                               <Input
-                                value={editOwner.name}
+                                value={editOwner.name || ""}
                                 onChange={e => setEditOwner({ ...editOwner, name: e.target.value })}
                                 className="w-20 py-1 px-2"
                               />
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editOwner?.id === owner.id ? (
                               <Input
-                                value={editOwner.phone}
+                                value={editOwner.phone || ""}
                                 onChange={e => setEditOwner({ ...editOwner, phone: e.target.value })}
                                 className="w-24 py-1 px-2"
                               />
@@ -484,7 +484,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editTradie?.id === tradie.id ? (
                               <Input
-                                value={editTradie.name}
+                                value={editTradie.name || ""}
                                 onChange={e => setEditTradie({ ...editTradie, name: e.target.value })}
                                 className="w-20 py-1 px-2"
                               />
@@ -495,7 +495,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editTradie?.id === tradie.id ? (
                               <Input
-                                value={editTradie.phone}
+                                value={editTradie.phone || ""}
                                 onChange={e => setEditTradie({ ...editTradie, phone: e.target.value })}
                                 className="w-24 py-1 px-2"
                               />
@@ -517,7 +517,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editTradie?.id === tradie.id ? (
                               <Input
-                                value={editTradie.company}
+                                value={editTradie.company || ""}
                                 onChange={e => setEditTradie({ ...editTradie, company: e.target.value })}
                                 className="w-24 py-1 px-2"
                               />
@@ -528,7 +528,7 @@ export default function AdminDashboard() {
                           <td className="px-2 py-1 text-sm">
                             {editTradie?.id === tradie.id ? (
                               <Input
-                                value={editTradie.specialty}
+                                value={editTradie.specialty || ""}
                                 onChange={e => setEditTradie({ ...editTradie, specialty: e.target.value })}
                                 className="w-20 py-1 px-2"
                               />
@@ -557,7 +557,7 @@ export default function AdminDashboard() {
                             {editTradie?.id === tradie.id ? (
                               <Input
                                 type="number"
-                                value={editTradie.service_radius}
+                                value={editTradie.service_radius || 0}
                                 onChange={e => setEditTradie({ ...editTradie, service_radius: Number(e.target.value) })}
                                 className="w-16 py-1 px-2"
                               />

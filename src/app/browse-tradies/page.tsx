@@ -92,24 +92,24 @@ const specialtyMap: Record<string, string> = {
 // 为显示添加的扩展技师类型，包含所有UI需要的字段
 interface ExtendedTradie {
   id: string
-  name: string
-  phone: string
+  name: string | null
+  phone: string | null
   email: string
-  company: string
-  specialty: string
+  company: string | null
+  specialty: string | null
   latitude: number | null
   longitude: number | null
   address: string | null
   service_radius: number
   status: 'pending' | 'approved' | 'closed'
   balance: number
-  rating: number
+  rating: number | null
   review_count: number
   created_at: string
   updated_at: string
   avatar?: string
   type?: 'company' | 'individual'
-  category?: string
+  category?: string | null
   reviews?: number
   location?: string
   description?: string
@@ -139,12 +139,12 @@ export default function BrowseTradiesPage() {
       const extendedTradies: ExtendedTradie[] = data.map((tradie, index) => ({
         ...tradie,
         avatar: `https://ext.same-assets.com/1633456512/professional-${(index % 5) + 1}.jpeg`,
-        type: tradie.company.includes('公司') || tradie.company.includes('有限') || tradie.company.includes('工作室') ? 'company' : 'individual',
+        type: (tradie.company || '').includes('公司') || (tradie.company || '').includes('有限') || (tradie.company || '').includes('工作室') ? 'company' : 'individual',
         category: tradie.specialty,
-        rating: 4.5 + Math.random() * 0.5, // 随机评分 4.5-5.0
-        reviews: Math.floor(Math.random() * 50) + 10, // 随机评价数 10-60
+        reviews: tradie.review_count || Math.floor(Math.random() * 50) + 10, // 使用数据库评价数或随机评价数 10-60
         location: "新西兰-奥克兰", // 默认位置，后续可从数据库获取
-        description: `专业${tradie.specialty}服务，经验丰富，质量保证`
+        description: `专业${tradie.specialty || '服务'}，经验丰富，质量保证`,
+        updated_at: (tradie as any).updated_at || tradie.created_at // 添加 updated_at 字段，暂时使用 any 类型
       }))
 
       setTradies(extendedTradies)
@@ -174,7 +174,7 @@ export default function BrowseTradiesPage() {
 
     // 按类型筛选（简化处理：如果公司名包含"公司"或"有限"则认为是公司）
     if (selectedType) {
-      const isCompany = tradie.company.includes('公司') || tradie.company.includes('有限') || tradie.company.includes('工作室')
+      const isCompany = (tradie.company || '').includes('公司') || (tradie.company || '').includes('有限') || (tradie.company || '').includes('工作室')
       const tradieType = isCompany ? 'company' : 'individual'
       if (tradieType !== selectedType) {
         matches = false
@@ -314,17 +314,17 @@ export default function BrowseTradiesPage() {
                 <CardHeader className="text-center">
                   <img
                     src={tradie.avatar}
-                    alt={tradie.name}
+                    alt={tradie.name || '技师'}
                     className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                   />
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold">{tradie.name}</h3>
+                    <h3 className="text-xl font-bold">{tradie.name || '未知技师'}</h3>
                     <Badge variant={tradie.type === "company" ? "default" : "secondary"}>
                       {tradie.type === "company" ? "公司" : "个人"}
                     </Badge>
                   </div>
-                  <p className="text-green-600 font-medium">{tradie.company}</p>
-                  <p className="text-sm text-gray-500">{tradie.category}</p>
+                  <p className="text-green-600 font-medium">{tradie.company || '个人服务'}</p>
+                  <p className="text-sm text-gray-500">{tradie.category || '综合服务'}</p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -344,7 +344,7 @@ export default function BrowseTradiesPage() {
                     <div className="space-y-1 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4" />
-                        <span>{tradie.phone}</span>
+                        <span>{tradie.phone || '未提供'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4" />

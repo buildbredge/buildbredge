@@ -72,6 +72,23 @@ CREATE TABLE IF NOT EXISTS reviews (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 1. 创建分类表
+CREATE TABLE categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name_en VARCHAR(100) NOT NULL,
+  name_zh VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. 创建职业表
+CREATE TABLE professions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  name_en VARCHAR(100) NOT NULL,
+  name_zh VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 创建索引以提高查询性能
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);

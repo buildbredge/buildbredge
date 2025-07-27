@@ -1,4 +1,4 @@
-import { supabase, Database, Coordinates, LocationQuery, ReviewFilters, TradieSearchParams } from './supabase'
+import { supabase, Database, Coordinates, LocationQuery, ReviewFilters, TradieSearchParams } from '../../lib/supabase'
 
 export type Project = Database['public']['Tables']['projects']['Row']
 export type ProjectInsert = Database['public']['Tables']['projects']['Insert']
@@ -15,6 +15,18 @@ export type TradieUpdate = Database['public']['Tables']['tradies']['Update']
 export type Review = Database['public']['Tables']['reviews']['Row']
 export type ReviewInsert = Database['public']['Tables']['reviews']['Insert']
 export type ReviewUpdate = Database['public']['Tables']['reviews']['Update']
+
+export type Category = Database['public']['Tables']['categories']['Row']
+export type CategoryInsert = Database['public']['Tables']['categories']['Insert']
+export type CategoryUpdate = Database['public']['Tables']['categories']['Update']
+
+export type Profession = Database['public']['Tables']['professions']['Row']
+export type ProfessionInsert = Database['public']['Tables']['professions']['Insert']
+export type ProfessionUpdate = Database['public']['Tables']['professions']['Update']
+
+export type TradieProfession = Database['public']['Tables']['tradie_professions']['Row']
+export type TradieProfessionInsert = Database['public']['Tables']['tradie_professions']['Insert']
+export type TradieProfessionUpdate = Database['public']['Tables']['tradie_professions']['Update']
 
 export type TradieStats = Database['public']['Views']['tradie_stats']['Row']
 
@@ -36,6 +48,28 @@ export const projectsApi = {
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      // 如果项目不存在，返回null而不是抛出错误
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
+    return data
+  },
+
+  // 根据ID获取项目（包含分类和职业信息）
+  async getByIdWithCategory(id: string): Promise<(Project & { category?: Category, profession?: Profession }) | null> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        category:categories(id, name_en, name_zh),
+        profession:professions(id, name_en, name_zh)
+      `)
       .eq('id', id)
       .single()
 
@@ -648,6 +682,219 @@ export const userApi = {
     } catch (error) {
       console.error('Error checking email:', error)
       return { exists: false }
+    }
+  }
+}
+
+// 分类API
+export const categoriesApi = {
+  // 获取所有分类
+  async getAll(): Promise<Category[]> {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name_zh', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  },
+
+  // 根据ID获取分类
+  async getById(id: string): Promise<Category | null> {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
+    return data
+  },
+
+  // 创建新分类
+  async create(category: CategoryInsert): Promise<Category> {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert(category)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  // 更新分类
+  async update(id: string, updates: CategoryUpdate): Promise<Category> {
+    const { data, error } = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  // 删除分类
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+}
+
+// 职业API
+export const professionsApi = {
+  // 获取所有职业
+  async getAll(): Promise<Profession[]> {
+    const { data, error } = await supabase
+      .from('professions')
+      .select('*')
+      .order('name_zh', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  },
+
+  // 根据分类ID获取职业
+  async getByCategoryId(categoryId: string): Promise<Profession[]> {
+    const { data, error } = await supabase
+      .from('professions')
+      .select('*')
+      .eq('category_id', categoryId)
+      .order('name_zh', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  },
+
+  // 根据ID获取职业
+  async getById(id: string): Promise<Profession | null> {
+    const { data, error } = await supabase
+      .from('professions')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
+    return data
+  },
+
+  // 创建新职业
+  async create(profession: ProfessionInsert): Promise<Profession> {
+    const { data, error } = await supabase
+      .from('professions')
+      .insert(profession)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  // 更新职业
+  async update(id: string, updates: ProfessionUpdate): Promise<Profession> {
+    const { data, error } = await supabase
+      .from('professions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  // 删除职业
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('professions')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+}
+
+// 技师职业关联API
+export const tradieProfessionsApi = {
+  // 获取技师的所有职业
+  async getByTradieId(tradieId: string): Promise<Profession[]> {
+    const { data, error } = await supabase
+      .from('tradie_professions')
+      .select(`
+        professions (*)
+      `)
+      .eq('tradie_id', tradieId)
+
+    if (error) throw error
+    return data?.map((item: any) => item.professions).filter(Boolean) || []
+  },
+
+  // 为技师添加职业
+  async create(tradieProfession: TradieProfessionInsert): Promise<TradieProfession> {
+    const { data, error } = await supabase
+      .from('tradie_professions')
+      .insert(tradieProfession)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  // 删除技师的职业关联
+  async delete(tradieId: string, professionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('tradie_professions')
+      .delete()
+      .eq('tradie_id', tradieId)
+      .eq('profession_id', professionId)
+
+    if (error) throw error
+  },
+
+  // 删除技师的所有职业关联
+  async deleteAllByTradieId(tradieId: string): Promise<void> {
+    const { error } = await supabase
+      .from('tradie_professions')
+      .delete()
+      .eq('tradie_id', tradieId)
+
+    if (error) throw error
+  },
+
+  // 批量设置技师的职业
+  async setTradieProfessions(tradieId: string, professionIds: string[]): Promise<void> {
+    // 先删除所有现有关联
+    await this.deleteAllByTradieId(tradieId)
+
+    // 如果有新的职业ID，则创建新关联
+    if (professionIds.length > 0) {
+      const insertData = professionIds.map(professionId => ({
+        tradie_id: tradieId,
+        profession_id: professionId
+      }))
+
+      const { error } = await supabase
+        .from('tradie_professions')
+        .insert(insertData)
+
+      if (error) throw error
     }
   }
 }

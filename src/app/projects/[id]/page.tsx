@@ -7,7 +7,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { 
   MapPin, 
   Mail, 
@@ -21,9 +20,11 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Tag
 } from "lucide-react"
-import { projectsApi, type Project } from "@/lib/api"
+import { projectsApi, type Project, type Category, type Profession } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSignedImageUrls } from "@/hooks/useSignedImageUrl"
 import { ImageGalleryModal } from "@/components/ImageGalleryModal"
@@ -32,7 +33,7 @@ export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const [project, setProject] = useState<Project | null>(null)
+  const [project, setProject] = useState<(Project & { category?: Category, profession?: Profession }) | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>("")
   
@@ -56,7 +57,7 @@ export default function ProjectDetailPage() {
       try {
         setLoading(true)
         const projectId = params.id as string
-        const projectData = await projectsApi.getById(projectId)
+        const projectData = await projectsApi.getByIdWithCategory(projectId)
         setProject(projectData)
       } catch (err) {
         console.error("Failed to fetch project:", err)
@@ -84,6 +85,7 @@ export default function ProjectDetailPage() {
     const statusConfig = {
       published: { label: "已发布", variant: "default" as const, icon: CheckCircle },
       draft: { label: "草稿", variant: "secondary" as const, icon: AlertCircle },
+      in_progress: { label: "进行中", variant: "default" as const, icon: Clock },
       completed: { label: "已完成", variant: "default" as const, icon: CheckCircle },
       cancelled: { label: "已取消", variant: "destructive" as const, icon: XCircle }
     }
@@ -212,6 +214,60 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
+          {/* Service Category */}
+          <div className="bg-white rounded-lg border p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">服务类别</h2>
+            <div className="space-y-4">
+              {project.category_id && project.profession_id ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Tag className="w-5 h-5 text-green-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">服务类别</p>
+                      <p className="font-medium text-gray-900">
+                        {project.category?.name_zh || project.category?.name_en || '未知类别'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Briefcase className="w-5 h-5 text-blue-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">具体职业</p>
+                      <p className="font-medium text-gray-900">
+                        {project.profession?.name_zh || project.profession?.name_en || '未知职业'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : project.other_description ? (
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <AlertCircle className="w-5 h-5 text-orange-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">其他服务需求</p>
+                    <p className="font-medium text-gray-900">{project.other_description}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3 text-gray-500">
+                  <AlertCircle className="w-5 h-5" />
+                  <p>未指定服务类别</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Project Details */}
           <div className="bg-white rounded-lg border p-6 mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">项目详情</h2>
@@ -315,7 +371,7 @@ export default function ProjectDetailPage() {
           {/* Project Meta Information */}
           <div className="mt-6 text-center text-sm text-gray-500">
             <p>项目ID: {project.id}</p>
-            <p>最后更新: {formatDate(project.updated_at)}</p>
+            <p>最后更新: {formatDate((project as any).updated_at || project.created_at)}</p>
           </div>
         </div>
       </div>

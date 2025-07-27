@@ -9,11 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { X, FileImage, Video, Upload, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { projectsApi, userApi } from "@/lib/api"
+import { projectsApi } from "@/lib/api"
 import { uploadProjectImages, uploadProjectVideo, validateFile, formatFileSize } from "../../../lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
-import { ConfirmationDialog } from "@/components/ConfirmationDialog"
-import { RegisterDialog } from "@/components/RegisterDialog"
+import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 
@@ -25,6 +24,11 @@ interface JobForm {
   video: File | null
   // Google Places相关字段
   googlePlace?: PlaceResult
+  // 分类和职业相关字段
+  categoryId?: string
+  professionId?: string
+  isOther: boolean
+  otherDescription: string
 }
 
 interface UploadProgress {
@@ -45,7 +49,11 @@ export default function PostJobPage() {
     phone: "",
     images: [],
     video: null,
-    googlePlace: undefined
+    googlePlace: undefined,
+    categoryId: undefined,
+    professionId: undefined,
+    isOther: false,
+    otherDescription: ""
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -58,12 +66,7 @@ export default function PostJobPage() {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
-  // 新增的对话框状态
-  const [showEmailDialog, setShowEmailDialog] = useState(false)
-  const [showRegisterDialog, setShowRegisterDialog] = useState(false)
-  const [emailCheckResult, setEmailCheckResult] = useState<{ exists: boolean; userType?: 'homeowner' | 'tradie' } | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
 
 
 
@@ -79,38 +82,16 @@ export default function PostJobPage() {
     setValidationErrors([])
     setUploadError("")
 
-    // 第二步：判断用户是否登录
+    // 第二步：根据登录状态保存项目
     if (user) {
-      // 已登录用户直接保存项目
+      // 已登录用户：保存项目并关联用户ID
       await saveProject(user.id)
     } else {
-      // 未登录用户需要检查邮箱
-      await checkEmailAndProceed()
+      // 未登录用户：保存匿名项目
+      await saveProject(null)
     }
   }
 
-  // 检查邮箱并决定后续流程
-  const checkEmailAndProceed = async () => {
-    setIsProcessing(true)
-    
-    try {
-      const result = await userApi.checkEmailExists(jobForm.email)
-      setEmailCheckResult(result)
-      
-      if (result.exists) {
-        // 邮箱已存在，显示登录确认对话框
-        setShowEmailDialog(true)
-      } else {
-        // 邮箱不存在，显示注册确认对话框
-        setShowRegisterDialog(true)
-      }
-    } catch (error) {
-      console.error('检查邮箱时出错:', error)
-      setUploadError('检查邮箱时出错，请重试')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
 
   // 保存项目的核心函数
   const saveProject = async (userId: string | null = null) => {
@@ -190,7 +171,10 @@ export default function PostJobPage() {
         images: uploadedImageUrls, // 直接包含上传的图片URL
         video: uploadedVideoUrl,
         status: 'published' as const,
-        user_id: userId || null // 如果是匿名用户则为null
+        user_id: userId || null, // 如果是匿名用户则为null
+        category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
+        profession_id: jobForm.isOther ? null : (jobForm.professionId || null),
+        other_description: jobForm.isOther ? jobForm.otherDescription : null
       }
 
       console.log('📋 创建项目记录（包含文件URL）...', projectData)
@@ -215,34 +199,6 @@ export default function PostJobPage() {
     }
   }
 
-  // 对话框处理函数
-  const handleEmailDialogConfirm = () => {
-    // 用户选择登录
-    setShowEmailDialog(false)
-    router.push(`/auth/login?email=${encodeURIComponent(jobForm.email)}`)
-  }
-
-  const handleEmailDialogCancel = () => {
-    // 用户选择匿名发布
-    setShowEmailDialog(false)
-    saveProject(null) // null表示匿名用户
-  }
-
-  const handleRegisterDialogSuccess = (userId: string) => {
-    // 注册成功，保存项目到新用户
-    setShowRegisterDialog(false)
-    saveProject(userId)
-  }
-
-  const handleRegisterDialogError = (error: string) => {
-    setUploadError(`注册失败: ${error}`)
-  }
-
-  const handleRegisterDialogCancel = () => {
-    // 用户选择匿名发布
-    setShowRegisterDialog(false)
-    saveProject(null) // null表示匿名用户
-  }
 
   const updateJobForm = (field: keyof JobForm, value: any) => {
     setJobForm(prev => ({ ...prev, [field]: value }))
@@ -372,17 +328,38 @@ export default function PostJobPage() {
       errors.push("项目描述至少需要10个字符")
     }
     
+    // 验证服务类别和职业
+    if (!jobForm.isOther) {
+      if (!jobForm.categoryId) {
+        errors.push("请选择服务类别")
+      }
+      if (!jobForm.professionId) {
+        errors.push("请选择具体职业")
+      }
+    } else {
+      if (!jobForm.otherDescription.trim()) {
+        errors.push("请填写其他服务内容的描述")
+      } else if (jobForm.otherDescription.trim().length < 5) {
+        errors.push("其他服务描述至少需要5个字符")
+      }
+    }
+    
     return errors
   }
 
   // 简化的表单验证函数（用于按钮disabled状态 - 只检查必填项）
   const isFormValid = () => {
-    // 只检查邮箱和项目详情（只要有内容即可）
+    // 检查邮箱和项目详情
     const hasEmail = jobForm.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email)
     const hasDescription = jobForm.detailedDescription.trim().length > 0
     
+    // 检查分类/职业选择
+    const hasValidCategory = jobForm.isOther 
+      ? jobForm.otherDescription.trim().length > 0
+      : (jobForm.categoryId && jobForm.professionId)
+    
     // 添加更详细的调试信息
-    const isValid = hasEmail && hasDescription
+    const isValid = hasEmail && hasDescription && hasValidCategory
     console.log('=== 表单验证状态 ===', {
       email: jobForm.email,
       emailTrimmed: jobForm.email.trim(),
@@ -393,9 +370,8 @@ export default function PostJobPage() {
       descriptionLength: jobForm.detailedDescription.trim().length,
       hasDescription,
       isUploading,
-      isProcessing,
       finalIsValid: isValid,
-      buttonShouldBeDisabled: !isValid || isUploading || isProcessing
+      buttonShouldBeDisabled: !isValid || isUploading
     })
     
     return isValid
@@ -491,6 +467,18 @@ export default function PostJobPage() {
                     )}
                   </div>
                 </div>
+
+                {/* 服务类别选择 */}
+                <CategoryProfessionSelector
+                  selectedCategoryId={jobForm.categoryId}
+                  selectedProfessionId={jobForm.professionId}
+                  isOther={jobForm.isOther}
+                  otherDescription={jobForm.otherDescription}
+                  onCategoryChange={(categoryId) => updateJobForm('categoryId', categoryId)}
+                  onProfessionChange={(professionId) => updateJobForm('professionId', professionId)}
+                  onOtherToggle={(isOther) => updateJobForm('isOther', isOther)}
+                  onOtherDescriptionChange={(description) => updateJobForm('otherDescription', description)}
+                />
 
                 {/* 项目详情 */}
                 <div>
@@ -691,7 +679,7 @@ export default function PostJobPage() {
                           <div>描述长度: {jobForm.detailedDescription.trim().length}</div>
                           <div>描述验证: {jobForm.detailedDescription.trim().length > 0 ? '✅' : '❌'}</div>
                           <div>表单有效: {isFormValid() ? '✅' : '❌'}</div>
-                          <div>按钮状态: {(!isFormValid() || isUploading || isProcessing) ? '禁用' : '启用'}</div>
+                          <div>按钮状态: {(!isFormValid() || isUploading) ? '禁用' : '启用'}</div>
                         </div>
                       </div>
                     )}
@@ -703,17 +691,12 @@ export default function PostJobPage() {
                         onClick={handleSubmit}
                         className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
                         size="lg"
-                        disabled={!isFormValid() || isUploading || isProcessing}
+                        disabled={!isFormValid() || isUploading}
                       >
                         {isUploading ? (
                           <div className="flex items-center space-x-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             <span>发布中...</span>
-                          </div>
-                        ) : isProcessing ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>检查中...</span>
                           </div>
                         ) : (
                           '发布需求'
@@ -731,40 +714,6 @@ export default function PostJobPage() {
       {/* Footer spacing */}
       <div className="py-16"></div>
 
-      {/* 对话框组件 */}
-      {emailCheckResult && (
-        <ConfirmationDialog
-          open={showEmailDialog}
-          onClose={() => setShowEmailDialog(false)}
-          type="email-exists"
-          email={jobForm.email}
-          onConfirm={handleEmailDialogConfirm}
-          onCancel={handleEmailDialogCancel}
-          isLoading={isUploading}
-        />
-      )}
-
-      <ConfirmationDialog
-        open={showRegisterDialog && !emailCheckResult?.exists}
-        onClose={() => setShowRegisterDialog(false)}
-        type="register-prompt"
-        email={jobForm.email}
-        onConfirm={() => {
-          setShowRegisterDialog(false)
-          // 这里应该打开实际的注册对话框，但由于复杂性，暂时跳转到注册页面
-          router.push(`/auth/register?email=${encodeURIComponent(jobForm.email)}`)
-        }}
-        onCancel={handleRegisterDialogCancel}
-        isLoading={isUploading}
-      />
-
-      <RegisterDialog
-        open={false} // 暂时禁用，使用页面跳转代替
-        onClose={() => setShowRegisterDialog(false)}
-        email={jobForm.email}
-        onSuccess={handleRegisterDialogSuccess}
-        onError={handleRegisterDialogError}
-      />
     </div>
   )
 }
