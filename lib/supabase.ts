@@ -8,63 +8,176 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Database = {
   public: {
     Tables: {
-      user_profiles: {
+      owners: {
         Row: {
           id: string
-          full_name: string | null
+          name: string | null
           phone: string | null
+          email: string
+          status: 'pending' | 'approved' | 'closed'
+          balance: number
+          latitude: number | null
+          longitude: number | null
           address: string | null
-          suburb: string | null
-          user_type: 'homeowner' | 'tradie'
           created_at: string
-          updated_at: string
         }
         Insert: {
           id: string
-          full_name?: string | null
+          name?: string | null
           phone?: string | null
+          email: string
+          status?: 'pending' | 'approved' | 'closed'
+          balance?: number
+          latitude?: number | null
+          longitude?: number | null
           address?: string | null
-          suburb?: string | null
-          user_type: 'homeowner' | 'tradie'
           created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
-          full_name?: string | null
+          name?: string | null
           phone?: string | null
+          email?: string
+          status?: 'pending' | 'approved' | 'closed'
+          balance?: number
+          latitude?: number | null
+          longitude?: number | null
           address?: string | null
-          suburb?: string | null
-          user_type?: 'homeowner' | 'tradie'
-          updated_at?: string
         }
       }
-      tradie_profiles: {
+      tradies: {
         Row: {
           id: string
-          company_name: string | null
-          specialties: string[] | null
-          hourly_rate: number | null
-          experience_years: number | null
-          verified: boolean
+          name: string | null
+          phone: string | null
+          email: string
+          company: string | null
+          specialty: string | null
+          status: 'pending' | 'approved' | 'closed'
+          balance: number
+          latitude: number | null
+          longitude: number | null
+          address: string | null
+          service_radius: number
+          rating: number | null
+          review_count: number
           created_at: string
         }
         Insert: {
           id: string
-          company_name?: string | null
-          specialties?: string[] | null
-          hourly_rate?: number | null
-          experience_years?: number | null
-          verified?: boolean
+          name?: string | null
+          phone?: string | null
+          email: string
+          company?: string | null
+          specialty?: string | null
+          status?: 'pending' | 'approved' | 'closed'
+          balance?: number
+          latitude?: number | null
+          longitude?: number | null
+          address?: string | null
+          service_radius?: number
+          rating?: number | null
+          review_count?: number
           created_at?: string
         }
         Update: {
           id?: string
-          company_name?: string | null
-          specialties?: string[] | null
-          hourly_rate?: number | null
-          experience_years?: number | null
-          verified?: boolean
+          name?: string | null
+          phone?: string | null
+          email?: string
+          company?: string | null
+          specialty?: string | null
+          status?: 'pending' | 'approved' | 'closed'
+          balance?: number
+          latitude?: number | null
+          longitude?: number | null
+          address?: string | null
+          service_radius?: number
+          rating?: number | null
+          review_count?: number
+        }
+      }
+      projects: {
+        Row: {
+          id: string
+          description: string
+          location: string
+          latitude: number | null
+          longitude: number | null
+          detailed_description: string | null
+          email: string
+          phone: string | null
+          images: string[]
+          video: string | null
+          status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          user_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          description: string
+          location: string
+          latitude?: number | null
+          longitude?: number | null
+          detailed_description?: string | null
+          email: string
+          phone?: string | null
+          images?: string[]
+          video?: string | null
+          status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          user_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          description?: string
+          location?: string
+          latitude?: number | null
+          longitude?: number | null
+          detailed_description?: string | null
+          email?: string
+          phone?: string | null
+          images?: string[]
+          video?: string | null
+          status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          user_id?: string
+        }
+      }
+      reviews: {
+        Row: {
+          id: string
+          project_id: string
+          owner_id: string
+          tradie_id: string
+          rating: number
+          comment: string | null
+          images: string[]
+          video: string | null
+          is_approved: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          owner_id: string
+          tradie_id: string
+          rating: number
+          comment?: string | null
+          images?: string[]
+          video?: string | null
+          is_approved?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          owner_id?: string
+          tradie_id?: string
+          rating?: number
+          comment?: string | null
+          images?: string[]
+          video?: string | null
+          is_approved?: boolean
         }
       }
     }

@@ -191,10 +191,10 @@ export default function ServicesPage() {
 
           <div className="flex items-center space-x-4">
             <Button variant="outline" asChild>
-              <Link href="/auth">登录</Link>
+              <Link href="/auth/login">登录</Link>
             </Button>
             <Button className="bg-green-600 hover:bg-green-700" asChild>
-              <Link href="/auth">注册</Link>
+              <Link href="/auth/register">注册</Link>
             </Button>
           </div>
         </div>

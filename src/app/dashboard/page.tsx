@@ -17,20 +17,21 @@ import { supabase } from "../../../lib/supabase"
 
 interface UserProfile {
   id: string
-  full_name: string | null
+  name: string | null
   phone: string | null
+  email: string
   address: string | null
-  suburb: string | null
-  user_type: 'homeowner' | 'tradie'
+  status: 'pending' | 'approved' | 'closed'
   created_at: string
+  user_type: 'homeowner' | 'tradie'
 }
 
 interface TradieProfile {
-  company_name: string | null
-  specialties: string[] | null
-  hourly_rate: number | null
-  experience_years: number | null
-  verified: boolean
+  company: string | null
+  specialty: string | null
+  service_radius: number
+  rating: number | null
+  review_count: number
 }
 
 export default function DashboardPage() {
@@ -55,27 +56,32 @@ export default function DashboardPage() {
 
       setUser(user)
 
-      // 获取用户资料
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
+      // 先尝试从 owners 表获取用户资料
+      const { data: ownerProfile, error: ownerError } = await supabase
+        .from('owners')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (profile) {
-        setUserProfile(profile)
+      if (ownerProfile) {
+        setUserProfile({
+          ...ownerProfile,
+          user_type: 'homeowner'
+        })
+      } else {
+        // 如果不是房主，尝试从 tradies 表获取
+        const { data: tradieProfile, error: tradieError } = await supabase
+          .from('tradies')
+          .select('*')
+          .eq('id', user.id)
+          .single()
 
-        // 如果是技师，获取技师资料
-        if (profile.user_type === 'tradie') {
-          const { data: tradieData, error: tradieError } = await supabase
-            .from('tradie_profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single()
-
-          if (tradieData) {
-            setTradieProfile(tradieData)
-          }
+        if (tradieProfile) {
+          setUserProfile({
+            ...tradieProfile,
+            user_type: 'tradie'
+          })
+          setTradieProfile(tradieProfile)
         }
       }
     } catch (error) {
@@ -121,7 +127,7 @@ export default function DashboardPage() {
   }
 
   const isTradie = userProfile.user_type === 'tradie'
-  const displayName = userProfile.full_name || user.email?.split('@')[0] || '用户'
+  const displayName = userProfile.name || user.email?.split('@')[0] || '用户'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,9 +170,11 @@ export default function DashboardPage() {
               <Bell className="w-4 h-4 mr-2" />
               通知
             </Button>
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              设置
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/profile">
+                <Settings className="w-4 h-4 mr-2" />
+                设置
+              </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -298,11 +306,11 @@ export default function DashboardPage() {
               <CardContent className="space-y-3">
                 <div>
                   <Label className="text-sm text-gray-500">姓名</Label>
-                  <p className="font-medium">{userProfile.full_name || '未填写'}</p>
+                  <p className="font-medium">{userProfile.name || '未填写'}</p>
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">邮箱</Label>
-                  <p className="font-medium">{user.email}</p>
+                  <p className="font-medium">{userProfile.email}</p>
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">电话</Label>
@@ -310,9 +318,13 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">地址</Label>
-                  <p className="font-medium">
-                    {userProfile.address ? `${userProfile.address}, ${userProfile.suburb}` : '未填写'}
-                  </p>
+                  <p className="font-medium">{userProfile.address || '未填写'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-gray-500">状态</Label>
+                  <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'}>
+                    {userProfile.status === 'approved' ? '已认证' : userProfile.status === 'pending' ? '待审核' : '已关闭'}
+                  </Badge>
                 </div>
 
                 {/* Tradie specific info */}
@@ -320,30 +332,31 @@ export default function DashboardPage() {
                   <>
                     <div>
                       <Label className="text-sm text-gray-500">公司名称</Label>
-                      <p className="font-medium">{tradieProfile.company_name || '未填写'}</p>
+                      <p className="font-medium">{tradieProfile.company || '未填写'}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">专业技能</Label>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {tradieProfile.specialties?.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="font-medium">{tradieProfile.specialty || '未填写'}</p>
                     </div>
                     <div>
-                      <Label className="text-sm text-gray-500">经验/费率</Label>
-                      <p className="font-medium">
-                        {tradieProfile.experience_years}年 / ${tradieProfile.hourly_rate}/小时
+                      <Label className="text-sm text-gray-500">服务半径</Label>
+                      <p className="font-medium">{tradieProfile.service_radius}公里</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">评分</Label>
+                      <p className="font-medium flex items-center">
+                        <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                        {tradieProfile.rating || '暂无'} ({tradieProfile.review_count} 评价)
                       </p>
                     </div>
                   </>
                 )}
 
-                <Button className="w-full mt-4" variant="outline">
-                  <Settings className="w-4 h-4 mr-2" />
-                  编辑资料
+                <Button className="w-full mt-4" variant="outline" asChild>
+                  <Link href="/profile">
+                    <Settings className="w-4 h-4 mr-2" />
+                    编辑资料
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

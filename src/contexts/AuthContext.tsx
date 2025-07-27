@@ -1,13 +1,15 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import type { Database } from '@/lib/supabase'
 
 interface User {
   id: string
   name: string
   email: string
   phone: string
-  userType: 'homeowner' | 'tradie' | 'supplier'
+  userType: 'homeowner' | 'tradie'
   location: string
   company?: string
   avatar?: string
@@ -31,195 +33,257 @@ interface RegisterData {
   email: string
   password: string
   phone: string
-  userType: 'homeowner' | 'tradie' | 'supplier'
+  userType: 'homeowner' | 'tradie'
   location: string
   company?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// 模拟用户数据库
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: '张先生',
-    email: 'zhang@example.com',
-    phone: '+64 21 123 4567',
-    userType: 'homeowner',
-    location: '奥克兰中心',
-    verified: true,
-    emailVerified: true
-  },
-  {
-    id: '2',
-    name: '李师傅',
-    email: 'li@example.com',
-    phone: '+64 21 234 5678',
-    userType: 'tradie',
-    location: '奥克兰南区',
-    company: '李师傅装修工作室',
-    verified: true,
-    emailVerified: true
-  }
-]
-
-// 模拟注册用户存储
-const registeredUsers: User[] = [...mockUsers]
-const tempPassword: { [email: string]: string } = {
-  'zhang@example.com': 'password123',
-  'li@example.com': 'password123'
-}
-
-// 模拟邮箱验证tokens
-const emailVerificationTokens: { [email: string]: string } = {}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // 检查localStorage中的用户信息
-    const savedUser = localStorage.getItem('buildbridge-user')
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-      } catch (error) {
-        console.error('Error parsing saved user:', error)
-        localStorage.removeItem('buildbridge-user')
+    // 获取当前会话
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        await loadUserProfile(session.user.id)
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    getSession()
+
+    // 监听认证状态变化
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await loadUserProfile(session.user.id)
+      } else {
+        setUser(null)
+      }
+      setIsLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser()
+      
+      // 先尝试从 owners 表查找
+      const { data: ownerProfile } = await supabase
+        .from('owners')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (ownerProfile) {
+        const userData: User = {
+          id: ownerProfile.id,
+          name: ownerProfile.name || '',
+          email: authUser.user?.email || '',
+          phone: ownerProfile.phone || '',
+          userType: 'homeowner',
+          location: ownerProfile.address || '',
+          verified: ownerProfile.status === 'approved',
+          emailVerified: authUser.user?.email_confirmed_at ? true : false
+        }
+        setUser(userData)
+        return
+      }
+
+      // 如果不是业主，尝试从 tradies 表查找
+      const { data: tradieProfile } = await supabase
+        .from('tradies')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (tradieProfile) {
+        const userData: User = {
+          id: tradieProfile.id,
+          name: tradieProfile.name || '',
+          email: authUser.user?.email || '',
+          phone: tradieProfile.phone || '',
+          userType: 'tradie',
+          location: tradieProfile.address || '',
+          company: tradieProfile.company || undefined,
+          verified: tradieProfile.status === 'approved',
+          emailVerified: authUser.user?.email_confirmed_at ? true : false
+        }
+        setUser(userData)
+        return
+      }
+
+      // 如果都没找到，说明用户数据不完整
+      console.warn('User profile not found in owners or tradies tables')
+    } catch (error) {
+      console.error('Error loading user profile:', error)
+    }
+  }
+
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
-    setIsLoading(true)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
+      if (error) {
+        let message = '登录失败，请重试'
+        
+        if (error.message.includes('Invalid login credentials')) {
+          message = '邮箱或密码错误，请重试'
+        } else if (error.message.includes('Email not confirmed')) {
+          message = '请先验证您的邮箱地址'
+        }
+        
+        return { success: false, message }
+      }
 
-    // 验证用户凭据
-    const foundUser = registeredUsers.find(u => u.email === email)
-    const correctPassword = tempPassword[email]
+      if (data.user) {
+        await loadUserProfile(data.user.id)
+        return { success: true, message: '登录成功！' }
+      }
 
-    if (!foundUser) {
-      setIsLoading(false)
-      return { success: false, message: '用户不存在，请先注册账户' }
+      return { success: false, message: '登录失败，请重试' }
+    } catch (error) {
+      console.error('Login error:', error)
+      return { success: false, message: '登录失败，请重试' }
     }
-
-    if (!correctPassword || correctPassword !== password) {
-      setIsLoading(false)
-      return { success: false, message: '邮箱或密码错误，请重试' }
-    }
-
-    if (!foundUser.emailVerified) {
-      setIsLoading(false)
-      return { success: false, message: '请先验证您的邮箱地址' }
-    }
-
-    // 登录成功
-    setUser(foundUser)
-    localStorage.setItem('buildbridge-user', JSON.stringify(foundUser))
-    setIsLoading(false)
-    return { success: true, message: '登录成功！' }
   }
 
   const register = async (userData: RegisterData): Promise<{ success: boolean; message: string }> => {
-    setIsLoading(true)
+    try {
+      // 注册Supabase用户
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+      })
 
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // 检查邮箱是否已存在
-    const existingUser = registeredUsers.find(u => u.email === userData.email)
-    if (existingUser) {
-      setIsLoading(false)
-      return { success: false, message: '该邮箱已被注册，请使用其他邮箱或直接登录' }
-    }
-
-    // 创建新用户
-    const newUser: User = {
-      id: Date.now().toString(),
-      ...userData,
-      verified: false,
-      emailVerified: false
-    }
-
-    registeredUsers.push(newUser)
-    tempPassword[userData.email] = userData.password
-
-    // 自动发送邮箱验证
-    const verificationResult = await sendEmailVerification(userData.email)
-
-    setIsLoading(false)
-
-    if (verificationResult.success) {
-      return {
-        success: true,
-        message: '注册成功！请检查您的邮箱并点击验证链接激活账户。'
+      if (error) {
+        let message = '注册失败，请重试'
+        
+        if (error.message.includes('User already registered')) {
+          message = '该邮箱已被注册，请使用其他邮箱或直接登录'
+        } else if (error.message.includes('Password should be at least')) {
+          message = '密码至少需要6个字符'
+        }
+        
+        return { success: false, message }
       }
-    } else {
-      return {
-        success: true,
-        message: '注册成功，但邮箱验证发送失败。请稍后在个人中心重新发送。'
+
+      if (data.user) {
+        // 根据用户类型创建对应的资料
+        if (userData.userType === 'homeowner') {
+          const { error: profileError } = await supabase
+            .from('owners')
+            .insert({
+              id: data.user.id,
+              name: userData.name,
+              phone: userData.phone,
+              email: userData.email,
+              address: userData.location,
+              status: 'pending',
+              balance: 0.00,
+              latitude: null,
+              longitude: null
+            })
+
+          if (profileError) {
+            console.error('Error creating owner profile:', profileError)
+            return { success: false, message: '业主资料创建失败，请联系客服' }
+          }
+        } else if (userData.userType === 'tradie') {
+          const { error: profileError } = await supabase
+            .from('tradies')
+            .insert({
+              id: data.user.id,
+              name: userData.name,
+              phone: userData.phone,
+              email: userData.email,
+              company: userData.company || '个人服务',
+              specialty: '通用服务',
+              status: 'pending',
+              balance: 0.00,
+              latitude: null,
+              longitude: null,
+              address: userData.location,
+              service_radius: 25,
+              rating: 0,
+              review_count: 0
+            })
+
+          if (profileError) {
+            console.error('Error creating tradie profile:', profileError)
+            return { success: false, message: '技师资料创建失败，请联系客服' }
+          }
+        }
+
+        return {
+          success: true,
+          message: '注册成功！请检查您的邮箱并点击验证链接激活账户。'
+        }
       }
+
+      return { success: false, message: '注册失败，请重试' }
+    } catch (error) {
+      console.error('Registration error:', error)
+      return { success: false, message: '注册失败，请重试' }
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('buildbridge-user')
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const sendEmailVerification = async (email: string): Promise<{ success: boolean; message: string }> => {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 800))
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      })
 
-    // 生成验证token
-    const token = Math.random().toString(36).substring(2, 15)
-    emailVerificationTokens[email] = token
+      if (error) {
+        return { success: false, message: '验证邮件发送失败，请重试' }
+      }
 
-    // 模拟发送邮件（实际应用中这里会调用邮件服务）
-    console.log(`邮箱验证邮件已发送到 ${email}`)
-    console.log(`验证链接: ${window.location.origin}/verify-email?token=${token}&email=${email}`)
-
-    return {
-      success: true,
-      message: '验证邮件已发送，请检查您的邮箱（包括垃圾邮件文件夹）'
+      return {
+        success: true,
+        message: '验证邮件已发送，请检查您的邮箱（包括垃圾邮件文件夹）'
+      }
+    } catch (error) {
+      console.error('Email verification error:', error)
+      return { success: false, message: '验证邮件发送失败，请重试' }
     }
   }
 
   const verifyEmail = async (token: string): Promise<{ success: boolean; message: string }> => {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'email'
+      })
 
-    // 查找对应的邮箱
-    const email = Object.keys(emailVerificationTokens).find(
-      email => emailVerificationTokens[email] === token
-    )
-
-    if (!email || !emailVerificationTokens[email]) {
-      return { success: false, message: '验证链接无效或已过期' }
-    }
-
-    // 更新用户邮箱验证状态
-    const userIndex = registeredUsers.findIndex(u => u.email === email)
-    if (userIndex !== -1) {
-      registeredUsers[userIndex].emailVerified = true
-
-      // 如果当前登录用户就是被验证的用户，更新状态
-      if (user && user.email === email) {
-        const updatedUser = { ...user, emailVerified: true }
-        setUser(updatedUser)
-        localStorage.setItem('buildbridge-user', JSON.stringify(updatedUser))
+      if (error) {
+        return { success: false, message: '验证链接无效或已过期' }
       }
 
-      // 删除已使用的token
-      delete emailVerificationTokens[email]
-
       return { success: true, message: '邮箱验证成功！您现在可以正常使用所有功能。' }
+    } catch (error) {
+      console.error('Email verification error:', error)
+      return { success: false, message: '验证失败，请重试' }
     }
-
-    return { success: false, message: '用户不存在' }
   }
 
   const updateUser = async (userData: Partial<User>): Promise<{ success: boolean; message: string }> => {
@@ -227,21 +291,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: '请先登录' }
     }
 
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      if (user.userType === 'homeowner') {
+        // 更新业主资料
+        const { error: profileError } = await supabase
+          .from('owners')
+          .update({
+            name: userData.name,
+            phone: userData.phone,
+            address: userData.location,
+          })
+          .eq('id', user.id)
 
-    const updatedUser = { ...user, ...userData }
+        if (profileError) {
+          console.error('Error updating owner profile:', profileError)
+          return { success: false, message: '更新失败，请重试' }
+        }
+      } else if (user.userType === 'tradie') {
+        // 更新技师资料
+        const { error: profileError } = await supabase
+          .from('tradies')
+          .update({
+            name: userData.name,
+            phone: userData.phone,
+            address: userData.location,
+            company: userData.company,
+          })
+          .eq('id', user.id)
 
-    // 更新数据库中的用户信息
-    const userIndex = registeredUsers.findIndex(u => u.id === user.id)
-    if (userIndex !== -1) {
-      registeredUsers[userIndex] = updatedUser
+        if (profileError) {
+          console.error('Error updating tradie profile:', profileError)
+          return { success: false, message: '更新失败，请重试' }
+        }
+      }
+
+      // 重新加载用户资料
+      await loadUserProfile(user.id)
+
+      return { success: true, message: '个人信息更新成功' }
+    } catch (error) {
+      console.error('Update user error:', error)
+      return { success: false, message: '更新失败，请重试' }
     }
-
-    setUser(updatedUser)
-    localStorage.setItem('buildbridge-user', JSON.stringify(updatedUser))
-
-    return { success: true, message: '个人信息更新成功' }
   }
 
   const value = {

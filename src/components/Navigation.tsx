@@ -64,7 +64,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
     switch (user.userType) {
       case 'homeowner': return { name: '房主用户', color: 'bg-green-100 text-green-800' }
       case 'tradie': return { name: '专业技师', color: 'bg-blue-100 text-blue-800' }
-      case 'supplier': return { name: '建材供应商', color: 'bg-purple-100 text-purple-800' }
       default: return { name: '用户', color: 'bg-gray-100 text-gray-800' }
     }
   }
@@ -226,10 +225,10 @@ export default function Navigation({ currentPage }: NavigationProps) {
           ) : (
             <div className="hidden sm:flex items-center space-x-2">
               <Button variant="outline" size="sm" asChild>
-                <Link href="/auth">登录</Link>
+                <Link href="/auth/login">登录</Link>
               </Button>
               <Button size="sm" className="bg-green-600 hover:bg-green-700" asChild>
-                <Link href="/auth">注册</Link>
+                <Link href="/auth/register">注册</Link>
               </Button>
             </div>
           )}
@@ -358,10 +357,10 @@ export default function Navigation({ currentPage }: NavigationProps) {
             ) : (
               <div className="flex space-x-2 pt-4">
                 <Button variant="outline" className="flex-1" asChild>
-                  <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>登录</Link>
+                  <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>登录</Link>
                 </Button>
                 <Button className="flex-1 bg-green-600 hover:bg-green-700" asChild>
-                  <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>注册</Link>
+                  <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>注册</Link>
                 </Button>
               </div>
             )}

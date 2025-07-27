@@ -6,12 +6,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { X, FileImage, Video } from "lucide-react"
+import { X, FileImage, Video, Upload, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { projectsApi } from "@/lib/api"
-import { uploadProjectImages, uploadProjectVideo, validateFile, formatFileSize } from "@/lib/storage"
+import { projectsApi, userApi } from "@/lib/api"
+import { uploadProjectImages, uploadProjectVideo, validateFile, formatFileSize } from "../../../lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
+import { ConfirmationDialog } from "@/components/ConfirmationDialog"
+import { RegisterDialog } from "@/components/RegisterDialog"
+import { useAuth } from "@/contexts/AuthContext"
+import { useRouter } from "next/navigation"
 
 interface JobForm {
   detailedDescription: string
@@ -23,9 +27,17 @@ interface JobForm {
   googlePlace?: PlaceResult
 }
 
+interface UploadProgress {
+  images: { [index: number]: number }
+  video: number
+}
+
 
 export default function PostJobPage() {
   console.log("=== POST JOB PAGE LOADED ===", new Date().toISOString())
+
+  const { user } = useAuth()
+  const router = useRouter()
 
   const [jobForm, setJobForm] = useState<JobForm>({
     detailedDescription: "",
@@ -41,21 +53,72 @@ export default function PostJobPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [videoUrl, setVideoUrl] = useState<string>("")
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {}, video: 0 })
+  const [uploadError, setUploadError] = useState<string>("")
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  // 新增的对话框状态
+  const [showEmailDialog, setShowEmailDialog] = useState(false)
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false)
+  const [emailCheckResult, setEmailCheckResult] = useState<{ exists: boolean; userType?: 'homeowner' | 'tradie' } | null>(null)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
 
 
 
   const handleSubmit = async () => {
-    if (!isFormValid()) {
-      alert("请填写所有必需信息")
+    // 第一步：表单验证
+    const errors = validateForm()
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      setUploadError(`表单验证失败:\n${errors.join('\n')}`)
       return
     }
 
+    setValidationErrors([])
+    setUploadError("")
+
+    // 第二步：判断用户是否登录
+    if (user) {
+      // 已登录用户直接保存项目
+      await saveProject(user.id)
+    } else {
+      // 未登录用户需要检查邮箱
+      await checkEmailAndProceed()
+    }
+  }
+
+  // 检查邮箱并决定后续流程
+  const checkEmailAndProceed = async () => {
+    setIsProcessing(true)
+    
+    try {
+      const result = await userApi.checkEmailExists(jobForm.email)
+      setEmailCheckResult(result)
+      
+      if (result.exists) {
+        // 邮箱已存在，显示登录确认对话框
+        setShowEmailDialog(true)
+      } else {
+        // 邮箱不存在，显示注册确认对话框
+        setShowRegisterDialog(true)
+      }
+    } catch (error) {
+      console.error('检查邮箱时出错:', error)
+      setUploadError('检查邮箱时出错，请重试')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // 保存项目的核心函数
+  const saveProject = async (userId: string | null = null) => {
     setIsUploading(true)
+    setUploadError("")
 
     try {
-      console.log('🚀 开始提交项目到数据库...')
+      console.log('🚀 开始提交项目...')
 
       // 获取地理位置信息
       const locationString = jobForm.googlePlace?.address || ''
@@ -67,39 +130,129 @@ export default function PostJobPage() {
         coordinates: { latitude, longitude }
       })
 
-      // 构建项目数据
-      const projectData = {
-        description: jobForm.detailedDescription.substring(0, 100), // 简短描述
+      // 如果有文件，先上传文件再创建项目
+      let uploadedImageUrls: string[] = []
+      let uploadedVideoUrl: string | null = null
+      
+      // 为了获取项目ID用于文件上传，我们先生成一个临时ID
+      const tempProjectId = crypto.randomUUID()
+
+      // 上传图片
+      if (jobForm.images.length > 0) {
+        console.log('📸 开始上传图片...')
+        try {
+          uploadedImageUrls = await uploadProjectImages(
+            jobForm.images,
+            tempProjectId,
+            (fileIndex, progress) => {
+              setUploadProgress(prev => ({
+                ...prev,
+                images: { ...prev.images, [fileIndex]: progress }
+              }))
+            }
+          )
+          console.log('✅ 图片上传成功:', uploadedImageUrls)
+        } catch (error) {
+          console.error('❌ 图片上传失败:', error)
+          setUploadError(`图片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+          // 继续执行，不阻断流程
+        }
+      }
+
+      // 上传视频
+      if (jobForm.video) {
+        console.log('🎬 开始上传视频...')
+        try {
+          uploadedVideoUrl = await uploadProjectVideo(
+            jobForm.video,
+            tempProjectId,
+            (progress) => {
+              setUploadProgress(prev => ({ ...prev, video: progress }))
+            }
+          )
+          console.log('✅ 视频上传成功:', uploadedVideoUrl)
+        } catch (error) {
+          console.error('❌ 视频上传失败:', error)
+          setUploadError(`视频上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+          // 继续执行，不阻断流程
+        }
+      }
+
+      // 创建项目记录，包含已上传的文件URL
+      const projectData: any = {
+        description: jobForm.detailedDescription.substring(0, 100),
         location: locationString,
         latitude,
         longitude,
         detailed_description: jobForm.detailedDescription,
         email: jobForm.email,
         phone: jobForm.phone || null,
-        images: imagePreviews, // 暂时使用预览URL
-        video: videoPreview || null,
+        images: uploadedImageUrls, // 直接包含上传的图片URL
+        video: uploadedVideoUrl,
         status: 'published' as const,
-        user_id: `user_${Date.now()}` // 临时用户ID
+        user_id: userId || null // 如果是匿名用户则为null
       }
 
-      console.log('📋 项目数据:', projectData)
-
-      // 使用API创建项目
+      console.log('📋 创建项目记录（包含文件URL）...', projectData)
       const createdProject = await projectsApi.create(projectData)
-      console.log('✅ 项目创建成功:', createdProject)
+      
+      if (!createdProject || !createdProject.id) {
+        throw new Error('项目创建失败：未返回有效的项目ID')
+      }
+      
+      const projectId = createdProject.id
+      console.log('✅ 项目创建成功，ID:', projectId)
 
-      setIsSubmitted(true)
+      // 保存成功，跳转到项目详情页
+      router.push(`/projects/${projectId}`)
 
     } catch (error) {
       console.error('❌ 发布项目时出错:', error)
-      alert(`发布项目时出错: ${error instanceof Error ? error.message : '未知错误'}`)
+      setUploadError(`发布项目时出错: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setIsUploading(false)
+      setUploadProgress({ images: {}, video: 0 })
     }
+  }
+
+  // 对话框处理函数
+  const handleEmailDialogConfirm = () => {
+    // 用户选择登录
+    setShowEmailDialog(false)
+    router.push(`/auth/login?email=${encodeURIComponent(jobForm.email)}`)
+  }
+
+  const handleEmailDialogCancel = () => {
+    // 用户选择匿名发布
+    setShowEmailDialog(false)
+    saveProject(null) // null表示匿名用户
+  }
+
+  const handleRegisterDialogSuccess = (userId: string) => {
+    // 注册成功，保存项目到新用户
+    setShowRegisterDialog(false)
+    saveProject(userId)
+  }
+
+  const handleRegisterDialogError = (error: string) => {
+    setUploadError(`注册失败: ${error}`)
+  }
+
+  const handleRegisterDialogCancel = () => {
+    // 用户选择匿名发布
+    setShowRegisterDialog(false)
+    saveProject(null) // null表示匿名用户
   }
 
   const updateJobForm = (field: keyof JobForm, value: any) => {
     setJobForm(prev => ({ ...prev, [field]: value }))
+    // 清除错误信息当用户开始输入时
+    if (uploadError) {
+      setUploadError("")
+    }
+    if (validationErrors.length > 0) {
+      setValidationErrors([])
+    }
   }
 
   // 处理Google Places地址选择
@@ -113,6 +266,8 @@ export default function PostJobPage() {
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || isUploading) return
+    
+    setUploadError("") // 清除之前的错误
 
     const newFiles = Array.from(files).slice(0, 5 - jobForm.images.length)
     
@@ -130,7 +285,7 @@ export default function PostJobPage() {
     }
 
     if (errors.length > 0) {
-      alert(`以下文件无法上传:\n${errors.join('\n')}`)
+      setUploadError(`以下图片文件无法上传:\n${errors.join('\n')}`)
     }
 
     if (validFiles.length === 0) {
@@ -152,13 +307,15 @@ export default function PostJobPage() {
 
   const handleVideoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || isUploading) return
+    
+    setUploadError("") // 清除之前的错误
 
     const file = files[0]
     
     // 验证文件
     const validation = validateFile(file, 'video')
     if (!validation.valid) {
-      alert(validation.error)
+      setUploadError(`视频文件上传失败: ${validation.error}`)
       if (videoInputRef.current) {
         videoInputRef.current.value = ''
       }
@@ -192,62 +349,59 @@ export default function PostJobPage() {
     setJobForm(prev => ({ ...prev, video: null }))
   }
 
-  // 表单验证函数
+  // 增强的表单验证函数（用于提交时的完整验证）
+  const validateForm = (): string[] => {
+    const errors: string[] = []
+    
+    // 验证邮箱
+    if (!jobForm.email.trim()) {
+      errors.push("请填写邮箱地址")
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email)) {
+      errors.push("请填写有效的邮箱地址")
+    }
+    
+    // 验证位置信息
+    if (!jobForm.googlePlace) {
+      errors.push("请选择项目位置")
+    }
+    
+    // 验证详细描述
+    if (!jobForm.detailedDescription.trim()) {
+      errors.push("请描述您的项目需求")
+    } else if (jobForm.detailedDescription.trim().length < 10) {
+      errors.push("项目描述至少需要10个字符")
+    }
+    
+    return errors
+  }
+
+  // 简化的表单验证函数（用于按钮disabled状态 - 只检查必填项）
   const isFormValid = () => {
-    // 位置信息必须完整
-    if (!jobForm.googlePlace) return false
+    // 只检查邮箱和项目详情（只要有内容即可）
+    const hasEmail = jobForm.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email)
+    const hasDescription = jobForm.detailedDescription.trim().length > 0
     
-    // 详细描述和邮箱必须填写
-    if (!jobForm.detailedDescription.trim() || !jobForm.email.trim()) return false
+    // 添加更详细的调试信息
+    const isValid = hasEmail && hasDescription
+    console.log('=== 表单验证状态 ===', {
+      email: jobForm.email,
+      emailTrimmed: jobForm.email.trim(),
+      emailRegexTest: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email),
+      hasEmail,
+      description: jobForm.detailedDescription,
+      descriptionTrimmed: jobForm.detailedDescription.trim(),
+      descriptionLength: jobForm.detailedDescription.trim().length,
+      hasDescription,
+      isUploading,
+      isProcessing,
+      finalIsValid: isValid,
+      buttonShouldBeDisabled: !isValid || isUploading || isProcessing
+    })
     
-    return true
+    return isValid
   }
 
 
-  // 如果已提交，显示成功页面
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="sticky top-0 z-50 bg-white border-b">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">B</span>
-                </div>
-                <span className="text-xl font-bold text-gray-800">BuildBridge</span>
-                <span className="text-sm text-gray-500">需求提交成功</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">提交成功！</h1>
-            <p className="text-xl text-gray-600 mb-8">
-              您已成功提交需求，您会收到我们的确认邮件。我们会根据您的信息快速匹配相应技师。
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-green-600 hover:bg-green-700" size="lg" asChild>
-                <Link href="/browse-tradies">寻找技师</Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/suppliers">折扣商家</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -326,7 +480,7 @@ export default function PostJobPage() {
                       <GooglePlacesAutocomplete
                         onPlaceSelect={handlePlaceSelect}
                         placeholder="输入您的详细地址..."
-                        label="项目位置 *"
+                        label="项目位置"
                         className="h-12 text-lg"
                       />
                     ) : (
@@ -460,12 +614,87 @@ export default function PostJobPage() {
                         <input
                           ref={videoInputRef}
                           type="file"
-                          accept="video/mp4,video/mov,video/avi,video/wmv"
+                          accept="video/mp4,video/quicktime,video/avi,video/x-ms-wmv,.mp4,.mov,.avi,.wmv"
                           onChange={(e) => handleVideoUpload(e.target.files)}
                           className="hidden"
                         />
                       </div>
                     </div>
+
+                    {/* 错误信息显示 */}
+                    {uploadError && (
+                      <div className="flex items-start space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm whitespace-pre-line">{uploadError}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 上传进度显示 */}
+                    {isUploading && (
+                      <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Upload className="w-5 h-5 text-blue-600" />
+                          <h4 className="font-medium text-blue-900">正在上传文件...</h4>
+                        </div>
+
+                        {/* 图片上传进度 */}
+                        {jobForm.images.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-blue-700">图片上传进度:</p>
+                            {jobForm.images.map((file, index) => (
+                              <div key={index} className="space-y-1">
+                                <div className="flex justify-between text-xs text-blue-600">
+                                  <span>{file.name}</span>
+                                  <span>{uploadProgress.images[index] || 0}%</span>
+                                </div>
+                                <div className="w-full bg-blue-200 rounded-full h-2">
+                                  <div
+                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadProgress.images[index] || 0}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 视频上传进度 */}
+                        {jobForm.video && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-blue-700">视频上传进度:</p>
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-blue-600">
+                                <span>{jobForm.video.name}</span>
+                                <span>{uploadProgress.video}%</span>
+                              </div>
+                              <div className="w-full bg-blue-200 rounded-full h-2">
+                                <div
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${uploadProgress.video}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 调试信息 - 开发环境显示 */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                        <h4 className="font-medium text-yellow-800 mb-2">调试信息:</h4>
+                        <div className="grid grid-cols-2 gap-2 text-yellow-700">
+                          <div>邮箱: {jobForm.email || '(空)'}</div>
+                          <div>邮箱验证: {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email) ? '✅' : '❌'}</div>
+                          <div>描述长度: {jobForm.detailedDescription.trim().length}</div>
+                          <div>描述验证: {jobForm.detailedDescription.trim().length > 0 ? '✅' : '❌'}</div>
+                          <div>表单有效: {isFormValid() ? '✅' : '❌'}</div>
+                          <div>按钮状态: {(!isFormValid() || isUploading || isProcessing) ? '禁用' : '启用'}</div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* 提交按钮 */}
                     <div className="flex justify-center pt-6">
@@ -474,9 +703,21 @@ export default function PostJobPage() {
                         onClick={handleSubmit}
                         className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
                         size="lg"
-                        disabled={!isFormValid() || isUploading}
+                        disabled={!isFormValid() || isUploading || isProcessing}
                       >
-                        {isUploading ? '发布中...' : '发布需求'}
+                        {isUploading ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>发布中...</span>
+                          </div>
+                        ) : isProcessing ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>检查中...</span>
+                          </div>
+                        ) : (
+                          '发布需求'
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -489,6 +730,41 @@ export default function PostJobPage() {
 
       {/* Footer spacing */}
       <div className="py-16"></div>
+
+      {/* 对话框组件 */}
+      {emailCheckResult && (
+        <ConfirmationDialog
+          open={showEmailDialog}
+          onClose={() => setShowEmailDialog(false)}
+          type="email-exists"
+          email={jobForm.email}
+          onConfirm={handleEmailDialogConfirm}
+          onCancel={handleEmailDialogCancel}
+          isLoading={isUploading}
+        />
+      )}
+
+      <ConfirmationDialog
+        open={showRegisterDialog && !emailCheckResult?.exists}
+        onClose={() => setShowRegisterDialog(false)}
+        type="register-prompt"
+        email={jobForm.email}
+        onConfirm={() => {
+          setShowRegisterDialog(false)
+          // 这里应该打开实际的注册对话框，但由于复杂性，暂时跳转到注册页面
+          router.push(`/auth/register?email=${encodeURIComponent(jobForm.email)}`)
+        }}
+        onCancel={handleRegisterDialogCancel}
+        isLoading={isUploading}
+      />
+
+      <RegisterDialog
+        open={false} // 暂时禁用，使用页面跳转代替
+        onClose={() => setShowRegisterDialog(false)}
+        email={jobForm.email}
+        onSuccess={handleRegisterDialogSuccess}
+        onError={handleRegisterDialogError}
+      />
     </div>
   )
 }

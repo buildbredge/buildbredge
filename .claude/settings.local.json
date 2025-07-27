@@ -13,7 +13,11 @@
       "Bash(pkill:*)",
       "Bash(node:*)",
       "Bash(kill:*)",
-      "Bash(open http://localhost:3000/post-job)"
+      "Bash(open http://localhost:3000/post-job)",
+      "Bash(true)",
+      "Bash(claude mcp:*)",
+      "Bash(npx next:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

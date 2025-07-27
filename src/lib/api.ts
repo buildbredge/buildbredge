@@ -39,7 +39,13 @@ export const projectsApi = {
       .eq('id', id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      // 如果项目不存在，返回null而不是抛出错误
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -64,7 +70,12 @@ export const projectsApi = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error(`项目不存在 (ID: ${id})`)
+      }
+      throw error
+    }
     return data
   },
 
@@ -151,7 +162,12 @@ export const ownersApi = {
       .eq('id', id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -210,7 +226,12 @@ export const ownersApi = {
       .eq('email', email)
       .single()
 
-    if (error && error.code !== 'PGRST116') throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   }
 }
@@ -247,7 +268,12 @@ export const tradiesApi = {
       .eq('id', id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -259,7 +285,12 @@ export const tradiesApi = {
       .eq('id', id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -331,7 +362,12 @@ export const tradiesApi = {
       .eq('email', email)
       .single()
 
-    if (error && error.code !== 'PGRST116') throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -448,7 +484,12 @@ export const reviewsApi = {
       .eq('id', id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 
@@ -574,6 +615,41 @@ export function getCurrentLocation(): Promise<Coordinates> {
       }
     )
   })
+}
+
+// 用户邮箱检查API
+export const userApi = {
+  // 检查邮箱是否已存在（在owners或tradies表中）
+  async checkEmailExists(email: string): Promise<{ exists: boolean; userType?: 'homeowner' | 'tradie' }> {
+    try {
+      // 先检查owners表
+      const { data: ownerData } = await supabase
+        .from('owners')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (ownerData) {
+        return { exists: true, userType: 'homeowner' }
+      }
+
+      // 再检查tradies表
+      const { data: tradieData } = await supabase
+        .from('tradies')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (tradieData) {
+        return { exists: true, userType: 'tradie' }
+      }
+
+      return { exists: false }
+    } catch (error) {
+      console.error('Error checking email:', error)
+      return { exists: false }
+    }
+  }
 }
 
 // 错误处理工具

@@ -85,11 +85,34 @@ export async function uploadFile(
   }
 }
 
-// 上传项目图片
-export async function uploadProjectImages(files: File[]): Promise<string[]> {
-  const uploadPromises = files.map((file, index) => 
-    uploadFile(file, 'project-images', `projects`)
-  )
+// 上传项目图片（带进度回调）
+export async function uploadProjectImages(
+  files: File[], 
+  projectId: string,
+  onProgress?: (fileIndex: number, progress: number) => void
+): Promise<string[]> {
+  console.log(`📸 开始上传 ${files.length} 张项目图片...`)
+  
+  const uploadPromises = files.map(async (file, index) => {
+    try {
+      // 模拟进度更新
+      if (onProgress) {
+        onProgress(index, 0)
+      }
+      
+      const url = await uploadFile(file, 'buildbridge', `projects/${projectId}/images`)
+      
+      // 上传完成，设置进度为100%
+      if (onProgress) {
+        onProgress(index, 100)
+      }
+      
+      return url
+    } catch (error) {
+      console.error(`❌ 图片 ${index} 上传失败:`, error)
+      throw error
+    }
+  })
 
   try {
     const urls = await Promise.all(uploadPromises)
@@ -101,9 +124,33 @@ export async function uploadProjectImages(files: File[]): Promise<string[]> {
   }
 }
 
-// 上传项目视频
-export async function uploadProjectVideo(file: File): Promise<string> {
-  return uploadFile(file, 'project-videos', 'projects')
+// 上传项目视频（带进度回调）
+export async function uploadProjectVideo(
+  file: File, 
+  projectId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  console.log('🎬 开始上传项目视频...')
+  
+  try {
+    // 模拟进度更新
+    if (onProgress) {
+      onProgress(0)
+    }
+    
+    const url = await uploadFile(file, 'buildbridge', `projects/${projectId}/videos`)
+    
+    // 上传完成，设置进度为100%
+    if (onProgress) {
+      onProgress(100)
+    }
+    
+    console.log('✅ 视频上传成功')
+    return url
+  } catch (error) {
+    console.error('❌ 视频上传失败:', error)
+    throw error
+  }
 }
 
 // 删除文件
