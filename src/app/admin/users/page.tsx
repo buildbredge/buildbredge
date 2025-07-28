@@ -71,7 +71,8 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     { href: "/admin/suppliers", icon: Users, label: "供应商管理" },
     { href: "/admin/support", icon: Users, label: "客服管理" },
     { href: "/admin/complaints", icon: Users, label: "投诉管理" },
-    { href: "/admin/reviews", icon: Users, label: "评价管理" }
+    { href: "/admin/reviews", icon: Users, label: "评价管理" },
+    { href: "/admin/admins", icon: Users, label: "管理员管理" }
   ]
 
   return (

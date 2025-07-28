@@ -19,7 +19,11 @@
       "Bash(npx next:*)",
       "Bash(mkdir:*)",
       "WebFetch(domain:localhost)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm install:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

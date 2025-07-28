@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Lock, User, Building, AlertCircle } from "lucide-react"
 import Link from "next/link"
+// 直接使用fetch调用API
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -24,32 +25,45 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError("")
 
-    console.log('管理员登录尝试:', formData)
+    console.log('管理员登录尝试:', formData.email)
 
-    // 简单的登录验证
-    if (formData.email === "admin@buildbridge.nz" && formData.password === "buildbridge2025") {
-      try {
+    try {
+      // 使用数据库验证登录
+      const response = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'login',
+          email: formData.email,
+          password: formData.password
+        })
+      })
+
+      const data = await response.json()
+      const adminSession = response.ok ? data.admin : null
+
+      if (adminSession) {
         // 存储管理员会话
-        const adminSession = {
-          id: "admin1",
-          email: "admin@buildbridge.nz",
-          name: "系统管理员",
-          role: "super_admin"
-        }
-
         if (typeof window !== 'undefined') {
-          localStorage.setItem('adminToken', 'admin_token_' + Date.now())
+          const tokenData = {
+            token: 'admin_token_' + Date.now(),
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24小时过期
+          }
+          
+          localStorage.setItem('adminToken', JSON.stringify(tokenData))
           localStorage.setItem('adminUser', JSON.stringify(adminSession))
 
-          console.log('登录成功，跳转到仪表板')
-          router.push("/admin/dashboard")
+          console.log('登录成功，跳转到管理面板')
+          router.push("/admin")
         }
-      } catch (error) {
-        console.error('登录错误:', error)
-        setError("登录过程中出现错误")
+      } else {
+        setError("邮箱或密码错误，或账户已被停用")
       }
-    } else {
-      setError("邮箱或密码错误")
+    } catch (error) {
+      console.error('登录错误:', error)
+      setError("登录过程中出现错误，请稍后重试")
     }
 
     setIsLoading(false)

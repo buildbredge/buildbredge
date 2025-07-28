@@ -74,12 +74,14 @@ interface User {
   userType: 'homeowner' | 'tradie' | 'supplier'
   location: string
   joinDate: string
-  status: 'active' | 'inactive' | 'suspended'
+  status: 'active' | 'inactive' | 'suspended' | 'approved' | 'pending'
   avatar?: string
   lastLogin: string
   projectsCount: number
   totalSpent?: number
   rating?: number
+  company?: string | null
+  specialty?: string | null
 }
 
 interface Project {
@@ -90,7 +92,7 @@ interface Project {
   location: string
   budget: string
   urgency: string
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled' | 'published'
   userId: string
   userName: string
   userEmail: string
@@ -98,6 +100,10 @@ interface Project {
   updatedAt: string
   responses: number
   selectedTradie?: string
+  images?: string[]
+  video?: string
+  phone?: string
+  detailedDescription?: string
 }
 
 interface AdminStats {
@@ -131,143 +137,66 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
-  // Mock data - 在真实应用中，这些数据会从API获取
+  // 从真实数据库获取数据
   useEffect(() => {
-    const mockUsers: User[] = [
-      {
-        id: "1",
-        name: "张女士",
-        email: "zhang@example.com",
-        phone: "+64 21 123 4567",
-        userType: "homeowner",
-        location: "奥克兰中心",
-        joinDate: "2024-01-15",
-        status: "active",
-        lastLogin: "2025-01-08",
-        projectsCount: 3,
-        totalSpent: 15000,
-        rating: 4.8
-      },
-      {
-        id: "2",
-        name: "李师傅",
-        email: "li@example.com",
-        phone: "+64 21 234 5678",
-        userType: "tradie",
-        location: "奥克兰西区",
-        joinDate: "2024-02-10",
-        status: "active",
-        lastLogin: "2025-01-09",
-        projectsCount: 25,
-        rating: 4.9
-      },
-      {
-        id: "3",
-        name: "王先生",
-        email: "wang@example.com",
-        phone: "+64 21 345 6789",
-        userType: "homeowner",
-        location: "惠灵顿",
-        joinDate: "2024-03-20",
-        status: "inactive",
-        lastLogin: "2024-12-15",
-        projectsCount: 1,
-        totalSpent: 3500,
-        rating: 4.5
-      },
-      {
-        id: "4",
-        name: "陈师傅",
-        email: "chen@example.com",
-        phone: "+64 21 456 7890",
-        userType: "tradie",
-        location: "基督城",
-        joinDate: "2024-01-05",
-        status: "active",
-        lastLogin: "2025-01-09",
-        projectsCount: 18,
-        rating: 4.7
-      },
-      {
-        id: "5",
-        name: "建材供应商",
-        email: "supplier@example.com",
-        phone: "+64 21 567 8901",
-        userType: "supplier",
-        location: "奥克兰南区",
-        joinDate: "2024-02-28",
-        status: "active",
-        lastLogin: "2025-01-08",
-        projectsCount: 50
-      }
-    ]
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        
+        // 并行获取所有数据
+        const [statsResponse, usersResponse, projectsResponse] = await Promise.all([
+          fetch('/api/admin/stats'),
+          fetch('/api/admin/users-list?limit=10'), // 只获取前10个用户用于显示
+          fetch('/api/admin/projects-list?limit=10') // 只获取前10个项目用于显示
+        ])
 
-    const mockProjects: Project[] = [
-      {
-        id: "p1",
-        title: "厨房翻新项目",
-        description: "需要重新装修厨房，包括橱柜、台面和电器安装",
-        category: "厨房翻新",
-        location: "奥克兰中心",
-        budget: "$15,000 - $25,000",
-        urgency: "未来几周",
-        status: "in_progress",
-        userId: "1",
-        userName: "张女士",
-        userEmail: "zhang@example.com",
-        createdAt: "2025-01-05",
-        updatedAt: "2025-01-08",
-        responses: 5,
-        selectedTradie: "李师傅"
-      },
-      {
-        id: "p2",
-        title: "电路安装工程",
-        description: "新房子需要完整的电路系统安装",
-        category: "电工服务",
-        location: "惠灵顿",
-        budget: "$8,000 - $12,000",
-        urgency: "今天（紧急）",
-        status: "open",
-        userId: "3",
-        userName: "王先生",
-        userEmail: "wang@example.com",
-        createdAt: "2025-01-08",
-        updatedAt: "2025-01-08",
-        responses: 3
-      },
-      {
-        id: "p3",
-        title: "浴室改造",
-        description: "老旧浴室需要现代化改造，包括瓷砖和淋浴设备",
-        category: "浴室改造",
-        location: "基督城",
-        budget: "$10,000 - $18,000",
-        urgency: "时间灵活",
-        status: "completed",
-        userId: "1",
-        userName: "张女士",
-        userEmail: "zhang@example.com",
-        createdAt: "2024-12-20",
-        updatedAt: "2025-01-02",
-        responses: 8,
-        selectedTradie: "陈师傅"
-      }
-    ]
+        // 处理统计数据
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          if (statsData.success) {
+            setStats({
+              totalUsers: statsData.stats.totalUsers,
+              totalProjects: statsData.stats.totalProjects,
+              activeProjects: statsData.stats.activeProjects,
+              completedProjects: statsData.stats.completedProjects,
+              totalRevenue: statsData.stats.totalRevenue,
+              monthlyGrowth: statsData.stats.monthlyGrowth,
+              newUsersThisMonth: statsData.stats.newUsersThisMonth,
+              newProjectsThisMonth: statsData.stats.newProjectsThisMonth
+            })
+          }
+        } else {
+          console.error('Failed to fetch stats:', await statsResponse.text())
+        }
 
-    setUsers(mockUsers)
-    setProjects(mockProjects)
-    setStats({
-      totalUsers: mockUsers.length,
-      totalProjects: mockProjects.length,
-      activeProjects: mockProjects.filter(p => p.status === 'open' || p.status === 'in_progress').length,
-      completedProjects: mockProjects.filter(p => p.status === 'completed').length,
-      totalRevenue: 125000,
-      monthlyGrowth: 15.5,
-      newUsersThisMonth: 8,
-      newProjectsThisMonth: 12
-    })
-    setLoading(false)
+        // 处理用户数据
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json()
+          if (usersData.success) {
+            setUsers(usersData.users)
+          }
+        } else {
+          console.error('Failed to fetch users:', await usersResponse.text())
+        }
+
+        // 处理项目数据
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json()
+          if (projectsData.success) {
+            setProjects(projectsData.projects)
+          }
+        } else {
+          console.error('Failed to fetch projects:', await projectsResponse.text())
+        }
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
   }, [])
 
   const filteredUsers = users.filter(user => {
@@ -279,46 +208,38 @@ export default function AdminDashboard() {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.userName.toLowerCase().includes(searchTerm.toLowerCase())
+                         project.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesFilter = projectFilter === "all" || project.status === projectFilter
     return matchesSearch && matchesFilter
   })
 
-  const getUserTypeLabel = (userType: string) => {
-    switch (userType) {
-      case 'homeowner': return { label: '房主', color: 'bg-green-100 text-green-800' }
-      case 'tradie': return { label: '技师', color: 'bg-blue-100 text-blue-800' }
-      case 'supplier': return { label: '供应商', color: 'bg-purple-100 text-purple-800' }
-      default: return { label: '未知', color: 'bg-gray-100 text-gray-800' }
-    }
+  const exportUsers = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Name,Email,Phone,Type,Location,Status,Join Date\n" +
+      filteredUsers.map(user => 
+        `${user.name},${user.email},${user.phone},${user.userType},${user.location},${user.status},${user.joinDate}`
+      ).join("\n")
+    
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "users.csv")
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return { label: '活跃', color: 'bg-green-100 text-green-800' }
-      case 'inactive': return { label: '不活跃', color: 'bg-yellow-100 text-yellow-800' }
-      case 'suspended': return { label: '已暂停', color: 'bg-red-100 text-red-800' }
-      case 'open': return { label: '开放中', color: 'bg-blue-100 text-blue-800' }
-      case 'in_progress': return { label: '进行中', color: 'bg-orange-100 text-orange-800' }
-      case 'completed': return { label: '已完成', color: 'bg-green-100 text-green-800' }
-      case 'cancelled': return { label: '已取消', color: 'bg-red-100 text-red-800' }
-      default: return { label: '未知', color: 'bg-gray-100 text-gray-800' }
-    }
-  }
-
-  const exportData = (type: 'users' | 'projects') => {
-    const csvContent = type === 'users'
-      ? "姓名,邮箱,电话,用户类型,地区,注册日期,状态\n" +
-        filteredUsers.map(u => `${u.name},${u.email},${u.phone},${getUserTypeLabel(u.userType).label},${u.location},${u.joinDate},${getStatusLabel(u.status).label}`).join('\n')
-      : "项目标题,分类,地区,预算,状态,发布者,创建日期\n" +
-        filteredProjects.map(p => `${p.title},${p.category},${p.location},${p.budget},${getStatusLabel(p.status).label},${p.userName},${p.createdAt}`).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `${type}_${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
+  const exportProjects = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Title,Description,Location,Status,User,Created Date\n" +
+      filteredProjects.map(project => 
+        `"${project.title}","${project.description}",${project.location},${project.status},${project.userName},${project.createdAt}`
+      ).join("\n")
+    
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", "projects.csv")
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -328,8 +249,8 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">加载中...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载数据中...</p>
         </div>
       </div>
     )
@@ -395,7 +316,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">总用户数</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</p>
                   <p className="text-xs text-green-600">+{stats.newUsersThisMonth} 本月新增</p>
                 </div>
               </div>
@@ -410,7 +331,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">总项目数</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalProjects}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalProjects.toLocaleString()}</p>
                   <p className="text-xs text-green-600">+{stats.newProjectsThisMonth} 本月新增</p>
                 </div>
               </div>
@@ -425,7 +346,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">进行中项目</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeProjects}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.activeProjects.toLocaleString()}</p>
                   <p className="text-xs text-gray-600">{stats.completedProjects} 已完成</p>
                 </div>
               </div>
@@ -455,7 +376,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="projects">项目管理</TabsTrigger>
             <TabsTrigger value="analytics">数据分析</TabsTrigger>
           </TabsList>
-
+          
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
             <Card>
@@ -469,7 +390,7 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => exportData('users')}
+                      onClick={exportUsers}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       导出数据
@@ -518,97 +439,99 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map((user) => {
-                        const userType = getUserTypeLabel(user.userType)
-                        const status = getStatusLabel(user.status)
-                        return (
-                          <TableRow key={user.id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={user.avatar} />
-                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{user.name}</div>
-                                  <div className="text-sm text-gray-500">#{user.id}</div>
-                                </div>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={user.avatar} />
+                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">#{user.id}</div>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm">
-                                  <Mail className="w-3 h-3 mr-1 text-gray-400" />
-                                  {user.email}
-                                </div>
-                                <div className="flex items-center text-sm">
-                                  <Phone className="w-3 h-3 mr-1 text-gray-400" />
-                                  {user.phone}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={userType.color}>
-                                {userType.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
                               <div className="flex items-center text-sm">
-                                <MapPin className="w-3 h-3 mr-1 text-gray-400" />
-                                {user.location}
+                                <Mail className="w-3 h-3 mr-1 text-gray-400" />
+                                {user.email}
                               </div>
-                            </TableCell>
-                            <TableCell>{user.joinDate}</TableCell>
-                            <TableCell>
-                              <Badge className={status.color}>
-                                {status.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div className="font-medium">{user.projectsCount}</div>
-                                {user.rating && (
-                                  <div className="flex items-center text-xs text-gray-500">
-                                    <Star className="w-3 h-3 mr-1 fill-current text-yellow-400" />
-                                    {user.rating}
-                                  </div>
-                                )}
+                              <div className="flex items-center text-sm">
+                                <Phone className="w-3 h-3 mr-1 text-gray-400" />
+                                {user.phone}
                               </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => setSelectedUser(user)}>
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    查看详情
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    编辑信息
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <MessageSquare className="w-4 h-4 mr-2" />
-                                    发送消息
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-600">
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    暂停账户
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={user.userType === 'homeowner' ? 'bg-green-100 text-green-800' : user.userType === 'tradie' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
+                              {user.userType === 'homeowner' ? '房主' : user.userType === 'tradie' ? '技师' : '供应商'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center text-sm">
+                              <MapPin className="w-3 h-3 mr-1 text-gray-400" />
+                              {user.location}
+                            </div>
+                          </TableCell>
+                          <TableCell>{new Date(user.joinDate).toLocaleDateString('zh-CN')}</TableCell>
+                          <TableCell>
+                            <Badge className={user.status === 'active' || user.status === 'approved' ? 'bg-green-100 text-green-800' : user.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}>
+                              {user.status === 'active' || user.status === 'approved' ? '活跃' : user.status === 'pending' ? '待审核' : '暂停'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-center">
+                              <div className="font-medium">{user.projectsCount}</div>
+                              {user.rating && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <Star className="w-3 h-3 mr-1 fill-current text-yellow-400" />
+                                  {user.rating}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setSelectedUser(user)}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  查看详情
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  编辑信息
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  发送消息
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  暂停账户
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
+
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    没有找到符合条件的用户
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -626,7 +549,7 @@ export default function AdminDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => exportData('projects')}
+                      onClick={exportProjects}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       导出数据
@@ -652,6 +575,7 @@ export default function AdminDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">全部项目</SelectItem>
+                      <SelectItem value="published">已发布</SelectItem>
                       <SelectItem value="open">开放中</SelectItem>
                       <SelectItem value="in_progress">进行中</SelectItem>
                       <SelectItem value="completed">已完成</SelectItem>
@@ -676,82 +600,91 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProjects.map((project) => {
-                        const status = getStatusLabel(project.status)
-                        return (
-                          <TableRow key={project.id}>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="font-medium">{project.title}</div>
-                                <div className="text-sm text-gray-500 max-w-xs truncate">
-                                  {project.description}
-                                </div>
-                                <div className="text-xs text-gray-400">#{project.id}</div>
+                      {filteredProjects.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{project.title}</div>
+                              <div className="text-sm text-gray-500 max-w-xs truncate">
+                                {project.description}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="font-medium text-sm">{project.userName}</div>
-                                <div className="text-xs text-gray-500">{project.userEmail}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{project.category}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center text-sm">
-                                <MapPin className="w-3 h-3 mr-1 text-gray-400" />
-                                {project.location}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm font-medium">{project.budget}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={status.color}>
-                                {status.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-center">
-                                <div className="font-medium">{project.responses}</div>
-                                <div className="text-xs text-gray-500">个回复</div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => setSelectedProject(project)}>
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    查看详情
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    编辑项目
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <MessageSquare className="w-4 h-4 mr-2" />
-                                    查看回复
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-600">
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    删除项目
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
+                              <div className="text-xs text-gray-400">#{project.id}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium text-sm">{project.userName}</div>
+                              <div className="text-xs text-gray-500">{project.userEmail}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{project.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center text-sm">
+                              <MapPin className="w-3 h-3 mr-1 text-gray-400" />
+                              {project.location}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium">{project.budget}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={
+                              project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              project.status === 'in_progress' ? 'bg-orange-100 text-orange-800' :
+                              project.status === 'published' || project.status === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                            }>
+                              {project.status === 'published' || project.status === 'open' ? '开放' :
+                               project.status === 'in_progress' ? '进行中' :
+                               project.status === 'completed' ? '已完成' : '已取消'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-center">
+                              <div className="font-medium">{project.responses}</div>
+                              <div className="text-xs text-gray-500">个回复</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setSelectedProject(project)}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  查看详情
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  编辑项目
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  查看回复
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600">
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  删除项目
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
+
+                {filteredProjects.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    没有找到符合条件的项目
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -782,7 +715,7 @@ export default function AdminDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm">活跃用户</span>
                         <span className="font-medium text-green-600">
-                          {users.filter(u => u.status === 'active').length}人
+                          {users.filter(u => u.status === 'active' || u.status === 'approved').length}人
                         </span>
                       </div>
                     </div>
@@ -800,7 +733,7 @@ export default function AdminDashboard() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm">开放中项目</span>
                       <span className="font-medium text-blue-600">
-                        {projects.filter(p => p.status === 'open').length}个
+                        {projects.filter(p => p.status === 'open' || p.status === 'published').length}个
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -819,7 +752,7 @@ export default function AdminDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm">平均响应数</span>
                         <span className="font-medium">
-                          {(projects.reduce((sum, p) => sum + p.responses, 0) / projects.length).toFixed(1)}个
+                          {projects.length > 0 ? (projects.reduce((sum, p) => sum + p.responses, 0) / projects.length).toFixed(1) : 0}个
                         </span>
                       </div>
                     </div>
@@ -841,9 +774,9 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">新用户注册</p>
-                      <p className="text-sm text-gray-600">张女士 注册为房主用户</p>
+                      <p className="text-sm text-gray-600">本月有 {stats.newUsersThisMonth} 名新用户加入平台</p>
                     </div>
-                    <div className="text-sm text-gray-500">2小时前</div>
+                    <div className="text-sm text-gray-500">实时数据</div>
                   </div>
 
                   <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-lg">
@@ -852,9 +785,9 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">新项目发布</p>
-                      <p className="text-sm text-gray-600">王先生 发布了电路安装工程项目</p>
+                      <p className="text-sm text-gray-600">本月发布了 {stats.newProjectsThisMonth} 个新项目</p>
                     </div>
-                    <div className="text-sm text-gray-500">4小时前</div>
+                    <div className="text-sm text-gray-500">实时数据</div>
                   </div>
 
                   <div className="flex items-center space-x-4 p-4 bg-orange-50 rounded-lg">
@@ -863,9 +796,20 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">项目完成</p>
-                      <p className="text-sm text-gray-600">浴室改造项目已完成并获得5星评价</p>
+                      <p className="text-sm text-gray-600">总共完成了 {stats.completedProjects} 个项目</p>
                     </div>
-                    <div className="text-sm text-gray-500">1天前</div>
+                    <div className="text-sm text-gray-500">累计统计</div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 p-4 bg-purple-50 rounded-lg">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">平台增长</p>
+                      <p className="text-sm text-gray-600">月增长率达到 {stats.monthlyGrowth}%，持续稳定增长</p>
+                    </div>
+                    <div className="text-sm text-gray-500">增长趋势</div>
                   </div>
                 </div>
               </CardContent>
@@ -874,156 +818,132 @@ export default function AdminDashboard() {
         </Tabs>
       </div>
 
-      {/* User Detail Modal */}
+      {/* User Detail Dialog */}
       {selectedUser && (
         <AlertDialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-          <AlertDialogContent className="max-w-2xl">
+          <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>用户详细信息</AlertDialogTitle>
+              <AlertDialogTitle>用户详情</AlertDialogTitle>
               <AlertDialogDescription>
-                查看 {selectedUser.name} 的完整用户信息
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">用户ID</Label>
-                  <p className="text-sm text-gray-600">#{selectedUser.id}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">用户类型</Label>
-                  <Badge className={getUserTypeLabel(selectedUser.userType).color}>
-                    {getUserTypeLabel(selectedUser.userType).label}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">注册日期</Label>
-                  <p className="text-sm text-gray-600">{selectedUser.joinDate}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">最后登录</Label>
-                  <p className="text-sm text-gray-600">{selectedUser.lastLogin}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">项目数量</Label>
-                  <p className="text-sm text-gray-600">{selectedUser.projectsCount}个</p>
-                </div>
-                {selectedUser.rating && (
-                  <div>
-                    <Label className="text-sm font-medium">评分</Label>
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                      <span className="text-sm text-gray-600">{selectedUser.rating}</span>
+                <div className="space-y-4 mt-4">
+                  <div className="flex items-center space-x-3">
+                    <Avatar>
+                      <AvatarImage src={selectedUser.avatar} />
+                      <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{selectedUser.name}</div>
+                      <div className="text-sm text-gray-500">{selectedUser.email}</div>
                     </div>
                   </div>
-                )}
-              </div>
-              <div className="border-t pt-4">
-                <Label className="text-sm font-medium">联系信息</Label>
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm">{selectedUser.email}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm">{selectedUser.phone}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm">{selectedUser.location}</span>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">电话:</span> {selectedUser.phone}
+                    </div>
+                    <div>
+                      <span className="font-medium">用户类型:</span> {selectedUser.userType === 'homeowner' ? '房主' : selectedUser.userType === 'tradie' ? '技师' : '供应商'}
+                    </div>
+                    <div>
+                      <span className="font-medium">位置:</span> {selectedUser.location}
+                    </div>
+                    <div>
+                      <span className="font-medium">状态:</span> 
+                      <Badge className="ml-2" variant={selectedUser.status === 'active' || selectedUser.status === 'approved' ? 'default' : 'secondary'}>
+                        {selectedUser.status === 'active' || selectedUser.status === 'approved' ? '活跃' : selectedUser.status === 'pending' ? '待审核' : '暂停'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="font-medium">加入时间:</span> {new Date(selectedUser.joinDate).toLocaleDateString('zh-CN')}
+                    </div>
+                    <div>
+                      <span className="font-medium">最后登录:</span> {new Date(selectedUser.lastLogin).toLocaleDateString('zh-CN')}
+                    </div>
+                    {selectedUser.rating && (
+                      <div>
+                        <span className="font-medium">评分:</span> {selectedUser.rating} ⭐
+                      </div>
+                    )}
+                    {selectedUser.company && (
+                      <div>
+                        <span className="font-medium">公司:</span> {selectedUser.company}
+                      </div>
+                    )}
+                    {selectedUser.specialty && (
+                      <div>
+                        <span className="font-medium">专业:</span> {selectedUser.specialty}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>关闭</AlertDialogCancel>
-              <AlertDialogAction>编辑用户</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       )}
 
-      {/* Project Detail Modal */}
+      {/* Project Detail Dialog */}
       {selectedProject && (
         <AlertDialog open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
-          <AlertDialogContent className="max-w-3xl">
+          <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>项目详细信息</AlertDialogTitle>
+              <AlertDialogTitle>项目详情</AlertDialogTitle>
               <AlertDialogDescription>
-                查看项目 "{selectedProject.title}" 的完整信息
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <div className="font-medium text-lg">{selectedProject.title}</div>
+                    <div className="text-sm text-gray-500 mt-1">{selectedProject.description}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">发布者:</span> {selectedProject.userName}
+                    </div>
+                    <div>
+                      <span className="font-medium">联系邮箱:</span> {selectedProject.userEmail}
+                    </div>
+                    <div>
+                      <span className="font-medium">位置:</span> {selectedProject.location}
+                    </div>
+                    <div>
+                      <span className="font-medium">状态:</span> 
+                      <Badge className="ml-2" variant={
+                        selectedProject.status === 'completed' ? 'default' :
+                        selectedProject.status === 'in_progress' ? 'secondary' :
+                        selectedProject.status === 'published' || selectedProject.status === 'open' ? 'outline' : 'destructive'
+                      }>
+                        {selectedProject.status === 'published' || selectedProject.status === 'open' ? '开放' :
+                         selectedProject.status === 'in_progress' ? '进行中' :
+                         selectedProject.status === 'completed' ? '已完成' : '已取消'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="font-medium">创建时间:</span> {new Date(selectedProject.createdAt).toLocaleDateString('zh-CN')}
+                    </div>
+                    <div>
+                      <span className="font-medium">更新时间:</span> {new Date(selectedProject.updatedAt).toLocaleDateString('zh-CN')}
+                    </div>
+                    {selectedProject.phone && (
+                      <div>
+                        <span className="font-medium">联系电话:</span> {selectedProject.phone}
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">响应数:</span> {selectedProject.responses}
+                    </div>
+                  </div>
+                  {selectedProject.detailedDescription && (
+                    <div>
+                      <div className="font-medium">详细描述:</div>
+                      <div className="text-sm text-gray-600 mt-1">{selectedProject.detailedDescription}</div>
+                    </div>
+                  )}
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">项目ID</Label>
-                  <p className="text-sm text-gray-600">#{selectedProject.id}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">项目状态</Label>
-                  <Badge className={getStatusLabel(selectedProject.status).color}>
-                    {getStatusLabel(selectedProject.status).label}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">分类</Label>
-                  <Badge variant="outline">{selectedProject.category}</Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">地区</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.location}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">预算范围</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.budget}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">紧急程度</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.urgency}</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">项目描述</Label>
-                <p className="text-sm text-gray-600 mt-1">{selectedProject.description}</p>
-              </div>
-              <div className="border-t pt-4">
-                <Label className="text-sm font-medium">发布者信息</Label>
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center">
-                    <User className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm">{selectedProject.userName}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-sm">{selectedProject.userEmail}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="border-t pt-4 grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">创建时间</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.createdAt}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">更新时间</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.updatedAt}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">回复数量</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.responses}个</p>
-                </div>
-              </div>
-              {selectedProject.selectedTradie && (
-                <div className="border-t pt-4">
-                  <Label className="text-sm font-medium">选中技师</Label>
-                  <p className="text-sm text-gray-600">{selectedProject.selectedTradie}</p>
-                </div>
-              )}
-            </div>
             <AlertDialogFooter>
               <AlertDialogCancel>关闭</AlertDialogCancel>
-              <AlertDialogAction>管理项目</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

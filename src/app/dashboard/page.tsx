@@ -34,12 +34,41 @@ interface TradieProfile {
   review_count: number
 }
 
+interface Project {
+  id: string
+  description: string
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+  created_at: string
+  category_id: string | null
+  profession_id: string | null
+  categories?: {
+    name_zh: string
+  } | null
+  professions?: {
+    name_zh: string
+  } | null
+}
+
+interface RawProject {
+  id: string
+  description: string
+  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+  created_at: string
+  category_id: string | null
+  profession_id: string | null
+  categories: { name_zh: string }[] | null
+  professions: { name_zh: string }[] | null
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [tradieProfile, setTradieProfile] = useState<TradieProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [showProjects, setShowProjects] = useState(false)
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
   useEffect(() => {
     checkUser()
@@ -89,6 +118,59 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const fetchUserProjects = async () => {
+    if (!user) return
+    
+    setLoadingProjects(true)
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          id,
+          description,
+          status,
+          created_at,
+          category_id,
+          profession_id,
+          categories(name_zh),
+          professions(name_zh)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching projects:', error)
+      } else {
+        console.log('Raw projects data:', data)
+        const rawData = data as RawProject[]
+        const formattedData: Project[] = (rawData || []).map(project => {
+          console.log('Project categories:', project.categories)
+          console.log('Project professions:', project.professions)
+          return {
+            ...project,
+            categories: Array.isArray(project.categories) && project.categories.length > 0 
+              ? project.categories[0] 
+              : project.categories as any,
+            professions: Array.isArray(project.professions) && project.professions.length > 0 
+              ? project.professions[0] 
+              : project.professions as any
+          }
+        })
+        console.log('Formatted data:', formattedData)
+        setProjects(formattedData)
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
+
+  const handleShowProjects = () => {
+    setShowProjects(true)
+    fetchUserProjects()
   }
 
   const handleLogout = async () => {
@@ -250,7 +332,11 @@ export default function DashboardPage() {
                         <MessageCircle className="w-6 h-6" />
                         <span className="text-sm">消息</span>
                       </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
+                      <Button 
+                        className="h-20 flex flex-col items-center space-y-2" 
+                        variant="outline"
+                        onClick={handleShowProjects}
+                      >
                         <Briefcase className="w-6 h-6" />
                         <span className="text-sm">我的项目</span>
                       </Button>
@@ -260,40 +346,127 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>最近活动</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">账户创建成功</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(userProfile.created_at).toLocaleDateString('zh-CN')}
-                      </p>
+            {/* Projects List or Recent Activity */}
+            {showProjects ? (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>我的项目</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowProjects(false)}
+                  >
+                    返回
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {loadingProjects ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-600">加载中...</p>
                     </div>
-                  </div>
-
-                  {!user.email_confirmed_at && (
-                    <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
-                      <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">等待邮箱验证</p>
-                        <p className="text-xs text-gray-500">请检查您的邮箱</p>
-                      </div>
+                  ) : projects.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">暂无项目记录</p>
+                      <Button className="mt-4" asChild>
+                        <Link href="/post-job">
+                          <Plus className="w-4 h-4 mr-2" />
+                          发布第一个项目
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {projects.map((project) => (
+                        <div
+                          key={project.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => router.push(`/projects/${project.id}`)}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <span className="font-medium text-gray-900">
+                                {project.categories?.name_zh || '未分类'}
+                              </span>
+                              <span className="text-gray-500">•</span>
+                              <span className="text-gray-600">
+                                {project.professions?.name_zh || '未指定专业'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              {project.description.length > 60 
+                                ? `${project.description.substring(0, 60)}...` 
+                                : project.description}
+                            </p>
+                            <div className="flex items-center space-x-3 text-xs text-gray-500">
+                              <span>
+                                {new Date(project.created_at).toLocaleDateString('zh-CN', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                              <Badge 
+                                variant={
+                                  project.status === 'published' ? 'default' :
+                                  project.status === 'in_progress' ? 'secondary' :
+                                  project.status === 'completed' ? 'outline' : 'destructive'
+                                }
+                                className="text-xs"
+                              >
+                                {project.status === 'published' && '已发布'}
+                                {project.status === 'draft' && '草稿'}
+                                {project.status === 'in_progress' && '进行中'}
+                                {project.status === 'completed' && '已完成'}
+                                {project.status === 'cancelled' && '已取消'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <Eye className="w-5 h-5 text-gray-400" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>最近活动</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">账户创建成功</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(userProfile.created_at).toLocaleDateString('zh-CN')}
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="text-center py-8 text-gray-500">
-                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">暂无更多活动记录</p>
+                    {!user.email_confirmed_at && (
+                      <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+                        <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">等待邮箱验证</p>
+                          <p className="text-xs text-gray-500">请检查您的邮箱</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-center py-8 text-gray-500">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">暂无更多活动记录</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}

@@ -8,6 +8,92 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          id: string
+          email: string
+          password_hash: string
+          name: string
+          role: 'super_admin' | 'admin' | 'moderator'
+          permissions: string[]
+          avatar: string | null
+          phone: string | null
+          department: string | null
+          is_active: boolean
+          last_login_at: string | null
+          login_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          password_hash: string
+          name: string
+          role?: 'super_admin' | 'admin' | 'moderator'
+          permissions?: string[]
+          avatar?: string | null
+          phone?: string | null
+          department?: string | null
+          is_active?: boolean
+          last_login_at?: string | null
+          login_count?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          password_hash?: string
+          name?: string
+          role?: 'super_admin' | 'admin' | 'moderator'
+          permissions?: string[]
+          avatar?: string | null
+          phone?: string | null
+          department?: string | null
+          is_active?: boolean
+          last_login_at?: string | null
+          login_count?: number
+          created_by?: string | null
+          updated_at?: string
+        }
+      }
+      admin_activity_logs: {
+        Row: {
+          id: string
+          admin_id: string
+          action: string
+          resource_type: string | null
+          resource_id: string | null
+          details: Record<string, any>
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_id: string
+          action: string
+          resource_type?: string | null
+          resource_id?: string | null
+          details?: Record<string, any>
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_id?: string
+          action?: string
+          resource_type?: string | null
+          resource_id?: string | null
+          details?: Record<string, any>
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+      }
       categories: {
         Row: {
           id: string
@@ -256,6 +342,28 @@ export type Database = {
       }
     }
     Views: {
+      admin_stats: {
+        Row: {
+          id: string
+          email: string
+          password_hash: string
+          name: string
+          role: 'super_admin' | 'admin' | 'moderator'
+          permissions: string[]
+          avatar: string | null
+          phone: string | null
+          department: string | null
+          is_active: boolean
+          last_login_at: string | null
+          login_count: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          total_activities: number
+          recent_activities: number
+          last_action: string | null
+        }
+      }
       tradie_stats: {
         Row: {
           id: string
@@ -312,4 +420,56 @@ export interface TradieSearchParams {
   status?: 'pending' | 'approved' | 'closed'
   sortBy?: 'rating' | 'review_count' | 'distance' | 'created_at'
   sortOrder?: 'asc' | 'desc'
+}
+
+// Admin-related type definitions
+export type AdminRole = 'super_admin' | 'admin' | 'moderator'
+
+export interface AdminPermissions {
+  user_management?: boolean
+  project_management?: boolean
+  tradie_management?: boolean
+  review_management?: boolean
+  system_settings?: boolean
+  admin_management?: boolean
+  activity_logs?: boolean
+  database_management?: boolean
+  support_tickets?: boolean
+  content_moderation?: boolean
+}
+
+export interface AdminSession {
+  id: string
+  email: string
+  name: string
+  role: AdminRole
+  permissions: string[]
+  avatar?: string | null
+  department?: string | null
+}
+
+export interface AdminLoginCredentials {
+  email: string
+  password: string
+}
+
+export interface AdminActivityLogData {
+  admin_id: string
+  action: string
+  resource_type?: string
+  resource_id?: string
+  details?: Record<string, any>
+  ip_address?: string
+  user_agent?: string
+}
+
+export interface AdminFilters {
+  role?: AdminRole
+  department?: string
+  is_active?: boolean
+  created_after?: string
+  created_before?: string
+  search?: string
+  limit?: number
+  offset?: number
 }

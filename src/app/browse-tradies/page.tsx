@@ -168,12 +168,12 @@ export default function BrowseTradiesPage() {
     let matches = true
 
     // 按专业筛选
-    if (selectedCategory && tradie.specialty !== selectedCategory) {
+    if (selectedCategory && selectedCategory !== "" && tradie.specialty !== selectedCategory) {
       matches = false
     }
 
     // 按类型筛选（简化处理：如果公司名包含"公司"或"有限"则认为是公司）
-    if (selectedType) {
+    if (selectedType && selectedType !== "") {
       const isCompany = (tradie.company || '').includes('公司') || (tradie.company || '').includes('有限') || (tradie.company || '').includes('工作室')
       const tradieType = isCompany ? 'company' : 'individual'
       if (tradieType !== selectedType) {
@@ -212,7 +212,6 @@ export default function BrowseTradiesPage() {
                   <SelectValue placeholder="选择国家" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">所有国家</SelectItem>
                   {countries.map(country => (
                     <SelectItem key={country} value={country}>{country}</SelectItem>
                   ))}
@@ -228,7 +227,6 @@ export default function BrowseTradiesPage() {
                   <SelectValue placeholder="选择城市" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">所有城市</SelectItem>
                   {cities.map(city => (
                     <SelectItem key={city} value={city}>{city}</SelectItem>
                   ))}
@@ -241,7 +239,6 @@ export default function BrowseTradiesPage() {
                   <SelectValue placeholder="选择区域" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">所有区域</SelectItem>
                   {districts.map(district => (
                     <SelectItem key={district} value={district}>{district}</SelectItem>
                   ))}
@@ -254,7 +251,6 @@ export default function BrowseTradiesPage() {
                   <SelectValue placeholder="技术类别" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">所有类别</SelectItem>
                   {tradeCategories.map(category => (
                     <SelectItem key={category} value={category}>{category}</SelectItem>
                   ))}
@@ -267,7 +263,6 @@ export default function BrowseTradiesPage() {
                   <SelectValue placeholder="公司" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部</SelectItem>
                   <SelectItem value="company">公司</SelectItem>
                   <SelectItem value="individual">个人</SelectItem>
                 </SelectContent>
