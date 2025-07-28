@@ -28,7 +28,9 @@
       "Bash(claude config list)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(claude doctor)",
+      "Bash(npm i:*)"
     ],
     "deny": []
   }

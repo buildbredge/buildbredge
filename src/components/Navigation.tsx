@@ -11,10 +11,9 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Home, Globe, ChevronDown, Menu, X, User, Settings, LogOut } from "lucide-react"
+import { Home, Globe, ChevronDown, Menu, X, User, LogOut } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface NavigationProps {
@@ -25,6 +24,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const [language, setLanguage] = useState("zh")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
 
   const handleLanguageChange = (value: string) => {
@@ -32,9 +32,10 @@ export default function Navigation({ currentPage }: NavigationProps) {
     console.log(`Switching to language: ${value}`)
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     setIsMobileMenuOpen(false)
+    router.push('/')
   }
 
   const isActive = (path: string) => {
@@ -59,16 +60,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
     { href: "/suppliers/usa", label: "美国", country: "美国", flag: "🇺🇸" }
   ]
 
-  const getUserTypeDisplay = () => {
-    if (!user) return null
-    switch (user.userType) {
-      case 'homeowner': return { name: '房主用户', color: 'bg-green-100 text-green-800' }
-      case 'tradie': return { name: '专业技师', color: 'bg-blue-100 text-blue-800' }
-      default: return { name: '用户', color: 'bg-gray-100 text-gray-800' }
-    }
-  }
-
-  const userTypeDisplay = getUserTypeDisplay()
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
@@ -186,11 +177,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
                   </Avatar>
                   <div className="text-left">
                     <p className="text-sm font-medium">{user.name}</p>
-                    {userTypeDisplay && (
-                      <Badge className={`text-xs ${userTypeDisplay.color}`}>
-                        {userTypeDisplay.name}
-                      </Badge>
-                    )}
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </DropdownMenuTrigger>
@@ -199,19 +185,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
                     <Link href="/dashboard" className="flex items-center space-x-2">
                       <User className="w-4 h-4" />
                       <span>个人中心</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard?tab=settings" className="flex items-center space-x-2">
-                      <Settings className="w-4 h-4" />
-                      <span>账户设置</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="flex items-center space-x-2 text-blue-600">
-                      <Settings className="w-4 h-4" />
-                      <span>管理后台</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -260,11 +233,6 @@ export default function Navigation({ currentPage }: NavigationProps) {
                   </Avatar>
                   <div>
                     <p className="font-medium">{user.name}</p>
-                    {userTypeDisplay && (
-                      <Badge className={`text-xs ${userTypeDisplay.color}`}>
-                        {userTypeDisplay.name}
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
@@ -338,14 +306,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
                   <User className="w-4 h-4" />
                   <span>个人中心</span>
                 </Link>
-                <Link
-                  href="/admin"
-                  className="flex items-center space-x-2 py-2 text-blue-600 hover:text-blue-700"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>管理后台</span>
-                </Link>
+            
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-2 py-2 text-red-600 hover:text-red-700 w-full text-left"

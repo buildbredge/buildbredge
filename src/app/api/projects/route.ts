@@ -21,6 +21,7 @@ interface ProjectResponse {
   status: string
   category: string
   profession: string
+  location: string
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
         id,
         description,
         status,
+        location,
         created_at,
         updated_at,
         category_id,
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
         status: project.status,
         category: categoryName,
         profession: professionName,
+        location: project.location || '位置未指定',
         createdAt: project.created_at,
         updatedAt: project.updated_at
       }

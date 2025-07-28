@@ -16,6 +16,7 @@ interface ProjectData {
   status: string
   category: string
   profession: string
+  location: string
   createdAt: string
   updatedAt: string
 }
@@ -23,7 +24,6 @@ interface ProjectData {
 interface ProjectDetailData extends ProjectData {
   images: string[]
   budget: number | null
-  location: string | null
 }
 
 interface UserProfileData {
