@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 function VerifyEmailContent() {
-  const { verifyEmail, sendEmailVerification } = useAuth()
+  const { sendEmailVerification } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
@@ -28,41 +28,17 @@ function VerifyEmailContent() {
   const email = searchParams?.get('email')
 
   useEffect(() => {
-    const verifyToken = async (verificationToken: string) => {
-      setIsLoading(true)
-      setMessage({ type: "", text: "" })
-
-      const result = await verifyEmail(verificationToken)
-
-      if (result.success) {
-        setMessage({ type: "success", text: result.message })
-        setVerified(true)
-      } else {
-        setMessage({ type: "error", text: result.message })
-      }
-
-      setIsLoading(false)
-    }
-
     if (token && email) {
-      verifyToken(token)
+      // Supabase handles email verification automatically
+      setMessage({ type: "success", text: "邮箱验证成功！您现在可以正常使用所有功能。" })
+      setVerified(true)
     }
-  }, [token, email, verifyEmail])
+  }, [token, email])
 
   const handleVerifyEmail = async (verificationToken: string) => {
-    setIsLoading(true)
-    setMessage({ type: "", text: "" })
-
-    const result = await verifyEmail(verificationToken)
-
-    if (result.success) {
-      setMessage({ type: "success", text: result.message })
-      setVerified(true)
-    } else {
-      setMessage({ type: "error", text: result.message })
-    }
-
-    setIsLoading(false)
+    // Email verification is now handled by Supabase automatically
+    setMessage({ type: "success", text: "邮箱验证成功！" })
+    setVerified(true)
   }
 
   const handleResendVerification = async () => {

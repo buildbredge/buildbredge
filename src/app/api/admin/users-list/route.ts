@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
       tradiesQuery = tradiesQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`)
     }
 
-    let owners = []
-    let tradies = []
+    let owners: any[] = []
+    let tradies: any[] = []
 
     if (userType === 'all' || userType === 'homeowner') {
       const { data: ownersData, error: ownersError } = await ownersQuery

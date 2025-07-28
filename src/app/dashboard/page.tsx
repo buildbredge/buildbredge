@@ -13,60 +13,22 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Navigation from "@/components/Navigation"
-import { supabase } from "../../../lib/supabase"
+import { apiClient } from "../../../lib/services/apiClient"
+import { authService } from "../../../lib/services/authService"
+import type { ProjectData, UserProfileData } from "../../../lib/services/apiClient"
 
-interface UserProfile {
+interface AuthUser {
   id: string
-  name: string | null
-  phone: string | null
   email: string
-  address: string | null
-  status: 'pending' | 'approved' | 'closed'
-  created_at: string
-  user_type: 'homeowner' | 'tradie'
-}
-
-interface TradieProfile {
-  company: string | null
-  specialty: string | null
-  service_radius: number
-  rating: number | null
-  review_count: number
-}
-
-interface Project {
-  id: string
-  description: string
-  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
-  created_at: string
-  category_id: string | null
-  profession_id: string | null
-  categories?: {
-    name_zh: string
-  } | null
-  professions?: {
-    name_zh: string
-  } | null
-}
-
-interface RawProject {
-  id: string
-  description: string
-  status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
-  created_at: string
-  category_id: string | null
-  profession_id: string | null
-  categories: { name_zh: string }[] | null
-  professions: { name_zh: string }[] | null
+  emailConfirmed: boolean
 }
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [tradieProfile, setTradieProfile] = useState<TradieProfile | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<ProjectData[]>([])
   const [showProjects, setShowProjects] = useState(false)
   const [loadingProjects, setLoadingProjects] = useState(false)
 
@@ -76,42 +38,22 @@ export default function DashboardPage() {
 
   const checkUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const session = await authService.getCurrentSession()
 
-      if (!user) {
+      if (!session) {
         router.push('/auth/login')
         return
       }
 
-      setUser(user)
+      setUser(session.user)
 
-      // 先尝试从 owners 表获取用户资料
-      const { data: ownerProfile, error: ownerError } = await supabase
-        .from('owners')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (ownerProfile) {
-        setUserProfile({
-          ...ownerProfile,
-          user_type: 'homeowner'
-        })
+      // 使用安全API获取用户资料
+      const profileResponse = await apiClient.getUserProfile()
+      
+      if (profileResponse.success && profileResponse.data) {
+        setUserProfile(profileResponse.data)
       } else {
-        // 如果不是房主，尝试从 tradies 表获取
-        const { data: tradieProfile, error: tradieError } = await supabase
-          .from('tradies')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        if (tradieProfile) {
-          setUserProfile({
-            ...tradieProfile,
-            user_type: 'tradie'
-          })
-          setTradieProfile(tradieProfile)
-        }
+        console.error('Failed to fetch user profile:', profileResponse.error)
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
@@ -125,41 +67,12 @@ export default function DashboardPage() {
     
     setLoadingProjects(true)
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`
-          id,
-          description,
-          status,
-          created_at,
-          category_id,
-          profession_id,
-          categories(name_zh),
-          professions(name_zh)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching projects:', error)
+      const response = await apiClient.getProjects({ page: 1, limit: 10 })
+      
+      if (response.success && response.data) {
+        setProjects(response.data.projects)
       } else {
-        console.log('Raw projects data:', data)
-        const rawData = data as RawProject[]
-        const formattedData: Project[] = (rawData || []).map(project => {
-          console.log('Project categories:', project.categories)
-          console.log('Project professions:', project.professions)
-          return {
-            ...project,
-            categories: Array.isArray(project.categories) && project.categories.length > 0 
-              ? project.categories[0] 
-              : project.categories as any,
-            professions: Array.isArray(project.professions) && project.professions.length > 0 
-              ? project.professions[0] 
-              : project.professions as any
-          }
-        })
-        console.log('Formatted data:', formattedData)
-        setProjects(formattedData)
+        console.error('Error fetching projects:', response.error)
       }
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -174,7 +87,7 @@ export default function DashboardPage() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await authService.logout()
     router.push('/')
   }
 
@@ -208,7 +121,7 @@ export default function DashboardPage() {
     )
   }
 
-  const isTradie = userProfile.user_type === 'tradie'
+  const isTradie = userProfile.userType === 'tradie'
   const displayName = userProfile.name || user.email?.split('@')[0] || '用户'
 
   return (
@@ -232,7 +145,7 @@ export default function DashboardPage() {
                 <Badge variant={isTradie ? "default" : "secondary"}>
                   {isTradie ? '技师账户' : '房主账户'}
                 </Badge>
-                {user.email_confirmed_at ? (
+                {user.emailConfirmed ? (
                   <Badge className="bg-green-100 text-green-800">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     已验证
@@ -266,7 +179,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Email Verification Alert */}
-        {!user.email_confirmed_at && (
+        {!user.emailConfirmed && (
           <Card className="mb-6 border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
@@ -387,11 +300,11 @@ export default function DashboardPage() {
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <span className="font-medium text-gray-900">
-                                {project.categories?.name_zh || '未分类'}
+                                {project.category || '未分类'}
                               </span>
                               <span className="text-gray-500">•</span>
                               <span className="text-gray-600">
-                                {project.professions?.name_zh || '未指定专业'}
+                                {project.profession || '未指定专业'}
                               </span>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">
@@ -401,7 +314,7 @@ export default function DashboardPage() {
                             </p>
                             <div className="flex items-center space-x-3 text-xs text-gray-500">
                               <span>
-                                {new Date(project.created_at).toLocaleDateString('zh-CN', {
+                                {new Date(project.createdAt).toLocaleDateString('zh-CN', {
                                   year: 'numeric',
                                   month: 'short',
                                   day: 'numeric'
@@ -444,12 +357,12 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="text-sm font-medium">账户创建成功</p>
                         <p className="text-xs text-gray-500">
-                          {new Date(userProfile.created_at).toLocaleDateString('zh-CN')}
+                          {new Date(userProfile.createdAt).toLocaleDateString('zh-CN')}
                         </p>
                       </div>
                     </div>
 
-                    {!user.email_confirmed_at && (
+                    {!user.emailConfirmed && (
                       <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
                         <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
                         <div className="flex-1">
@@ -491,7 +404,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">地址</Label>
-                  <p className="font-medium">{userProfile.address || '未填写'}</p>
+                  <p className="font-medium">{userProfile.location || '未填写'}</p>
                 </div>
                 <div>
                   <Label className="text-sm text-gray-500">状态</Label>
@@ -501,25 +414,25 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Tradie specific info */}
-                {isTradie && tradieProfile && (
+                {isTradie && userProfile.company && (
                   <>
                     <div>
                       <Label className="text-sm text-gray-500">公司名称</Label>
-                      <p className="font-medium">{tradieProfile.company || '未填写'}</p>
+                      <p className="font-medium">{userProfile.company || '未填写'}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">专业技能</Label>
-                      <p className="font-medium">{tradieProfile.specialty || '未填写'}</p>
+                      <p className="font-medium">{userProfile.specialty || '未填写'}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">服务半径</Label>
-                      <p className="font-medium">{tradieProfile.service_radius}公里</p>
+                      <p className="font-medium">{userProfile.serviceRadius || 25}公里</p>
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">评分</Label>
                       <p className="font-medium flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                        {tradieProfile.rating || '暂无'} ({tradieProfile.review_count} 评价)
+                        {userProfile.rating || '暂无'} ({userProfile.reviewCount || 0} 评价)
                       </p>
                     </div>
                   </>

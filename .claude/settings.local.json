@@ -23,7 +23,12 @@
       "Bash(npm run build:*)",
       "mcp__ide__getDiagnostics",
       "Bash(npm install:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(source:*)",
+      "Bash(claude config list)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
