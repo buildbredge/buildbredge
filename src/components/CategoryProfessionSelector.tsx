@@ -83,7 +83,7 @@ export default function CategoryProfessionSelector({
     }
 
     loadProfessions()
-  }, [selectedCategoryId, selectedProfessionId, onProfessionChange])
+  }, [selectedCategoryId])
 
   const handleCategoryChange = (value: string) => {
     if (value === selectedCategoryId) return

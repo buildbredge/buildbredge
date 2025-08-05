@@ -14,7 +14,6 @@ import {
   ChevronLeft, ChevronRight
 } from "lucide-react"
 import Link from "next/link"
-import Navigation from "@/components/Navigation"
 import { apiClient } from "../../../lib/services/apiClient"
 import { authService } from "../../../lib/services/authService"
 import type { ProjectData, UserProfileData } from "../../../lib/services/apiClient"
@@ -101,7 +100,6 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navigation />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
@@ -115,7 +113,6 @@ export default function DashboardPage() {
   if (!user || !userProfile) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navigation />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <p className="text-red-600">获取用户信息失败</p>
@@ -133,7 +130,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}

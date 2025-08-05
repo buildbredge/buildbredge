@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { X, FileImage, Video, Upload, AlertCircle } from "lucide-react"
+import { X, FileImage, Video, Upload, AlertCircle, Check } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
@@ -15,8 +15,10 @@ import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@
 import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface JobForm {
+  subject: string
   detailedDescription: string
   email: string
   phone: string
@@ -29,6 +31,9 @@ interface JobForm {
   professionId?: string
   isOther: boolean
   otherDescription: string
+  // 新增字段
+  timeOption: string
+  priorityNeed: string
 }
 
 interface UploadProgress {
@@ -44,6 +49,7 @@ export default function PostJobPage() {
   const router = useRouter()
 
   const [jobForm, setJobForm] = useState<JobForm>({
+    subject: "",
     detailedDescription: "",
     email: "",
     phone: "",
@@ -53,13 +59,12 @@ export default function PostJobPage() {
     categoryId: undefined,
     professionId: undefined,
     isOther: false,
-    otherDescription: ""
+    otherDescription: "",
+    timeOption: "urgent",
+    priorityNeed: "quality"
   })
-  const [isSubmitted, setIsSubmitted] = useState(false)
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [videoPreview, setVideoPreview] = useState<string>("")
-  const [imageUrls, setImageUrls] = useState<string[]>([])
-  const [videoUrl, setVideoUrl] = useState<string>("")
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {}, video: 0 })
   const [uploadError, setUploadError] = useState<string>("")
@@ -67,6 +72,7 @@ export default function PostJobPage() {
   const videoInputRef = useRef<HTMLInputElement>(null)
 
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
 
 
@@ -161,7 +167,7 @@ export default function PostJobPage() {
 
       // 创建项目记录，包含已上传的文件URL
       const projectData: any = {
-        description: jobForm.detailedDescription.substring(0, 100),
+        description: jobForm.subject,
         location: locationString,
         latitude,
         longitude,
@@ -174,7 +180,9 @@ export default function PostJobPage() {
         user_id: userId || null, // 如果是匿名用户则为null
         category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
         profession_id: jobForm.isOther ? null : (jobForm.professionId || null),
-        other_description: jobForm.isOther ? jobForm.otherDescription : null
+        other_description: jobForm.isOther ? jobForm.otherDescription : null,
+        time_option: jobForm.timeOption || null,
+        priority_need: jobForm.priorityNeed || null
       }
 
       console.log('📋 创建项目记录（包含文件URL）...', projectData)
@@ -321,7 +329,13 @@ export default function PostJobPage() {
       errors.push("请选择项目位置")
     }
     
-    // 验证详细描述
+    // 验证简单描述和详细描述
+    if (!jobForm.subject.trim()) {
+      errors.push("请填写简单描述")
+    } else if (jobForm.subject.trim().length < 5) {
+      errors.push("简单描述至少需要5个字符")
+    }
+    
     if (!jobForm.detailedDescription.trim()) {
       errors.push("请描述您的项目需求")
     } else if (jobForm.detailedDescription.trim().length < 10) {
@@ -349,8 +363,9 @@ export default function PostJobPage() {
 
   // 简化的表单验证函数（用于按钮disabled状态 - 只检查必填项）
   const isFormValid = () => {
-    // 检查邮箱和项目详情
+    // 检查邮箱、简单描述和项目详情
     const hasEmail = jobForm.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email)
+    const hasSubject = jobForm.subject.trim().length > 0
     const hasDescription = jobForm.detailedDescription.trim().length > 0
     
     // 检查分类/职业选择
@@ -359,12 +374,14 @@ export default function PostJobPage() {
       : (jobForm.categoryId && jobForm.professionId)
     
     // 添加更详细的调试信息
-    const isValid = hasEmail && hasDescription && hasValidCategory
+    const isValid = hasEmail && hasSubject && hasDescription && hasValidCategory
     console.log('=== 表单验证状态 ===', {
       email: jobForm.email,
       emailTrimmed: jobForm.email.trim(),
       emailRegexTest: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(jobForm.email),
       hasEmail,
+      subject: jobForm.subject,
+      hasSubject,
       description: jobForm.detailedDescription,
       descriptionTrimmed: jobForm.detailedDescription.trim(),
       descriptionLength: jobForm.detailedDescription.trim().length,
@@ -381,27 +398,6 @@ export default function PostJobPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
-              </div>
-              <span className="text-xl font-bold text-gray-800">BuildBridge</span>
-              <span className="text-sm text-gray-500">发布需求</span>
-            </Link>
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="p-2">
-                <X className="w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-
       {/* Main content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -418,6 +414,26 @@ export default function PostJobPage() {
             {/* 单一表单卡片 */}
             <div className="bg-white rounded-lg border p-8 shadow-sm">
               <div className="space-y-8">
+                {/* 隐私提示 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-700">
+                    我们会问您几个问题，以便在几分钟内帮您联系到合适的商家或技工。带照片或视频的介绍可提高 20% 的技工兴趣。为保护您的隐私，请勿在职位名称或描述中包含姓名、电话或地址。
+                  </p>
+                </div>
+
+                {/* 简单描述 */}
+                <div>
+                  <Label htmlFor="subject" className="text-lg font-medium">简单描述 *</Label>
+                  <Input
+                    id="subject"
+                    type="text"
+                    placeholder="简单描述您的需求，例如：更换水龙头、室内装修、房屋匔筑等"
+                    value={jobForm.subject}
+                    onChange={(e) => updateJobForm('subject', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+
                 {/* 联系信息 */}
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">联系信息</h2>
@@ -497,6 +513,38 @@ export default function PostJobPage() {
                         className="min-h-[150px] text-base"
                         rows={6}
                       />
+                    </div>
+
+                    {/* 时间选项和优先项 */}
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {/* 时间选项 */}
+                      <div>
+                        <Label className="text-lg font-medium">时间选项</Label>
+                        <Select value={jobForm.timeOption} onValueChange={(value) => updateJobForm('timeOption', value)}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="选择时间需求" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="urgent">紧急（今天）</SelectItem>
+                            <SelectItem value="recent">最近几天</SelectItem>
+                            <SelectItem value="flexible">没有固定时间</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 需求优先项 */}
+                      <div>
+                        <Label className="text-lg font-medium">需求优先项</Label>
+                        <Select value={jobForm.priorityNeed} onValueChange={(value) => updateJobForm('priorityNeed', value)}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="选择优先项" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cost">成本</SelectItem>
+                            <SelectItem value="quality">质量</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {/* 媒体上传 */}
@@ -713,6 +761,32 @@ export default function PostJobPage() {
 
       {/* Footer spacing */}
       <div className="py-16"></div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">任务发布成功！</h3>
+              <p className="text-gray-600">
+                您的任务已成功发送到所有相关商家和技师，回复信息会发送到您的邮箱或会员区。
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setShowSuccessModal(false)
+                window.location.href = 'https://buildbridge.nz/'
+              }}
+              className="bg-green-600 hover:bg-green-700 px-8 py-2"
+            >
+              OK
+            </Button>
+          </div>
+        </div>
+      )}
 
     </div>
   )

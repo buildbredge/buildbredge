@@ -14,12 +14,10 @@ import {
   Mail
 } from "lucide-react"
 import Link from "next/link"
-import Navigation from "@/components/Navigation"
 
 export default function CanadaSuppliersPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Navigation currentPage="suppliers" />
 
       {/* Breadcrumb */}
       <div className="bg-gray-50 py-4">

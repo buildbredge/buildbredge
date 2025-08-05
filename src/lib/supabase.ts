@@ -25,6 +25,11 @@ export interface Database {
           created_at: string
           updated_at: string
           user_id: string | null
+          time_option: 'urgent' | 'recent' | 'flexible' | null
+          priority_need: 'cost' | 'quality' | null
+          category_id: string | null
+          profession_id: string | null
+          other_description: string | null
         }
         Insert: {
           id?: string
@@ -41,6 +46,11 @@ export interface Database {
           created_at?: string
           updated_at?: string
           user_id?: string | null
+          time_option?: 'urgent' | 'recent' | 'flexible' | null
+          priority_need?: 'cost' | 'quality' | null
+          category_id?: string | null
+          profession_id?: string | null
+          other_description?: string | null
         }
         Update: {
           id?: string
@@ -57,6 +67,11 @@ export interface Database {
           created_at?: string
           updated_at?: string
           user_id?: string | null
+          time_option?: 'urgent' | 'recent' | 'flexible' | null
+          priority_need?: 'cost' | 'quality' | null
+          category_id?: string | null
+          profession_id?: string | null
+          other_description?: string | null
         }
       }
       owners: {

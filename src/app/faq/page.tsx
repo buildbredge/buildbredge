@@ -20,7 +20,6 @@ import {
   Phone,
   Mail
 } from "lucide-react"
-import Navigation from "@/components/Navigation"
 import Link from "next/link"
 
 interface FAQItem {
@@ -255,7 +254,6 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation currentPage="faq" />
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}

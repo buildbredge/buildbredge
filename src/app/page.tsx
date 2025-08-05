@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Star, Shield, Users, Wrench, CheckCircle, Home, Zap, Hammer, Paintbrush, Settings, Leaf, Phone, Calendar, Globe, ChevronDown, MessageCircle, Bot, X } from "lucide-react"
 import Link from "next/link"
-import Navigation from "@/components/Navigation"
 import { useState } from "react"
 
 export default function HomePage() {
@@ -77,15 +76,28 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
-
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold mb-6">
             连接<span className="text-green-200">业主</span>与<span className="text-green-200">专业人员</span>的桥梁
           </h1>
-
+          
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4 text-white">我能帮你做什么？</h2>
+            <p className="text-lg text-green-100 max-w-3xl mx-auto leading-relaxed">
+              向我简单描述你的需求我会为你匹配所有的适合的商家或技师，主动为您提供帮助和报价，供您对比选择
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+              <Link href="/post-job">发布需求</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-white border-2 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold">
+              <Link href="/browse-tradies">浏览技师</Link>
+            </Button>
+          </div>
 
         </div>
       </section>

@@ -19,12 +19,10 @@ import {
   Handshake
 } from "lucide-react"
 import Link from "next/link"
-import Navigation from "@/components/Navigation"
 
 export default function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Star, MapPin, Phone, Mail } from "lucide-react"
 import Link from "next/link"
-import Navigation from "@/components/Navigation"
 import { useRouter } from "next/navigation"
 import { tradiesApi, Tradie } from "@/lib/api"
 
@@ -189,7 +188,6 @@ export default function BrowseTradiesPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">

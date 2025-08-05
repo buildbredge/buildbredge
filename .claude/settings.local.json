@@ -30,7 +30,18 @@
       "Bash(ls:*)",
       "Bash(cp:*)",
       "Bash(claude doctor)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "Bash(npm run lint:*)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__get_anon_key",
+      "mcp__thinking__sequentialthinking",
+      "Bash(npx @modelcontextprotocol/server-supabase:*)",
+      "Bash(npm search:*)",
+      "Bash(npx @supabase/mcp-utils:*)",
+      "Bash(npx supabase-mcp:*)"
     ],
     "deny": []
   }

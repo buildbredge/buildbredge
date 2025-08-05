@@ -25,12 +25,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import Navigation from "@/components/Navigation"
 
 export default function NewZealandSuppliersPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Navigation currentPage="suppliers" />
 
       {/* Breadcrumb */}
       <div className="bg-gray-50 py-4">

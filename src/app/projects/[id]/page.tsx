@@ -24,7 +24,7 @@ import {
   Briefcase,
   Tag
 } from "lucide-react"
-import { projectsApi, type Project, type Category, type Profession } from "@/lib/api"
+import { type Project, type Category, type Profession } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSignedImageUrls } from "@/hooks/useSignedImageUrl"
 import { ImageGalleryModal } from "@/components/ImageGalleryModal"
@@ -57,7 +57,14 @@ export default function ProjectDetailPage() {
       try {
         setLoading(true)
         const projectId = params.id as string
-        const projectData = await projectsApi.getByIdWithCategory(projectId)
+        
+        // 使用API路由而不是直接的Supabase查询
+        const response = await fetch(`/api/projects/${projectId}`)
+        if (!response.ok) {
+          throw new Error('项目不存在或已被删除')
+        }
+        
+        const projectData = await response.json()
         setProject(projectData)
       } catch (err) {
         console.error("Failed to fetch project:", err)
@@ -180,6 +187,11 @@ export default function ProjectDetailPage() {
             {/* Project Header */}
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6 mb-4 sm:mb-6">
               <div className="flex-1">
+                {/* Project Subject/Description as title */}
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight">
+                  {project.description}
+                </h1>
+                
                 <div className="flex items-center gap-3 mb-4">
                   {getStatusBadge(project.status)}
                   <div className="flex items-center text-gray-500 text-sm">
@@ -205,9 +217,46 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            {/* Service Categories */}
+            {/* Project Requirements */}
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">服务需求</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">项目要求</h3>
+              
+              {/* Time Option and Priority Need */}
+              <div className="grid gap-4 md:grid-cols-2 mb-6">
+                {(project as any).time_option && (
+                  <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">时间要求</p>
+                      <p className="font-semibold text-gray-900">
+                        {(project as any).time_option === 'urgent' && '紧急（今天）'}
+                        {(project as any).time_option === 'recent' && '最近几天'}
+                        {(project as any).time_option === 'flexible' && '没有固定时间'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {(project as any).priority_need && (
+                  <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Star className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">优先考虑</p>
+                      <p className="font-semibold text-gray-900">
+                        {(project as any).priority_need === 'cost' && '成本'}
+                        {(project as any).priority_need === 'quality' && '质量'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Service Categories */}
+              <h4 className="text-md font-semibold text-gray-900 mb-3">服务需求</h4>
               {project.category_id && project.profession_id ? (
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="flex items-center space-x-4">
