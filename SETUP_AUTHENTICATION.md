@@ -73,10 +73,10 @@ CREATE POLICY "Users can insert own tradie profile" ON tradie_profiles
 
 在Supabase Dashboard → Authentication → Settings：
 
-1. **Site URL**: `http://localhost:3000` (开发环境)
+1. **Site URL**: `https://buildbridge.nz` (生产环境)
 2. **Redirect URLs**:
-   - `http://localhost:3000/auth/callback`
-   - `https://your-domain.com/auth/callback` (生产环境)
+   - `https://buildbridge.nz/auth/callback` (生产环境)
+   - `http://localhost:3000/auth/callback` (开发环境)
 3. **启用邮箱确认**: ✅
 4. **邮件模板**: 可自定义欢迎邮件和重置密码邮件
 
@@ -106,7 +106,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 RESEND_API_KEY=re_your-api-key
 
 # 应用URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://buildbridge.nz
 ```
 
 ### 6. 测试认证流程

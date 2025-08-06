@@ -102,46 +102,10 @@ export async function GET(request: NextRequest) {
       activeRole = primaryRole ? primaryRole.role_type : userRoles[0].role_type
     }
 
-    // 4. 获取所有角色的数据（融合式设计）
+    // 4. 暂时移除对 owners 和 tradies 表的操作
+    // 所有数据现在都存储在 users 表中
     let ownerData = null
     let tradieData = null
-
-    // 如果用户有业主角色，获取业主数据
-    if (userRoles.some(r => r.role_type === 'owner')) {
-      const { data: ownerResult } = await supabase
-        .from('owners')
-        .select('status, balance')
-        .eq('id', user.id)
-        .single()
-
-      if (ownerResult) {
-        ownerData = {
-          status: ownerResult.status,
-          balance: ownerResult.balance || 0
-        }
-      }
-    }
-
-    // 如果用户有技师角色，获取技师数据
-    if (userRoles.some(r => r.role_type === 'tradie')) {
-      const { data: tradieResult } = await supabase
-        .from('tradies')
-        .select('company, specialty, service_radius, rating, review_count, status, balance')
-        .eq('id', user.id)
-        .single()
-
-      if (tradieResult) {
-        tradieData = {
-          company: tradieResult.company,
-          specialty: tradieResult.specialty,
-          serviceRadius: tradieResult.service_radius,
-          rating: tradieResult.rating,
-          reviewCount: tradieResult.review_count,
-          status: tradieResult.status,
-          balance: tradieResult.balance || 0
-        }
-      }
-    }
 
     const response: UserProfileResponse = {
       id: userProfile.id,
@@ -149,8 +113,8 @@ export async function GET(request: NextRequest) {
       email: userProfile.email,
       phone: userProfile.phone,
       address: userProfile.address || '',
-      status: (activeRole === 'tradie' ? tradieData?.status : ownerData?.status) || userProfile.status,
-      verified: ((activeRole === 'tradie' ? tradieData?.status : ownerData?.status) || userProfile.status) === 'approved',
+      status: userProfile.status,
+      verified: userProfile.status === 'approved',
       emailVerified: user.email_confirmed_at ? true : false,
       createdAt: userProfile.created_at,
       roles: userRoles,
@@ -248,48 +212,8 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 2. 根据角色更新角色特定信息
-    if (targetRole === 'owner') {
-      const { error: ownerError } = await supabase
-        .from('owners')
-        .update({
-          name,
-          phone,
-          address
-        })
-        .eq('id', user.id)
-
-      if (ownerError) {
-        console.error('Owner profile update error:', ownerError)
-        return NextResponse.json({
-          success: false,
-          error: "业主资料更新失败"
-        }, { status: 500 })
-      }
-    } else if (targetRole === 'tradie') {
-      const updateData: any = {
-        name,
-        phone,
-        address
-      }
-
-      if (company !== undefined) updateData.company = company
-      if (specialty !== undefined) updateData.specialty = specialty
-      if (serviceRadius !== undefined) updateData.service_radius = serviceRadius
-
-      const { error: tradieError } = await supabase
-        .from('tradies')
-        .update(updateData)
-        .eq('id', user.id)
-
-      if (tradieError) {
-        console.error('Tradie profile update error:', tradieError)
-        return NextResponse.json({
-          success: false,
-          error: "技师资料更新失败"
-        }, { status: 500 })
-      }
-    }
+    // 2. 暂时移除对 owners 和 tradies 表的更新操作
+    // 所有数据更新都在 users 表中处理
 
     return NextResponse.json({
       success: true,

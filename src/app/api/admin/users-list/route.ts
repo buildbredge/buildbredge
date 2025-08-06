@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../../lib/supabase'
 
-// Admin users list API with pagination and filtering
+// Admin users list API with pagination and filtering - updated for users/user_roles schema
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -15,94 +15,65 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching users list with filters:', { page, limit, userType, status, search })
 
-    // Fetch owners
-    let ownersQuery = supabase
-      .from('owners')
-      .select('id, name, email, phone, status, created_at, updated_at, address, balance')
+    // Build base query for users
+    let usersQuery = supabase
+      .from('users')
+      .select(`
+        id, name, email, phone, address, status, created_at, updated_at,
+        user_roles!inner(role_type, is_primary)
+      `)
 
+    // Apply status filter
     if (status !== 'all') {
-      ownersQuery = ownersQuery.eq('status', status)
+      usersQuery = usersQuery.eq('status', status)
     }
 
+    // Apply search filter
     if (search) {
-      ownersQuery = ownersQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
+      usersQuery = usersQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%`)
     }
 
-    // Fetch tradies  
-    let tradiesQuery = supabase
-      .from('tradies')
-      .select('id, name, email, phone, company, specialty, status, created_at, updated_at, address, balance, rating, review_count')
-
-    if (status !== 'all') {
-      tradiesQuery = tradiesQuery.eq('status', status)
+    // Apply role type filter
+    if (userType !== 'all') {
+      const roleType = userType === 'homeowner' ? 'owner' : 'tradie'
+      usersQuery = usersQuery.eq('user_roles.role_type', roleType)
     }
 
-    if (search) {
-      tradiesQuery = tradiesQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`)
-    }
-
-    let owners: any[] = []
-    let tradies: any[] = []
-
-    if (userType === 'all' || userType === 'homeowner') {
-      const { data: ownersData, error: ownersError } = await ownersQuery
-      if (ownersError) {
-        console.error('Error fetching owners:', ownersError)
-      } else {
-        owners = ownersData || []
-      }
-    }
-
-    if (userType === 'all' || userType === 'tradie') {
-      const { data: tradiesData, error: tradiesError } = await tradiesQuery
-      if (tradiesError) {
-        console.error('Error fetching tradies:', tradiesError)  
-      } else {
-        tradies = tradiesData || []
-      }
+    const { data: users, error: usersError } = await usersQuery
+    if (usersError) {
+      console.error('Error fetching users:', usersError)
+      return NextResponse.json(
+        { error: 'Failed to fetch users: ' + usersError.message },
+        { status: 500 }
+      )
     }
 
     // Transform data to unified format
-    const transformedOwners = owners.map(owner => ({
-      id: owner.id,
-      name: owner.name || 'Unknown',
-      email: owner.email,
-      phone: owner.phone || 'N/A',
-      userType: 'homeowner' as const,
-      location: owner.address || 'Not specified',
-      joinDate: owner.created_at,
-      status: owner.status,
-      lastLogin: owner.updated_at, // Approximation
-      projectsCount: 0, // Would need separate query
-      totalSpent: owner.balance || 0,
-      rating: null,
-      company: null,
-      specialty: null
-    }))
-
-    const transformedTradies = tradies.map(tradie => ({
-      id: tradie.id,
-      name: tradie.name || 'Unknown',
-      email: tradie.email,
-      phone: tradie.phone || 'N/A',
-      userType: 'tradie' as const,
-      location: tradie.address || 'Not specified',
-      joinDate: tradie.created_at,
-      status: tradie.status,
-      lastLogin: tradie.updated_at, // Approximation
-      projectsCount: 0, // Would need separate query
-      totalSpent: null,
-      rating: tradie.rating,
-      company: tradie.company,
-      specialty: tradie.specialty
-    }))
-
-    // Combine and sort by creation date
-    const allUsers = [...transformedOwners, ...transformedTradies]
-      .sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime())
+    const transformedUsers = (users || []).map(user => {
+      const primaryRole = user.user_roles.find(r => r.is_primary) || user.user_roles[0]
+      const userTypeLabel = primaryRole?.role_type === 'owner' ? 'homeowner' : 'tradie'
+      
+      return {
+        id: user.id,
+        name: user.name || 'Unknown',
+        email: user.email,
+        phone: user.phone || 'N/A',
+        userType: userTypeLabel as const,
+        location: user.address || 'Not specified',
+        joinDate: user.created_at,
+        status: user.status,
+        lastLogin: user.updated_at, // Approximation
+        projectsCount: 0, // Would need separate query
+        totalSpent: 0, // Would need calculation from projects
+        rating: null, // Would need calculation from reviews
+        company: null, // Not stored in users table currently
+        specialty: null, // Not stored in users table currently
+        roles: user.user_roles.map(r => r.role_type)
+      }
+    })
 
     // Apply pagination
-    const paginatedUsers = allUsers.slice(offset, offset + limit)
+    const paginatedUsers = transformedUsers.slice(offset, offset + limit)
 
     const response = {
       success: true,
@@ -110,9 +81,9 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: allUsers.length,
-        totalPages: Math.ceil(allUsers.length / limit),
-        hasNext: offset + limit < allUsers.length,
+        total: transformedUsers.length,
+        totalPages: Math.ceil(transformedUsers.length / limit),
+        hasNext: offset + limit < transformedUsers.length,
         hasPrev: page > 1
       },
       filters: {
@@ -123,7 +94,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     }
 
-    console.log(`Returning ${paginatedUsers.length} users out of ${allUsers.length} total`)
+    console.log(`Returning ${paginatedUsers.length} users out of ${transformedUsers.length} total`)
 
     return NextResponse.json(response)
 

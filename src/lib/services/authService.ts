@@ -76,10 +76,16 @@ class AuthService {
   // 注册
   async register(userData: RegisterData): Promise<AuthResponse> {
     try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
       // 注册Supabase用户
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
+        options: {
+      
+          emailRedirectTo: `${appUrl}/auth/callback`
+        }
       })
 
       if (error) {
@@ -178,9 +184,14 @@ class AuthService {
   // 重新发送验证邮件
   async resendVerificationEmail(email: string): Promise<AuthResponse> {
     try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
+        options: {
+          emailRedirectTo: `${appUrl}/auth/callback`
+        }
       })
 
       if (error) {

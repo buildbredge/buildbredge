@@ -26,11 +26,19 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 检查用户是否已存在于统一用户表中
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: userSelectError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single()
+
+    if (userSelectError && userSelectError.code !== 'PGRST116') {
+      console.error('User select error:', userSelectError)
+      return NextResponse.json({
+        success: false,
+        error: `用户查询失败: ${userSelectError.message}`
+      }, { status: 500 })
+    }
 
     let userMessage = ''
 
@@ -62,12 +70,20 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 检查用户是否已有此角色
-    const { data: existingRole } = await supabase
+    const { data: existingRole, error: roleSelectError } = await supabase
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
       .eq('role_type', userType === 'homeowner' ? 'owner' : 'tradie')
       .single()
+
+    if (roleSelectError && roleSelectError.code !== 'PGRST116') {
+      console.error('Role select error:', roleSelectError)
+      return NextResponse.json({
+        success: false,
+        error: `角色查询失败: ${roleSelectError.message}`
+      }, { status: 500 })
+    }
 
     if (existingRole) {
       return NextResponse.json({
@@ -93,57 +109,8 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 5. 根据用户类型创建对应的角色特定数据
-    if (userType === 'homeowner') {
-      const { error: ownerError } = await supabase
-        .from('owners')
-        .insert({
-          id: userId,
-          name,
-          phone,
-          email,
-          address: location,
-          status: 'pending',
-          balance: 0.00,
-          latitude: null,
-          longitude: null
-        })
-
-      if (ownerError) {
-        console.error('Owner profile creation error:', ownerError)
-        return NextResponse.json({
-          success: false,
-          error: "业主资料创建失败"
-        }, { status: 500 })
-      }
-    } else {
-      const { error: tradieError } = await supabase
-        .from('tradies')
-        .insert({
-          id: userId,
-          name,
-          phone,
-          email,
-          company: company || name + ' 工作室',
-          specialty: '通用服务',
-          status: 'pending',
-          balance: 0.00,
-          latitude: null,
-          longitude: null,
-          address: location,
-          service_radius: 25,
-          rating: 0,
-          review_count: 0
-        })
-
-      if (tradieError) {
-        console.error('Tradie profile creation error:', tradieError)
-        return NextResponse.json({
-          success: false,
-          error: "技师资料创建失败"
-        }, { status: 500 })
-      }
-    }
+    // 5. 注意：不再需要创建 owners 和 tradies 表的记录
+    // 所有信息都存储在 users 和 user_roles 表中
 
     return NextResponse.json({
       success: true,
@@ -154,6 +121,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('API error:', 'Profile creation failed', error)
+    
+    // 如果是数据库错误，返回更具体的错误信息
+    if (error && typeof error === 'object' && 'message' in error) {
+      return NextResponse.json({
+        success: false,
+        error: `服务器错误: ${(error as any).message}`
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({
       success: false,
       error: "服务器内部错误"
