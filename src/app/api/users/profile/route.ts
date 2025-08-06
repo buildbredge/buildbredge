@@ -3,22 +3,39 @@ import { supabase } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
+interface UserRole {
+  role_type: 'owner' | 'tradie'
+  is_primary: boolean
+  created_at: string
+}
+
 interface UserProfileResponse {
   id: string
   name: string
   email: string
   phone: string
-  userType: 'homeowner' | 'tradie'
-  location: string
-  company?: string
-  specialty?: string
-  serviceRadius?: number
-  rating?: number
-  reviewCount?: number
-  status: 'pending' | 'approved' | 'closed'
+  address: string
+  status: 'pending' | 'approved' | 'closed' | 'active'
   verified: boolean
   emailVerified: boolean
   createdAt: string
+  roles: UserRole[]
+  activeRole: 'owner' | 'tradie'
+  // 融合式设计：包含所有角色数据
+  ownerData?: {
+    status: string
+    balance: number
+    projectCount?: number
+  }
+  tradieData?: {
+    company: string
+    specialty: string
+    serviceRadius: number
+    rating: number
+    reviewCount: number
+    status: string
+    balance: number
+  }
 }
 
 // 获取用户资料
@@ -43,72 +60,112 @@ export async function GET(request: NextRequest) {
       }, { status: 401 })
     }
 
-    // 尝试从 owners 表获取资料
-    const { data: ownerProfile } = await supabase
-      .from('owners')
+    // 从查询参数获取请求的角色（可选）
+    const url = new URL(request.url)
+    const requestedRole = url.searchParams.get('role') as 'owner' | 'tradie' | null
+
+    // 1. 获取用户基本信息
+    const { data: userProfile, error: userError } = await supabase
+      .from('users')
       .select('*')
       .eq('id', user.id)
       .single()
 
-    if (ownerProfile) {
-      const userProfile: UserProfileResponse = {
-        id: ownerProfile.id,
-        name: ownerProfile.name || '',
-        email: user.email || '',
-        phone: ownerProfile.phone || '',
-        userType: 'homeowner',
-        location: ownerProfile.address || '',
-        status: ownerProfile.status,
-        verified: ownerProfile.status === 'approved',
-        emailVerified: user.email_confirmed_at ? true : false,
-        createdAt: ownerProfile.created_at
-      }
-
+    if (userError || !userProfile) {
       return NextResponse.json({
-        success: true,
-        data: userProfile
-      })
+        success: false,
+        error: "用户基本信息不存在"
+      }, { status: 404 })
     }
 
-    // 如果不是业主，尝试从 tradies 表获取
-    const { data: tradieProfile } = await supabase
-      .from('tradies')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    // 2. 获取用户所有角色
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role_type, is_primary, created_at')
+      .eq('user_id', user.id)
+      .order('is_primary', { ascending: false })
 
-    if (tradieProfile) {
-      const userProfile: UserProfileResponse = {
-        id: tradieProfile.id,
-        name: tradieProfile.name || '',
-        email: user.email || '',
-        phone: tradieProfile.phone || '',
-        userType: 'tradie',
-        location: tradieProfile.address || '',
-        company: tradieProfile.company || undefined,
-        specialty: tradieProfile.specialty || undefined,
-        serviceRadius: tradieProfile.service_radius || undefined,
-        rating: tradieProfile.rating || undefined,
-        reviewCount: tradieProfile.review_count || undefined,
-        status: tradieProfile.status,
-        verified: tradieProfile.status === 'approved',
-        emailVerified: user.email_confirmed_at ? true : false,
-        createdAt: tradieProfile.created_at
-      }
-
+    if (rolesError || !userRoles || userRoles.length === 0) {
       return NextResponse.json({
-        success: true,
-        data: userProfile
-      })
+        success: false,
+        error: "用户角色信息不存在"
+      }, { status: 404 })
+    }
+
+    // 3. 确定活跃角色
+    let activeRole: 'owner' | 'tradie'
+    if (requestedRole && userRoles.some(r => r.role_type === requestedRole)) {
+      activeRole = requestedRole
+    } else {
+      // 使用主要角色或第一个角色
+      const primaryRole = userRoles.find(r => r.is_primary)
+      activeRole = primaryRole ? primaryRole.role_type : userRoles[0].role_type
+    }
+
+    // 4. 获取所有角色的数据（融合式设计）
+    let ownerData = null
+    let tradieData = null
+
+    // 如果用户有业主角色，获取业主数据
+    if (userRoles.some(r => r.role_type === 'owner')) {
+      const { data: ownerResult } = await supabase
+        .from('owners')
+        .select('status, balance')
+        .eq('id', user.id)
+        .single()
+
+      if (ownerResult) {
+        ownerData = {
+          status: ownerResult.status,
+          balance: ownerResult.balance || 0
+        }
+      }
+    }
+
+    // 如果用户有技师角色，获取技师数据
+    if (userRoles.some(r => r.role_type === 'tradie')) {
+      const { data: tradieResult } = await supabase
+        .from('tradies')
+        .select('company, specialty, service_radius, rating, review_count, status, balance')
+        .eq('id', user.id)
+        .single()
+
+      if (tradieResult) {
+        tradieData = {
+          company: tradieResult.company,
+          specialty: tradieResult.specialty,
+          serviceRadius: tradieResult.service_radius,
+          rating: tradieResult.rating,
+          reviewCount: tradieResult.review_count,
+          status: tradieResult.status,
+          balance: tradieResult.balance || 0
+        }
+      }
+    }
+
+    const response: UserProfileResponse = {
+      id: userProfile.id,
+      name: userProfile.name,
+      email: userProfile.email,
+      phone: userProfile.phone,
+      address: userProfile.address || '',
+      status: (activeRole === 'tradie' ? tradieData?.status : ownerData?.status) || userProfile.status,
+      verified: ((activeRole === 'tradie' ? tradieData?.status : ownerData?.status) || userProfile.status) === 'approved',
+      emailVerified: user.email_confirmed_at ? true : false,
+      createdAt: userProfile.created_at,
+      roles: userRoles,
+      activeRole: activeRole,
+      ownerData: ownerData || undefined,
+      tradieData: tradieData || undefined
     }
 
     return NextResponse.json({
-      success: false,
-      error: "用户资料不存在"
-    }, { status: 404 })
+      success: true,
+      data: response
+    })
 
   } catch (error) {
-    console.error('API error:', 'User profile fetch failed')
+    console.error('API error:', 'User profile fetch failed', error)
     return NextResponse.json({
       success: false,
       error: "服务器内部错误"
@@ -139,7 +196,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, location, company, specialty, serviceRadius } = body
+    const { name, phone, address, role, company, specialty, serviceRadius } = body
 
     // 验证必需字段
     if (!name || !phone) {
@@ -149,55 +206,87 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 先确定用户类型
-    const { data: ownerProfile } = await supabase
-      .from('owners')
-      .select('id')
-      .eq('id', user.id)
-      .single()
+    // 获取用户当前角色
+    const { data: userRoles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role_type, is_primary')
+      .eq('user_id', user.id)
 
-    if (ownerProfile) {
-      // 更新业主资料
-      const { error } = await supabase
+    if (rolesError || !userRoles || userRoles.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: "用户角色信息不存在"
+      }, { status: 404 })
+    }
+
+    // 确定要更新的角色
+    const targetRole = role || userRoles.find(r => r.is_primary)?.role_type || userRoles[0].role_type
+    
+    // 验证用户是否拥有该角色
+    if (!userRoles.some(r => r.role_type === targetRole)) {
+      return NextResponse.json({
+        success: false,
+        error: "您没有权限更新该角色的信息"
+      }, { status: 403 })
+    }
+
+    // 1. 更新统一用户表的基本信息
+    const { error: userUpdateError } = await supabase
+      .from('users')
+      .update({
+        name,
+        phone,
+        address
+      })
+      .eq('id', user.id)
+
+    if (userUpdateError) {
+      console.error('User table update error:', userUpdateError)
+      return NextResponse.json({
+        success: false,
+        error: "用户基本信息更新失败"
+      }, { status: 500 })
+    }
+
+    // 2. 根据角色更新角色特定信息
+    if (targetRole === 'owner') {
+      const { error: ownerError } = await supabase
         .from('owners')
         .update({
           name,
           phone,
-          address: location,
-          updated_at: new Date().toISOString()
+          address
         })
         .eq('id', user.id)
 
-      if (error) {
-        console.error('Database update error:', error.code)
+      if (ownerError) {
+        console.error('Owner profile update error:', ownerError)
         return NextResponse.json({
           success: false,
-          error: "更新资料失败"
+          error: "业主资料更新失败"
         }, { status: 500 })
       }
-    } else {
-      // 更新技师资料
+    } else if (targetRole === 'tradie') {
       const updateData: any = {
         name,
         phone,
-        address: location,
-        updated_at: new Date().toISOString()
+        address
       }
 
       if (company !== undefined) updateData.company = company
       if (specialty !== undefined) updateData.specialty = specialty
       if (serviceRadius !== undefined) updateData.service_radius = serviceRadius
 
-      const { error } = await supabase
+      const { error: tradieError } = await supabase
         .from('tradies')
         .update(updateData)
         .eq('id', user.id)
 
-      if (error) {
-        console.error('Database update error:', error.code)
+      if (tradieError) {
+        console.error('Tradie profile update error:', tradieError)
         return NextResponse.json({
           success: false,
-          error: "更新资料失败"
+          error: "技师资料更新失败"
         }, { status: 500 })
       }
     }
@@ -205,12 +294,12 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        message: "资料更新成功"
+        message: `${targetRole === 'owner' ? '业主' : '技师'}资料更新成功`
       }
     })
 
   } catch (error) {
-    console.error('API error:', 'User profile update failed')
+    console.error('API error:', 'User profile update failed', error)
     return NextResponse.json({
       success: false,
       error: "服务器内部错误"

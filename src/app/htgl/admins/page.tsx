@@ -23,7 +23,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react"
-// import { AdminAPI } from "@/lib/admin-api"
+// import { AdminAPI } from "@/lib/htgl-api"
 import { AdminRole, AdminSession } from "../../../../lib/supabase"
 
 interface AdminData {

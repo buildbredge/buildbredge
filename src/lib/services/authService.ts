@@ -41,9 +41,9 @@ class AuthService {
         let message = '登录失败，请重试'
         
         if (error.message.includes('Invalid login credentials')) {
-          message = '邮箱或密码错误，请重试'
+          message = '登录失败。可能原因：1) 邮箱或密码错误 2) 邮箱尚未验证。请检查您的邮箱并点击验证链接，或重新发送验证邮件。'
         } else if (error.message.includes('Email not confirmed')) {
-          message = '请先验证您的邮箱地址'
+          message = '请先验证您的邮箱地址。请检查您的邮箱（包括垃圾邮件夹）并点击验证链接。'
         } else if (error.message.includes('Too many requests')) {
           message = '登录尝试过于频繁，请稍后再试'
         }
@@ -101,8 +101,7 @@ class AuthService {
         const profileResponse = await fetch('/api/auth/register-profile', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${data.session?.access_token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             userId: data.user.id,

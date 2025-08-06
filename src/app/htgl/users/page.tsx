@@ -42,7 +42,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     const user = localStorage.getItem("adminUser")
 
     if (!token || !user) {
-      router.push("/admin/login")
+      router.push("/htgl/login")
       return
     }
 
@@ -52,7 +52,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
   const handleLogout = () => {
     localStorage.removeItem("adminToken")
     localStorage.removeItem("adminUser")
-    router.push("/admin/login")
+    router.push("/htgl/login")
   }
 
   if (!adminUser) {
@@ -65,14 +65,14 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
   }
 
   const navItems = [
-    { href: "/admin/dashboard", icon: Users, label: "仪表板" },
-    { href: "/admin/users", icon: Users, label: "用户管理", active: true },
-    { href: "/admin/tradies", icon: Users, label: "技师管理" },
-    { href: "/admin/suppliers", icon: Users, label: "供应商管理" },
-    { href: "/admin/support", icon: Users, label: "客服管理" },
-    { href: "/admin/complaints", icon: Users, label: "投诉管理" },
-    { href: "/admin/reviews", icon: Users, label: "评价管理" },
-    { href: "/admin/admins", icon: Users, label: "管理员管理" }
+    { href: "/htgl/dashboard", icon: Users, label: "仪表板" },
+    { href: "/htgl/users", icon: Users, label: "用户管理", active: true },
+    { href: "/htgl/tradies", icon: Users, label: "技师管理" },
+    { href: "/htgl/suppliers", icon: Users, label: "供应商管理" },
+    { href: "/htgl/support", icon: Users, label: "客服管理" },
+    { href: "/htgl/complaints", icon: Users, label: "投诉管理" },
+    { href: "/htgl/reviews", icon: Users, label: "评价管理" },
+    { href: "/htgl/htgls", icon: Users, label: "管理员管理" }
   ]
 
   return (

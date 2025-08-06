@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
           localStorage.setItem('adminUser', JSON.stringify(adminSession))
 
           console.log('登录成功，跳转到管理面板')
-          router.push("/admin")
+          router.push("/htgl")
         }
       } else {
         setError("邮箱或密码错误，或账户已被停用")

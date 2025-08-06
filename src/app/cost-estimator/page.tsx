@@ -31,28 +31,6 @@ export default function CostEstimatorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="border-b bg-white sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-              <Home className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-green-600">BuildBridge</span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Badge className="bg-green-100 text-green-800">
-              <Calculator className="w-3 h-3 mr-1" />
-              费用估算
-            </Badge>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/">返回首页</Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">

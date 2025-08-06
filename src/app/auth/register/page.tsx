@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EmailVerificationDialog } from "@/components/ui/email-verification-dialog"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -20,6 +21,8 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showVerificationDialog, setShowVerificationDialog] = useState(false)
+  const [isNewUser, setIsNewUser] = useState(true)
 
   const { register } = useAuth()
   const router = useRouter()
@@ -57,7 +60,9 @@ export default function RegisterPage() {
       })
       
       if (result.success) {
-        router.push("/profile?message=" + encodeURIComponent(result.message))
+        // 检查消息中是否包含"现有用户"来判断是否为新用户
+        setIsNewUser(!result.message.includes('现有用户'))
+        setShowVerificationDialog(true)
       } else {
         setError(result.message)
       }
@@ -69,12 +74,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center mb-2">
-          <h2 className="text-2xl font-bold text-green-700 mb-1">注册</h2>
-          <p className="text-sm text-gray-500">创建新BuildBridge账户</p>
-        </CardHeader>
+    <>
+      <EmailVerificationDialog
+        isOpen={showVerificationDialog}
+        onClose={() => setShowVerificationDialog(false)}
+        email={email}
+        userType={userType as 'homeowner' | 'tradie'}
+        isNewUser={isNewUser}
+      />
+      
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center mb-2">
+            <h2 className="text-2xl font-bold text-green-700 mb-1">注册</h2>
+            <p className="text-sm text-gray-500">创建新BuildBridge账户</p>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -194,5 +208,6 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }

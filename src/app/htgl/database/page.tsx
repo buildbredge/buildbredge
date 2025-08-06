@@ -202,7 +202,7 @@ export default function DatabaseManagePage() {
             <p className="text-gray-600">管理和监控 BuildBridge 增强数据库状态（坐标 + 评论系统）</p>
           </div>
           <Button variant="outline" asChild>
-            <Link href="/admin/dashboard">
+            <Link href="/htgl/dashboard">
               ← 返回管理后台
             </Link>
           </Button>
@@ -547,7 +547,7 @@ export default function DatabaseManagePage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Button variant="outline" asChild className="h-auto p-4 flex-col">
-                <Link href="/admin/dashboard">
+                <Link href="/htgl/dashboard">
                   <Database className="w-6 h-6 mb-2" />
                   <span className="text-sm">管理后台</span>
                 </Link>

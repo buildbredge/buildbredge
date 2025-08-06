@@ -11,12 +11,71 @@ import {
   User, Home, Briefcase, MessageCircle, Star,
   Settings, Plus, Eye, Calendar, DollarSign,
   Bell, LogOut, Shield, CheckCircle, Clock,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Wrench
 } from "lucide-react"
 import Link from "next/link"
 import { apiClient } from "../../../lib/services/apiClient"
 import { authService } from "../../../lib/services/authService"
+import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
+import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding"
 import type { ProjectData, UserProfileData } from "../../../lib/services/apiClient"
+
+interface UserRole {
+  role_type: 'owner' | 'tradie'
+  is_primary: boolean
+  created_at: string
+}
+
+interface DashboardData {
+  projectStats: {
+    total: number
+    published: number
+    inProgress: number
+    completed: number
+    draft: number
+  }
+  recentProjects: Array<{
+    id: string
+    title: string
+    description: string
+    status: string
+    category: string
+    profession: string
+    location: string
+    createdAt: string
+  }>
+  serviceStats?: {
+    availableJobs: number
+    activeServices: number
+    pendingQuotes: number
+    monthlyRevenue: number
+  }
+  availableCategories: Array<{
+    id: string
+    name: string
+    count: number
+  }>
+}
+
+interface ExtendedUserProfileData extends UserProfileData {
+  roles?: UserRole[]
+  activeRole?: 'owner' | 'tradie'
+  address?: string  // Add address property
+  ownerData?: {
+    status: string
+    balance: number
+    projectCount?: number
+  }
+  tradieData?: {
+    company: string
+    specialty: string
+    serviceRadius: number
+    rating: number
+    reviewCount: number
+    status: string
+    balance: number
+  }
+}
 
 interface AuthUser {
   id: string
@@ -27,9 +86,10 @@ interface AuthUser {
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
+  const [userProfile, setUserProfile] = useState<ExtendedUserProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [projects, setProjects] = useState<ProjectData[]>([])
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -54,7 +114,7 @@ export default function DashboardPage() {
       const profileResponse = await apiClient.getUserProfile()
       
       if (profileResponse.success && profileResponse.data) {
-        setUserProfile(profileResponse.data)
+        setUserProfile(profileResponse.data as ExtendedUserProfileData)
       } else {
         console.error('Failed to fetch user profile:', profileResponse.error)
       }
@@ -65,32 +125,89 @@ export default function DashboardPage() {
     }
   }
 
-  const fetchUserProjects = useCallback(async (page: number = currentPage, limit: number = itemsPerPage) => {
+  // 临时的dashboard数据获取功能
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return
     
     setLoadingProjects(true)
     try {
-      const response = await apiClient.getProjects({ page, limit })
+      // 直接调用API获取dashboard数据
+      const sessionResult = await authService.getCurrentSession()
+      const token = sessionResult?.session?.access_token
       
-      if (response.success && response.data) {
-        setProjects(response.data.projects)
-        setTotalProjects(response.data.pagination?.total || response.data.projects.length)
-      } else {
-        console.error('Error fetching projects:', response.error)
+      let dashboardResponse = null
+      if (token) {
+        dashboardResponse = await fetch('/api/dashboard/data', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
       }
+      
+      let dashboardData = null
+      if (dashboardResponse && dashboardResponse.ok) {
+        const dashResult = await dashboardResponse.json()
+        if (dashResult.success) {
+          dashboardData = dashResult.data
+          setDashboardData(dashResult.data)
+        }
+      }
+      
+      // 获取项目列表
+      const projectsResponse = await apiClient.getProjects({ page: currentPage, limit: itemsPerPage })
+      if (projectsResponse.success && projectsResponse.data) {
+        setProjects(projectsResponse.data.projects)
+        setTotalProjects(projectsResponse.data.pagination?.total || projectsResponse.data.projects.length)
+      } else {
+        console.error('Error fetching projects:', projectsResponse.error)
+      }
+      
+      // 如果没有dashboard数据，创建默认数据
+      if (!dashboardData) {
+        const mockDashboardData: DashboardData = {
+          projectStats: {
+            total: projectsResponse.data?.projects.length || 0,
+            published: projectsResponse.data?.projects.filter(p => p.status === 'published').length || 0,
+            inProgress: projectsResponse.data?.projects.filter(p => p.status === 'in_progress').length || 0,
+            completed: projectsResponse.data?.projects.filter(p => p.status === 'completed').length || 0,
+            draft: projectsResponse.data?.projects.filter(p => p.status === 'draft').length || 0
+          },
+          recentProjects: projectsResponse.data?.projects.slice(0, 5).map(p => ({
+            id: p.id,
+            title: p.category,
+            description: p.description,
+            status: p.status,
+            category: p.category,
+            profession: p.profession,
+            location: p.location,
+            createdAt: p.createdAt
+          })) || [],
+          availableCategories: []
+        }
+        setDashboardData(mockDashboardData)
+      }
+      
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching data:', error)
+      // 创建默认数据作为备选
+      const fallbackData: DashboardData = {
+        projectStats: { total: 0, published: 0, inProgress: 0, completed: 0, draft: 0 },
+        recentProjects: [],
+        availableCategories: []
+      }
+      setDashboardData(fallbackData)
     } finally {
       setLoadingProjects(false)
     }
   }, [user, currentPage, itemsPerPage])
 
-  // Load projects on component mount and when pagination changes
+  // Load dashboard data on component mount and when pagination changes
   useEffect(() => {
     if (user) {
-      fetchUserProjects(currentPage, itemsPerPage)
+      fetchDashboardData()
     }
-  }, [user, currentPage, itemsPerPage, fetchUserProjects])
+  }, [user, currentPage, itemsPerPage, fetchDashboardData])
 
   const handleLogout = async () => {
     await authService.logout()
@@ -125,7 +242,9 @@ export default function DashboardPage() {
     )
   }
 
-  const isTradie = userProfile.userType === 'tradie'
+  const hasOwnerRole = userProfile.roles?.some((r: UserRole) => r.role_type === 'owner')
+  const hasTradieRole = userProfile.roles?.some((r: UserRole) => r.role_type === 'tradie') 
+  const isMultiRole = (userProfile.roles?.length || 0) > 1
   const displayName = userProfile.name || user.email?.split('@')[0] || '用户'
 
   return (
@@ -143,11 +262,13 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 欢迎回来，{displayName}
+                {isMultiRole && <span className="text-sm text-gray-500 ml-2">🌟 多重身份</span>}
               </h1>
-              <div className="flex items-center space-x-2">
-                <Badge variant={isTradie ? "default" : "secondary"}>
-                  {isTradie ? '技师账户' : '房主账户'}
-                </Badge>
+              <div className="flex items-center space-x-2 mt-2">
+                <RoleBadges 
+                  roles={userProfile.roles || []} 
+                  activeRole={userProfile.activeRole || 'owner'}
+                />
                 {user.emailConfirmed ? (
                   <Badge className="bg-green-100 text-green-800">
                     <CheckCircle className="w-3 h-3 mr-1" />
@@ -204,55 +325,80 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Quick Actions */}
+            {/* 渐进式入门引导 */}
+            <ProgressiveOnboarding
+              userRoles={userProfile.roles || []}
+              projectCount={dashboardData?.projectStats.total || 0}
+              profileComplete={!!(userProfile.name && userProfile.phone && userProfile.address)}
+              emailVerified={user.emailConfirmed}
+            />
+            {/* 融合式快速操作 */}
             <Card>
               <CardHeader>
-                <CardTitle>快速操作</CardTitle>
+                <CardTitle className="flex items-center">
+                  快速操作
+                  {isMultiRole && <Badge className="ml-2 text-xs bg-purple-100 text-purple-800">融合功能</Badge>}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {isTradie ? (
-                    <>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <Eye className="w-6 h-6" />
-                        <span className="text-sm">查看项目</span>
-                      </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <MessageCircle className="w-6 h-6" />
-                        <span className="text-sm">客户消息</span>
-                      </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <Calendar className="w-6 h-6" />
-                        <span className="text-sm">日程安排</span>
-                      </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <DollarSign className="w-6 h-6" />
-                        <span className="text-sm">收入统计</span>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button className="h-20 flex flex-col items-center space-y-2 bg-green-600 hover:bg-green-700 text-white" asChild>
+                <div className="space-y-6">
+                  {/* 基础功能（所有用户） */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                      <Home className="w-4 h-4 mr-2 text-blue-600" />
+                      业主功能
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <Button className="h-16 flex flex-col items-center space-y-1 bg-blue-600 hover:bg-blue-700 text-white" asChild>
                         <Link href="/post-job">
-                          <Plus className="w-6 h-6" />
-                          <span className="text-sm">发布项目</span>
+                          <Plus className="w-5 h-5" />
+                          <span className="text-xs">发布项目</span>
                         </Link>
                       </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline" asChild>
+                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
                         <Link href="/browse-tradies">
-                          <User className="w-6 h-6" />
-                          <span className="text-sm">找技师</span>
+                          <User className="w-5 h-5" />
+                          <span className="text-xs">找技师</span>
                         </Link>
                       </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <MessageCircle className="w-6 h-6" />
-                        <span className="text-sm">消息</span>
+                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="text-xs">我的咨询</span>
                       </Button>
-                      <Button className="h-20 flex flex-col items-center space-y-2" variant="outline">
-                        <Calendar className="w-6 h-6" />
-                        <span className="text-sm">日程安排</span>
+                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                        <Calendar className="w-5 h-5" />
+                        <span className="text-xs">项目进度</span>
                       </Button>
-                    </>
+                    </div>
+                  </div>
+
+                  {/* 技师功能（仅技师显示） */}
+                  {hasTradieRole && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                        <Wrench className="w-4 h-4 mr-2 text-green-600" />
+                        技师功能
+                        <Badge className="ml-2 text-xs bg-green-100 text-green-800">专业服务</Badge>
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <Button className="h-16 flex flex-col items-center space-y-1 bg-green-600 hover:bg-green-700 text-white">
+                          <Eye className="w-5 h-5" />
+                          <span className="text-xs">可接项目</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
+                          <Briefcase className="w-5 h-5" />
+                          <span className="text-xs">我的服务</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
+                          <MessageCircle className="w-5 h-5" />
+                          <span className="text-xs">客户消息</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
+                          <DollarSign className="w-5 h-5" />
+                          <span className="text-xs">收入统计</span>
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -291,19 +437,17 @@ export default function DashboardPage() {
                         <div className="text-center py-8 text-gray-500">
                           <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">暂无项目记录</p>
-                          {!isTradie && (
-                            <Button className="mt-4" asChild>
-                              <Link href="/post-job">
-                                <Plus className="w-4 h-4 mr-2" />
-                                发布第一个项目
-                              </Link>
-                            </Button>
-                          )}
+                          <Button className="mt-4" asChild>
+                            <Link href="/post-job">
+                              <Plus className="w-4 h-4 mr-2" />
+                              发布第一个项目
+                            </Link>
+                          </Button>
                         </div>
                       ) : (
                         <>
                           <div className="space-y-3">
-                            {projects.map((project) => (
+                            {(dashboardData?.recentProjects || projects).slice(0, 5).map((project: any) => (
                               <div
                                 key={project.id}
                                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
@@ -413,108 +557,76 @@ export default function DashboardPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Profile Summary */}
+            {/* 融合式角色统计 */}
             <Card>
               <CardHeader>
-                <CardTitle>个人资料</CardTitle>
+                <CardTitle>账户信息</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label className="text-sm text-gray-500">姓名</Label>
-                  <p className="font-medium">{userProfile.name || '未填写'}</p>
+              <CardContent>
+                <RoleStats 
+                  ownerData={userProfile.ownerData}
+                  tradieData={userProfile.tradieData}
+                />
+                <div className="mt-4 pt-4 border-t space-y-3">
+                  <div>
+                    <Label className="text-sm text-gray-500">联系信息</Label>
+                    <p className="font-medium text-sm">{userProfile.name || '未填写'}</p>
+                    <p className="text-sm text-gray-600">{userProfile.phone || '未填写'}</p>
+                    <p className="text-sm text-gray-600">{userProfile.address || userProfile.location || '未填写'}</p>
+                  </div>
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href="/profile">
+                      <Settings className="w-4 h-4 mr-2" />
+                      编辑资料
+                    </Link>
+                  </Button>
                 </div>
-                <div>
-                  <Label className="text-sm text-gray-500">邮箱</Label>
-                  <p className="font-medium">{userProfile.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-500">电话</Label>
-                  <p className="font-medium">{userProfile.phone || '未填写'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-500">地址</Label>
-                  <p className="font-medium">{userProfile.location || '未填写'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-500">状态</Label>
-                  <Badge variant={userProfile.status === 'approved' ? 'default' : 'secondary'}>
-                    {userProfile.status === 'approved' ? '已认证' : userProfile.status === 'pending' ? '待审核' : '已关闭'}
-                  </Badge>
-                </div>
-
-                {/* Tradie specific info */}
-                {isTradie && userProfile.company && (
-                  <>
-                    <div>
-                      <Label className="text-sm text-gray-500">公司名称</Label>
-                      <p className="font-medium">{userProfile.company || '未填写'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">专业技能</Label>
-                      <p className="font-medium">{userProfile.specialty || '未填写'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">服务半径</Label>
-                      <p className="font-medium">{userProfile.serviceRadius || 25}公里</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">评分</Label>
-                      <p className="font-medium flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                        {userProfile.rating || '暂无'} ({userProfile.reviewCount || 0} 评价)
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                <Button className="w-full mt-4" variant="outline" asChild>
-                  <Link href="/profile">
-                    <Settings className="w-4 h-4 mr-2" />
-                    编辑资料
-                  </Link>
-                </Button>
               </CardContent>
             </Card>
 
-            {/* Statistics */}
+            {/* 快速统计 */}
             <Card>
               <CardHeader>
-                <CardTitle>统计信息</CardTitle>
+                <CardTitle>项目概览</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isTradie ? (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">完成项目</span>
-                      <span className="font-medium">0</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{dashboardData?.projectStats.total || 0}</div>
+                    <div className="text-xs text-blue-600">项目总数</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{dashboardData?.projectStats.published || 0}</div>
+                    <div className="text-xs text-green-600">已发布</div>
+                  </div>
+                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">{dashboardData?.projectStats.inProgress || 0}</div>
+                    <div className="text-xs text-yellow-600">进行中</div>
+                  </div>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{dashboardData?.projectStats.completed || 0}</div>
+                    <div className="text-xs text-purple-600">已完成</div>
+                  </div>
+                </div>
+
+                {/* 技师服务统计 */}
+                {hasTradieRole && dashboardData?.serviceStats && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center">
+                      <Wrench className="w-4 h-4 mr-2" />
+                      服务统计
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-2 bg-green-50 rounded">
+                        <div className="text-lg font-bold text-green-600">{dashboardData.serviceStats.availableJobs}</div>
+                        <div className="text-xs text-green-600">可接项目</div>
+                      </div>
+                      <div className="text-center p-2 bg-green-50 rounded">
+                        <div className="text-lg font-bold text-green-600">${dashboardData.serviceStats.monthlyRevenue}</div>
+                        <div className="text-xs text-green-600">本月收入</div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">客户评价</span>
-                      <span className="font-medium">0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">平均评分</span>
-                      <span className="font-medium flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                        暂无
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">发布项目</span>
-                      <span className="font-medium">0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">进行中</span>
-                      <span className="font-medium">0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">已完成</span>
-                      <span className="font-medium">0</span>
-                    </div>
-                  </>
+                  </div>
                 )}
               </CardContent>
             </Card>

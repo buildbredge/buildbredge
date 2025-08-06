@@ -12,10 +12,11 @@ function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  const { login, user } = useAuth()
+  const { login, user, sendEmailVerification } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -61,6 +62,29 @@ function LoginForm() {
     }
   }
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError("请先输入邮箱地址")
+      return
+    }
+
+    setIsResending(true)
+    setError("")
+    
+    try {
+      const result = await sendEmailVerification(email)
+      if (result.success) {
+        setSuccessMessage(result.message)
+      } else {
+        setError(result.message)
+      }
+    } catch (err) {
+      setError("发送验证邮件失败，请重试")
+    } finally {
+      setIsResending(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <Card className="w-full max-w-sm">
@@ -79,6 +103,20 @@ function LoginForm() {
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
                 {error}
+                {error.includes('邮箱尚未验证') && (
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                      className="text-xs"
+                    >
+                      {isResending ? "发送中..." : "重新发送验证邮件"}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
             

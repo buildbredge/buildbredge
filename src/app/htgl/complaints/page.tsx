@@ -34,7 +34,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     const user = localStorage.getItem("adminUser")
 
     if (!token || !user) {
-      router.push("/admin/login")
+      router.push("/htgl/login")
       return
     }
 
@@ -62,7 +62,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{adminUser.name}</span>
-              <Button variant="outline" size="sm" onClick={() => router.push("/admin/login")}>
+              <Button variant="outline" size="sm" onClick={() => router.push("/htgl/login")}>
                 退出
               </Button>
             </div>
@@ -73,13 +73,13 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
         <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)]">
           <nav className="p-4">
             <ul className="space-y-2">
-              <li><a href="/admin/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>仪表板</span></a></li>
-              <li><a href="/admin/users" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>用户管理</span></a></li>
-              <li><a href="/admin/tradies" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>技师管理</span></a></li>
-              <li><a href="/admin/suppliers" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>供应商管理</span></a></li>
-              <li><a href="/admin/support" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>客服管理</span></a></li>
-              <li><a href="/admin/complaints" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700"><AlertTriangle className="w-5 h-5" /><span>投诉管理</span></a></li>
-              <li><a href="/admin/reviews" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>评价管理</span></a></li>
+              <li><a href="/htgl/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>仪表板</span></a></li>
+              <li><a href="/htgl/users" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>用户管理</span></a></li>
+              <li><a href="/htgl/tradies" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>技师管理</span></a></li>
+              <li><a href="/htgl/suppliers" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>供应商管理</span></a></li>
+              <li><a href="/htgl/support" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>客服管理</span></a></li>
+              <li><a href="/htgl/complaints" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700"><AlertTriangle className="w-5 h-5" /><span>投诉管理</span></a></li>
+              <li><a href="/htgl/reviews" className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100"><AlertTriangle className="w-5 h-5" /><span>评价管理</span></a></li>
             </ul>
           </nav>
         </aside>

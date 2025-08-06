@@ -16,6 +16,7 @@ interface AuthContextType {
   logout: () => void
   sendEmailVerification: (email: string) => Promise<{ success: boolean; message: string }>
   updateUser: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>
+  switchRole: (role: 'owner' | 'tradie') => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -103,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const result = await apiClient.updateUserProfile({
       name: userData.name || user.name,
       phone: userData.phone || user.phone,
-      location: userData.location || user.location,
+      address: userData.address || user.address,
       company: userData.company,
       specialty: userData.specialty,
       serviceRadius: userData.serviceRadius
@@ -118,6 +119,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const switchRole = async (role: 'owner' | 'tradie'): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      return { success: false, message: '请先登录' }
+    }
+
+    // 检查用户是否拥有该角色
+    const hasRole = user.roles?.some(r => r.role_type === role)
+    if (!hasRole) {
+      return { success: false, message: `您没有${role === 'owner' ? '业主' : '技师'}角色` }
+    }
+
+    try {
+      const result = await apiClient.switchUserRole(role)
+      if (result.success && result.data) {
+        setUser(result.data)
+        return { success: true, message: `已切换到${role === 'owner' ? '业主' : '技师'}角色` }
+      } else {
+        return { success: false, message: result.error || '角色切换失败' }
+      }
+    } catch (error) {
+      return { success: false, message: '角色切换失败，请重试' }
+    }
+  }
+
   const value = {
     user,
     authUser,
@@ -126,7 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     sendEmailVerification,
-    updateUser
+    updateUser,
+    switchRole
   }
 
   return (

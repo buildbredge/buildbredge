@@ -26,22 +26,46 @@ interface ProjectDetailData extends ProjectData {
   budget: number | null
 }
 
+interface UserRole {
+  role_type: 'owner' | 'tradie'
+  is_primary: boolean
+  created_at: string
+}
+
 interface UserProfileData {
   id: string
   name: string
   email: string
   phone: string
-  userType: 'homeowner' | 'tradie'
-  location: string
+  address: string
+  status: 'pending' | 'approved' | 'closed' | 'active'
+  verified: boolean
+  emailVerified: boolean
+  createdAt: string
+  roles?: UserRole[]
+  activeRole?: 'owner' | 'tradie'
+  // Legacy properties for backward compatibility
   company?: string
   specialty?: string
   serviceRadius?: number
   rating?: number
   reviewCount?: number
-  status: 'pending' | 'approved' | 'closed'
-  verified: boolean
-  emailVerified: boolean
-  createdAt: string
+  location?: string
+  // 融合式设计：包含所有角色数据
+  ownerData?: {
+    status: string
+    balance: number
+    projectCount?: number
+  }
+  tradieData?: {
+    company: string
+    specialty: string
+    serviceRadius: number
+    rating: number
+    reviewCount: number
+    status: string
+    balance: number
+  }
 }
 
 interface PaginationData {
@@ -49,6 +73,37 @@ interface PaginationData {
   limit: number
   total: number
   totalPages: number
+}
+
+interface DashboardData {
+  projectStats: {
+    total: number
+    published: number
+    inProgress: number
+    completed: number
+    draft: number
+  }
+  recentProjects: Array<{
+    id: string
+    title: string
+    description: string
+    status: string
+    category: string
+    profession: string
+    location: string
+    createdAt: string
+  }>
+  serviceStats?: {
+    availableJobs: number
+    activeServices: number
+    pendingQuotes: number
+    monthlyRevenue: number
+  }
+  availableCategories: Array<{
+    id: string
+    name: string
+    count: number
+  }>
 }
 
 interface ProjectsListResponse {
@@ -170,14 +225,16 @@ class ApiClient {
   }
 
   // 用户资料相关API
-  async getUserProfile(): Promise<ApiResponse<UserProfileData>> {
-    return this.request<UserProfileData>('/users/profile')
+  async getUserProfile(role?: 'owner' | 'tradie'): Promise<ApiResponse<UserProfileData>> {
+    const params = role ? `?role=${role}` : ''
+    return this.request<UserProfileData>(`/users/profile${params}`)
   }
 
   async updateUserProfile(data: {
     name: string
     phone: string
-    location: string
+    address: string
+    role?: 'owner' | 'tradie'
     company?: string
     specialty?: string
     serviceRadius?: number
@@ -186,6 +243,15 @@ class ApiClient {
       method: 'PUT',
       body: JSON.stringify(data)
     })
+  }
+
+  async switchUserRole(role: 'owner' | 'tradie'): Promise<ApiResponse<UserProfileData>> {
+    return this.getUserProfile(role)
+  }
+
+  // Dashboard数据相关API
+  async getDashboardData(): Promise<ApiResponse<DashboardData>> {
+    return this.request<DashboardData>('/dashboard/data')
   }
 }
 
@@ -198,6 +264,8 @@ export type {
   ProjectData,
   ProjectDetailData,
   UserProfileData,
+  UserRole,
   ProjectsListResponse,
-  PaginationData
+  PaginationData,
+  DashboardData
 }

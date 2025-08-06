@@ -47,7 +47,7 @@ export default function ProfilePage() {
     if (user) {
       setFullName(user.name || "")
       setPhone(user.phone || "")
-      setAddress(user.location || "")
+      setAddress(user.address || "")
       setCompanyName(user.company || "")
     }
   }, [user, authLoading, router])
@@ -72,8 +72,8 @@ export default function ProfilePage() {
       const result = await updateUser({
         name: fullName,
         phone,
-        location: address,
-        company: user?.userType === "tradie" ? companyName : undefined,
+        address: address,
+        company: user?.activeRole === "tradie" ? companyName : undefined,
       })
 
       if (result.success) {
@@ -108,7 +108,7 @@ export default function ProfilePage() {
     return null
   }
 
-  const isTradie = user.userType === "tradie"
+  const isTradie = user.activeRole === "tradie"
 
   return (
     <div className="min-h-screen bg-gray-50">
