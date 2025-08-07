@@ -65,31 +65,10 @@ export async function GET() {
       p.status === 'completed'
     ).length || 0
 
-    const newProjectsThisMonth = projects?.filter(p => 
-      new Date(p.created_at) >= thisMonth
-    ).length || 0
-
-    const newProjectsLastMonth = projects?.filter(p => 
-      new Date(p.created_at) >= lastMonth && new Date(p.created_at) < thisMonth
-    ).length || 0
-
     // Review statistics
     const totalReviews = reviews?.length || 0
     const avgRating = reviews?.length ? 
       reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0
-
-    // Calculate growth rates
-    const userGrowthRate = newUsersLastMonth > 0 ? 
-      ((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth * 100) : 
-      (newUsersThisMonth > 0 ? 100 : 0)
-
-    const projectGrowthRate = newProjectsLastMonth > 0 ? 
-      ((newProjectsThisMonth - newProjectsLastMonth) / newProjectsLastMonth * 100) : 
-      (newProjectsThisMonth > 0 ? 100 : 0)
-
-    // Estimated revenue (mock calculation based on projects)
-    const estimatedRevenuePerProject = 50 // Assuming $50 average commission per project
-    const totalRevenue = completedProjects * estimatedRevenuePerProject
 
     const stats = {
       // User stats  

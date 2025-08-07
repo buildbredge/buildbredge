@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         name: user.name || 'Unknown',
         email: user.email,
         phone: user.phone || 'N/A',
-        userType: userTypeLabel as const,
+        userType: userTypeLabel,
         location: user.address || 'Not specified',
         joinDate: user.created_at,
         status: user.status,

@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  User, Home, Briefcase, MessageCircle, Star,
-  Settings, Plus, Eye, Calendar, DollarSign,
+  Home, Briefcase, MessageCircle, Star,
+  Settings, Plus, Eye, DollarSign,
   Bell, LogOut, Shield, CheckCircle, Clock,
   ChevronLeft, ChevronRight, Wrench
 } from "lucide-react"
@@ -342,35 +342,47 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* 基础功能（所有用户） */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                      <Home className="w-4 h-4 mr-2 text-blue-600" />
-                      业主功能
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <Button className="h-16 flex flex-col items-center space-y-1 bg-blue-600 hover:bg-blue-700 text-white" asChild>
-                        <Link href="/post-job">
-                          <Plus className="w-5 h-5" />
-                          <span className="text-xs">发布项目</span>
-                        </Link>
-                      </Button>
-                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
-                        <Link href="/browse-tradies">
-                          <User className="w-5 h-5" />
-                          <span className="text-xs">找技师</span>
-                        </Link>
-                      </Button>
-                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="text-xs">我的咨询</span>
-                      </Button>
-                      <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-xs">项目进度</span>
-                      </Button>
+                  {/* 业主功能（仅业主显示） */}
+                  {hasOwnerRole && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                        <Home className="w-4 h-4 mr-2 text-blue-600" />
+                        业主功能
+                      </h4>
+                      {/* 发布项目按钮 - 单独一行 */}
+                      <div className="mb-4">
+                        <Button className="w-full h-16 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-lg font-medium" asChild>
+                          <Link href="/post-job">
+                            <Plus className="w-6 h-6" />
+                            <span>发布项目</span>
+                          </Link>
+                        </Button>
+                      </div>
+                      {/* 功能卡片 */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                          <Briefcase className="w-5 h-5" />
+                          <span className="text-xs">我的订单</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                          <MessageCircle className="w-5 h-5" />
+                          <span className="text-xs">我的发布</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                          <Clock className="w-5 h-5" />
+                          <span className="text-xs">历史记录</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                          <Star className="w-5 h-5" />
+                          <span className="text-xs">评价技师</span>
+                        </Button>
+                        <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline">
+                          <DollarSign className="w-5 h-5" />
+                          <span className="text-xs">最新折扣</span>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* 技师功能（仅技师显示） */}
                   {hasTradieRole && (
@@ -383,7 +395,7 @@ export default function DashboardPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <Button className="h-16 flex flex-col items-center space-y-1 bg-green-600 hover:bg-green-700 text-white">
                           <Eye className="w-5 h-5" />
-                          <span className="text-xs">可接项目</span>
+                          <span className="text-xs">最新需求</span>
                         </Button>
                         <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
                           <Briefcase className="w-5 h-5" />
@@ -391,11 +403,11 @@ export default function DashboardPage() {
                         </Button>
                         <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
                           <MessageCircle className="w-5 h-5" />
-                          <span className="text-xs">客户消息</span>
+                          <span className="text-xs">最新通知</span>
                         </Button>
                         <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
                           <DollarSign className="w-5 h-5" />
-                          <span className="text-xs">收入统计</span>
+                          <span className="text-xs">我的报价</span>
                         </Button>
                       </div>
                     </div>
