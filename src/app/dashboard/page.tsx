@@ -449,12 +449,7 @@ export default function DashboardPage() {
                         <div className="text-center py-8 text-gray-500">
                           <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p className="text-sm">暂无项目记录</p>
-                          <Button className="mt-4" asChild>
-                            <Link href="/post-job">
-                              <Plus className="w-4 h-4 mr-2" />
-                              发布第一个项目
-                            </Link>
-                          </Button>
+                         
                         </div>
                       ) : (
                         <>

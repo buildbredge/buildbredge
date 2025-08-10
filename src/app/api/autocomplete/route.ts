@@ -18,33 +18,57 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
   }
 
-  const endpoint = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-    input,
-  )}&key=${apiKey}&language=en&components=country:nz|country:au|country:us|country:ca&types=address`
+  // Use the new Places API (Text Search - Autocomplete)
+  const endpoint = `https://places.googleapis.com/v1/places:autocomplete`
 
   try {
-    
-    const response = await fetch(endpoint)
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+      },
+      body: JSON.stringify({
+        input: input,
+        languageCode: 'en',
+        regionCode: 'NZ', // Default to New Zealand, but will also include other countries
+        includedRegionCodes: ['NZ', 'AU', 'US', 'CA'],
+        includedPrimaryTypes: ['establishment', 'geocode']
+      })
+    })
     const data = await response.json()
 
 
-    // ZERO_RESULTS是正常状态，表示没有找到匹配结果
-    if (data.status === "ZERO_RESULTS") {
+    // Handle new API response format
+    if (data.error) {
+      return NextResponse.json({ 
+        error: "Google API error", 
+        details: data.error
+      }, { status: 500 })
+    }
+
+    // Transform new API response to match legacy format for frontend compatibility
+    const suggestions = data.suggestions || []
+    const predictions = suggestions.map((suggestion: any) => ({
+      description: suggestion.placePrediction?.text?.text || suggestion.stringData?.text || '',
+      place_id: suggestion.placePrediction?.placeId || '',
+      structured_formatting: {
+        main_text: suggestion.placePrediction?.structuredFormat?.mainText?.text || suggestion.stringData?.text || '',
+        secondary_text: suggestion.placePrediction?.structuredFormat?.secondaryText?.text || ''
+      }
+    })).filter((pred: any) => pred.place_id) // Only keep place predictions, not string suggestions
+
+    if (predictions.length === 0) {
       return NextResponse.json({ 
         status: "ZERO_RESULTS", 
         predictions: [] 
       })
     }
 
-    if (data.status !== "OK") {
-      return NextResponse.json({ 
-        error: "Google API error", 
-        details: data,
-        status: data.status 
-      }, { status: 500 })
-    }
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      status: "OK",
+      predictions: predictions
+    })
     
   } catch (error) {
     console.error("❌ 服务器错误:", error)
