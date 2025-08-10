@@ -26,8 +26,6 @@ Netlify的秘密扫描检测到了硬编码的API密钥，已修复：
 # Google Places API密钥（服务器端）
 GOOGLE_PLACES_API_KEY = 
 
-# Google Maps API密钥（客户端）
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = 
 
 # Supabase配置（如果需要）
 NEXT_PUBLIC_SUPABASE_URL = your-supabase-url

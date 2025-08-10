@@ -37,6 +37,7 @@ interface UserProfileData {
   name: string
   email: string
   phone: string
+  phone_verified?: boolean
   address: string
   status: 'pending' | 'approved' | 'closed' | 'active'
   verified: boolean

@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { ArrowLeft, Save, User, Phone, MapPin, Building } from "lucide-react"
+import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 const tradieSpecialties = [
   "电工", "水管工", "木工", "油漆工", "瓦工", "焊工",
@@ -29,14 +30,25 @@ export default function ProfilePage() {
   // 基础信息
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
+  const [phoneVerified, setPhoneVerified] = useState(false)
   const [address, setAddress] = useState("")
   
   // Tradie专用信息
   const [companyName, setCompanyName] = useState("")
+  const [specialty, setSpecialty] = useState("")
   const [specialties, setSpecialties] = useState<string[]>([])
   const [hourlyRate, setHourlyRate] = useState("")
   const [experienceYears, setExperienceYears] = useState("")
   const [bio, setBio] = useState("")
+  
+  // OTP verification states
+  const [showPhoneVerificationDialog, setShowPhoneVerificationDialog] = useState(false)
+  const [otpStep, setOtpStep] = useState<'input' | 'verify' | 'completed'>('input')
+  const [verificationCode, setVerificationCode] = useState("")
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [otpError, setOtpError] = useState("")
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -47,10 +59,29 @@ export default function ProfilePage() {
     if (user) {
       setFullName(user.name || "")
       setPhone(user.phone || "")
+      setPhoneVerified(user.phone_verified || false)
       setAddress(user.address || "")
-      setCompanyName(user.company || "")
+      
+      // Load tradie data if available
+      if (user.tradieData) {
+        setCompanyName(user.tradieData.company || "")
+        setSpecialty(user.tradieData.specialty || "")
+      }
     }
   }, [user, authLoading, router])
+
+  // 倒计时定时器
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown(prev => prev - 1)
+      }, 1000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [countdown])
 
   const handleAddSpecialty = (specialty: string) => {
     if (!specialties.includes(specialty)) {
@@ -60,6 +91,107 @@ export default function ProfilePage() {
 
   const handleRemoveSpecialty = (specialty: string) => {
     setSpecialties(specialties.filter(s => s !== specialty))
+  }
+
+  const handleSendOtp = async () => {
+    if (!phone.trim()) {
+      setOtpError("请输入手机号码")
+      return
+    }
+    
+    if (!user?.id) {
+      setOtpError("用户信息错误")
+      return
+    }
+    
+    setIsSendingOtp(true)
+    setOtpError("")
+    
+    try {
+      const response = await fetch('/api/phone/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: phone,
+          userId: user.id
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        setOtpStep('verify')
+        setCountdown(60)
+        setSuccess("验证码发送成功！")
+        setTimeout(() => setSuccess(""), 3000)
+      } else {
+        setOtpError(result.message || "发送验证码失败")
+      }
+    } catch (error) {
+      console.error('发送验证码失败:', error)
+      setOtpError("发送验证码失败，请重试")
+    } finally {
+      setIsSendingOtp(false)
+    }
+  }
+
+  const handleVerifyOtp = async () => {
+    if (!verificationCode.trim() || verificationCode.length !== 6) {
+      setOtpError("请输入6位验证码")
+      return
+    }
+    
+    if (!user?.id) {
+      setOtpError("用户信息错误")
+      return
+    }
+    
+    setIsVerifyingOtp(true)
+    setOtpError("")
+    
+    try {
+      const response = await fetch('/api/phone/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: phone,
+          code: verificationCode,
+          userId: user.id
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        setPhoneVerified(true)
+        setOtpStep('completed')
+        setSuccess("手机号码验证成功！")
+        setShowPhoneVerificationDialog(false)
+        
+        // Refresh user data
+        await updateUser({})
+        
+        setTimeout(() => setSuccess(""), 3000)
+      } else {
+        setOtpError(result.message || "验证失败")
+      }
+    } catch (error) {
+      console.error('验证失败:', error)
+      setOtpError("验证失败，请重试")
+    } finally {
+      setIsVerifyingOtp(false)
+    }
+  }
+
+  const openPhoneVerificationDialog = () => {
+    setOtpStep('input')
+    setVerificationCode("")
+    setOtpError("")
+    setShowPhoneVerificationDialog(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,14 +328,39 @@ export default function ProfilePage() {
                           <Phone className="w-4 h-4 inline mr-2" />
                           电话号码 *
                         </Label>
-                        <Input 
-                          id="phone" 
-                          type="tel" 
-                          value={phone} 
-                          onChange={e => setPhone(e.target.value)} 
-                          placeholder="请输入电话号码" 
-                          required 
-                        />
+                        <div className="flex items-center space-x-2">
+                          <Input 
+                            id="phone" 
+                            type="tel" 
+                            value={phone} 
+                            onChange={e => setPhone(e.target.value)} 
+                            placeholder="请输入电话号码" 
+                            required 
+                            className="flex-1"
+                          />
+                          {phoneVerified ? (
+                            <Badge className="bg-green-100 text-green-700 px-2 py-1">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              已验证
+                            </Badge>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={openPhoneVerificationDialog}
+                              className="whitespace-nowrap"
+                            >
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              验证
+                            </Button>
+                          )}
+                        </div>
+                        {!phoneVerified && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            建议验证手机号码以提高信任度
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -227,17 +384,35 @@ export default function ProfilePage() {
                         <hr className="my-6" />
                         <h3 className="text-lg font-semibold mb-4">技师信息</h3>
                         
-                        <div>
-                          <Label htmlFor="companyName">
-                            <Building className="w-4 h-4 inline mr-2" />
-                            公司名称
-                          </Label>
-                          <Input 
-                            id="companyName" 
-                            value={companyName} 
-                            onChange={e => setCompanyName(e.target.value)} 
-                            placeholder="请输入公司名称（可选）" 
-                          />
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="companyName">
+                              <Building className="w-4 h-4 inline mr-2" />
+                              公司名称
+                            </Label>
+                            <Input 
+                              id="companyName" 
+                              value={companyName} 
+                              onChange={e => setCompanyName(e.target.value)} 
+                              placeholder="请输入公司名称（可选）" 
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="specialty">专业技能</Label>
+                            <Input 
+                              id="specialty" 
+                              value={specialty}
+                              onChange={e => setSpecialty(e.target.value)}
+                              placeholder="您的主要专业技能"
+                              readOnly={specialty ? true : false}
+                            />
+                            {specialty && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                专业技能来自系统设置，如需修改请联系管理员
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-4">
@@ -339,6 +514,140 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Phone Verification Dialog */}
+      <Dialog open={showPhoneVerificationDialog} onOpenChange={setShowPhoneVerificationDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {otpStep === 'input' ? '验证手机号码' : 
+               otpStep === 'verify' ? '输入验证码' : '验证完成'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Step 1: Input Phone Number */}
+            {otpStep === 'input' && (
+              <>
+                <div>
+                  <Label htmlFor="verification-phone">手机号码</Label>
+                  <Input
+                    id="verification-phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="请输入手机号码 (如: +8613800138000)"
+                    disabled={isSendingOtp}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    我们将发送验证码到此号码进行验证
+                  </p>
+                </div>
+                
+                {otpError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{otpError}</p>
+                  </div>
+                )}
+                
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={handleSendOtp}
+                    disabled={!phone.trim() || isSendingOtp}
+                    className="flex-1"
+                  >
+                    {isSendingOtp ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    发送验证码
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPhoneVerificationDialog(false)
+                      setOtpError("")
+                    }}
+                  >
+                    取消
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Verify Code */}
+            {otpStep === 'verify' && (
+              <>
+                <div>
+                  <Label htmlFor="verification-code">验证码</Label>
+                  <Input
+                    id="verification-code"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      if (value.length <= 6) {
+                        setVerificationCode(value)
+                        setOtpError("")
+                      }
+                    }}
+                    placeholder="请输入6位验证码"
+                    maxLength={6}
+                    disabled={isVerifyingOtp}
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-sm text-gray-500">
+                      验证码已发送到 {phone.replace(/(.*\d{4})\d{4}(\d{4})/, '$1****$2')}
+                    </p>
+                    {countdown > 0 ? (
+                      <p className="text-sm text-gray-500">
+                        {countdown}秒后可重新发送
+                      </p>
+                    ) : (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={handleSendOtp}
+                        disabled={isSendingOtp}
+                        className="p-0 h-auto text-sm"
+                      >
+                        重新发送
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {otpError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{otpError}</p>
+                  </div>
+                )}
+                
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={handleVerifyOtp}
+                    disabled={verificationCode.length !== 6 || isVerifyingOtp}
+                    className="flex-1"
+                  >
+                    {isVerifyingOtp ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    验证
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setOtpStep('input')
+                      setVerificationCode("")
+                      setOtpError("")
+                    }}
+                  >
+                    返回
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

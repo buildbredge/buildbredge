@@ -41,7 +41,25 @@ class AuthService {
         let message = '登录失败，请重试'
         
         if (error.message.includes('Invalid login credentials')) {
-          message = '登录失败。可能原因：1) 邮箱或密码错误 2) 邮箱尚未验证。请检查您的邮箱并点击验证链接，或重新发送验证邮件。'
+          // 通过查询用户资料表来检查用户是否存在
+          try {
+            const { data: userProfile } = await supabase
+              .from('users')
+              .select('email')
+              .eq('email', email)
+              .single()
+            
+            if (!userProfile) {
+              message = '该邮箱不存在，请检查邮箱地址或先注册账户'
+            } else {
+              // 用户存在，那么可能是密码错误或邮箱未验证
+              // 由于我们无法直接检查验证状态，提供更明确的错误信息
+              message = '登录失败，请检查密码是否正确，或确认邮箱是否已验证'
+            }
+          } catch (checkError) {
+            // 如果查询失败，使用通用错误消息
+            message = '登录失败，请检查邮箱和密码'
+          }
         } else if (error.message.includes('Email not confirmed')) {
           message = '请先验证您的邮箱地址。请检查您的邮箱（包括垃圾邮件夹）并点击验证链接。'
         } else if (error.message.includes('Too many requests')) {
@@ -216,7 +234,7 @@ class AuthService {
 
   // 监听认证状态变化
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange((event, session) => {
+    return supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         apiClient.setAuthToken(session.access_token)
         callback({
