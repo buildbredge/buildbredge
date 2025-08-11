@@ -81,8 +81,19 @@ export function TradieProfileCompletion({
 
   const isTradie = userProfile.roles?.some(role => role.role_type === 'tradie')
   
+  // 主要依赖数据库数据，本地状态只在更新过程中临时使用
   const phoneVerified = !!(userProfile.phone_verified) || localPhoneVerified
   const categorySelected = !!(userProfile.tradieData?.specialty) || localCategoryUpdated
+  
+  // 如果数据库中已有数据，清除本地状态标记（避免重复计算）
+  useEffect(() => {
+    if (userProfile.phone_verified && localPhoneVerified) {
+      setLocalPhoneVerified(false)
+    }
+    if (userProfile.tradieData?.specialty && localCategoryUpdated) {
+      setLocalCategoryUpdated(false)
+    }
+  }, [userProfile.phone_verified, userProfile.tradieData?.specialty])
   
   const completionSteps: CompletionStep[] = [
     {
@@ -130,15 +141,7 @@ export function TradieProfileCompletion({
     }
   }, [countdown])
 
-  // 当真正的用户资料更新时，重置本地状态标记
-  useEffect(() => {
-    if (userProfile.phone_verified && localPhoneVerified) {
-      setLocalPhoneVerified(false)
-    }
-    if (userProfile.tradieData?.specialty && localCategoryUpdated) {
-      setLocalCategoryUpdated(false)
-    }
-  }, [userProfile.phone_verified, userProfile.tradieData?.specialty, localPhoneVerified, localCategoryUpdated])
+  // 注释：已经在上面处理了本地状态的清理
 
   const getAuthToken = async () => {
     const session = await authService.getCurrentSession()
@@ -173,6 +176,45 @@ export function TradieProfileCompletion({
     setIsSendingOtp(true)
     setOtpError("")
     
+    // Show development message and directly verify the phone
+    setTimeout(async () => {
+      setShowSuccessMessage("短信验证功能正在开发中，系统已自动完成验证！")
+      
+      // Update phone number in database and mark as verified
+      try {
+        const response = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getAuthToken()}`
+          },
+          body: JSON.stringify({
+            name: userProfile.name || "",
+            phone: phoneNumber,
+            phone_verified: true,
+            address: userProfile.address || "",
+            company: userProfile.tradieData?.company,
+            specialty: userProfile.tradieData?.specialty
+          })
+        })
+        
+        if (response.ok) {
+          setLocalPhoneVerified(true)
+          setShowPhoneDialog(false)
+          onProfileUpdate?.()
+        } else {
+          setOtpError("更新手机号码失败，请重试")
+        }
+      } catch (error) {
+        console.error('更新手机号码失败:', error)
+        setOtpError("更新手机号码失败，请重试")
+      }
+      
+      setTimeout(() => setShowSuccessMessage(""), 5000)
+      setIsSendingOtp(false)
+    }, 1000)
+    
+    /* Original SMS verification code - disabled
     try {
       const response = await fetch('/api/phone/send-otp', {
         method: 'POST',
@@ -201,64 +243,40 @@ export function TradieProfileCompletion({
     } finally {
       setIsSendingOtp(false)
     }
+    */
   }
 
   const handleVerifyOtp = async () => {
-    if (!verificationCode.trim() || verificationCode.length !== 6) {
-      setOtpError("请输入6位验证码")
-      return
-    }
-    
-    if (!userProfile.id) {
-      setOtpError("用户信息错误")
-      return
-    }
-    
-    setIsVerifyingOtp(true)
-    setOtpError("")
-    
-    try {
-      const response = await fetch('/api/phone/verify-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          code: verificationCode,
-          userId: userProfile.id
-        })
-      })
-      
-      const result = await response.json()
-      
-      if (response.ok && result.success) {
-        setLocalPhoneVerified(true)
-        setOtpStep('completed')
-        setShowSuccessMessage("手机号码验证成功！")
-        setShowPhoneDialog(false)
-        onProfileUpdate?.()
-        
-        // 3秒后隐藏成功消息
-        setTimeout(() => setShowSuccessMessage(""), 3000)
-      } else {
-        setOtpError(result.message || "验证失败")
-      }
-    } catch (error) {
-      console.error('验证失败:', error)
-      setOtpError("验证失败，请重试")
-    } finally {
-      setIsVerifyingOtp(false)
-    }
+    // This function is no longer needed since we directly verify upon sending
+    // Kept for UI compatibility but should not be called
+    console.log("handleVerifyOtp called - this should not happen with the new flow")
   }
 
   const handleCategoryUpdate = async () => {
     if (!selectedCategory) return
     
+    console.log('Frontend - Starting category update for category:', selectedCategory)
+    
     setIsUpdatingCategory(true)
     try {
       const category = categories.find(c => c.id === selectedCategory)
-      if (!category) return
+      if (!category) {
+        console.log('Frontend - Category not found')
+        return
+      }
+
+      console.log('Frontend - Selected category:', category)
+
+      const requestData = {
+        name: userProfile.name || "",
+        phone: userProfile.phone || "",
+        address: userProfile.address || "",
+        role: 'tradie',
+        company: userProfile.tradieData?.company,
+        specialty: category.name_zh
+      }
+      
+      console.log('Frontend - Sending request with data:', requestData)
 
       const response = await fetch('/api/users/profile', {
         method: 'PUT',
@@ -266,18 +284,17 @@ export function TradieProfileCompletion({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await getAuthToken()}`
         },
-        body: JSON.stringify({
-          name: userProfile.name || "",
-          phone: userProfile.phone || "",
-          address: userProfile.address || "",
-          company: userProfile.tradieData?.company,
-          specialty: category.name_zh
-        })
+        body: JSON.stringify(requestData)
       })
+      
+      console.log('Frontend - API response status:', response.status)
       
       if (response.ok) {
         const result = await response.json()
+        console.log('Frontend - API response:', result)
+        
         if (result.success) {
+          console.log('Frontend - PUT API debug info:', result.debug)
           setLocalCategoryUpdated(true)
           setShowSuccessMessage("工作类别更新成功！")
           setShowCategoryDialog(false)
@@ -285,7 +302,12 @@ export function TradieProfileCompletion({
           
           // 3秒后隐藏成功消息
           setTimeout(() => setShowSuccessMessage(""), 3000)
+        } else {
+          console.log('Frontend - API returned success: false')
         }
+      } else {
+        const errorResult = await response.json()
+        console.log('Frontend - API error response:', errorResult)
       }
     } catch (error) {
       console.error('更新服务类别失败:', error)
@@ -297,6 +319,20 @@ export function TradieProfileCompletion({
   // 如果不是技师角色，不显示
   if (!isTradie) {
     return null
+  }
+
+  // 如果用户资料还在加载中，显示加载状态
+  if (!userProfile.id) {
+    return (
+      <Card className="border-gray-200">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600"></div>
+            <p className="text-gray-600">正在加载资料完成状态...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   // 如果所有步骤都完成了，显示一个简洁的完成状态

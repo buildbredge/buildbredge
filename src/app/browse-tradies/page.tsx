@@ -99,8 +99,8 @@ interface ExtendedTradie {
   latitude: number | null
   longitude: number | null
   address: string | null
-  service_radius: number
-  status: 'pending' | 'approved' | 'closed'
+  service_radius: number | null
+  status: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
   balance: number
   rating: number | null
   review_count: number

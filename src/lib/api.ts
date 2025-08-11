@@ -4,13 +4,14 @@ export type Project = Database['public']['Tables']['projects']['Row']
 export type ProjectInsert = Database['public']['Tables']['projects']['Insert']
 export type ProjectUpdate = Database['public']['Tables']['projects']['Update']
 
-export type Owner = Database['public']['Tables']['owners']['Row']
-export type OwnerInsert = Database['public']['Tables']['owners']['Insert']
-export type OwnerUpdate = Database['public']['Tables']['owners']['Update']
+// Owner and Tradie now use the unified users table
+export type Owner = Database['public']['Tables']['users']['Row']
+export type OwnerInsert = Database['public']['Tables']['users']['Insert']
+export type OwnerUpdate = Database['public']['Tables']['users']['Update']
 
-export type Tradie = Database['public']['Tables']['tradies']['Row']
-export type TradieInsert = Database['public']['Tables']['tradies']['Insert']
-export type TradieUpdate = Database['public']['Tables']['tradies']['Update']
+export type Tradie = Database['public']['Tables']['users']['Row']
+export type TradieInsert = Database['public']['Tables']['users']['Insert']
+export type TradieUpdate = Database['public']['Tables']['users']['Update']
 
 export type Review = Database['public']['Tables']['reviews']['Row']
 export type ReviewInsert = Database['public']['Tables']['reviews']['Insert']
@@ -180,19 +181,28 @@ export const ownersApi = {
   // 获取所有业主
   async getAll(): Promise<Owner[]> {
     const { data, error } = await supabase
-      .from('owners')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
+      .eq('user_roles.role_type', 'owner')
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return data?.filter(user => 
+      user.user_roles?.some((role: any) => role.role_type === 'owner')
+    ) || []
   },
 
   // 根据ID获取业主
   async getById(id: string): Promise<Owner | null> {
     const { data, error } = await supabase
-      .from('owners')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('id', id)
       .single()
 
@@ -202,61 +212,115 @@ export const ownersApi = {
       }
       throw error
     }
-    return data
+    
+    // 检查用户是否有owner角色
+    const hasOwnerRole = data?.user_roles?.some((role: any) => role.role_type === 'owner')
+    return hasOwnerRole ? data : null
   },
 
-  // 创建新业主
+  // 创建新业主（现在通过统一用户系统处理）
   async create(owner: OwnerInsert): Promise<Owner> {
-    const { data, error } = await supabase
-      .from('owners')
-      .insert(owner)
+    // 先创建用户记录
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        name: owner.name,
+        email: owner.email,
+        phone: owner.phone,
+        address: owner.address,
+        status: owner.status || 'pending',
+        latitude: owner.latitude,
+        longitude: owner.longitude
+      })
       .select()
       .single()
 
-    if (error) throw error
-    return data
+    if (userError) throw userError
+
+    // 然后创建owner角色
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userData.id,
+        role_type: 'owner',
+        is_primary: true
+      })
+
+    if (roleError) throw roleError
+    return userData
   },
 
   // 更新业主
   async update(id: string, updates: OwnerUpdate): Promise<Owner> {
     const { data, error } = await supabase
-      .from('owners')
+      .from('users')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .single()
 
     if (error) throw error
     return data
   },
 
-  // 删除业主
+  // 删除业主（删除用户和角色）
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('owners')
+    // 先删除角色（外键约束）
+    const { error: roleError } = await supabase
+      .from('user_roles')
       .delete()
-      .eq('id', id)
+      .eq('user_id', id)
+      .eq('role_type', 'owner')
 
-    if (error) throw error
+    if (roleError) throw roleError
+
+    // 检查用户是否还有其他角色
+    const { data: remainingRoles, error: checkError } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', id)
+
+    if (checkError) throw checkError
+
+    // 如果没有其他角色，删除用户记录
+    if (!remainingRoles || remainingRoles.length === 0) {
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id)
+
+      if (userError) throw userError
+    }
   },
 
   // 根据状态获取业主
   async getByStatus(status: Owner['status']): Promise<Owner[]> {
     const { data, error } = await supabase
-      .from('owners')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('status', status)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return data?.filter(user => 
+      user.user_roles?.some((role: any) => role.role_type === 'owner')
+    ) || []
   },
 
   // 根据邮箱查找业主
   async getByEmail(email: string): Promise<Owner | null> {
     const { data, error } = await supabase
-      .from('owners')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('email', email)
       .single()
 
@@ -266,7 +330,10 @@ export const ownersApi = {
       }
       throw error
     }
-    return data
+    
+    // 检查用户是否有owner角色
+    const hasOwnerRole = data?.user_roles?.some((role: any) => role.role_type === 'owner')
+    return hasOwnerRole ? data : null
   }
 }
 
@@ -275,12 +342,17 @@ export const tradiesApi = {
   // 获取所有技师
   async getAll(): Promise<Tradie[]> {
     const { data, error } = await supabase
-      .from('tradies')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return data?.filter(user => 
+      user.user_roles?.some((role: any) => role.role_type === 'tradie')
+    ) || []
   },
 
   // 获取技师统计信息
@@ -297,8 +369,11 @@ export const tradiesApi = {
   // 根据ID获取技师
   async getById(id: string): Promise<Tradie | null> {
     const { data, error } = await supabase
-      .from('tradies')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('id', id)
       .single()
 
@@ -308,7 +383,10 @@ export const tradiesApi = {
       }
       throw error
     }
-    return data
+    
+    // 检查用户是否有tradie角色
+    const hasTradieRole = data?.user_roles?.some((role: any) => role.role_type === 'tradie')
+    return hasTradieRole ? data : null
   },
 
   // 根据ID获取技师统计信息
@@ -328,71 +406,130 @@ export const tradiesApi = {
     return data
   },
 
-  // 创建新技师
+  // 创建新技师（现在通过统一用户系统处理）
   async create(tradie: TradieInsert): Promise<Tradie> {
-    const { data, error } = await supabase
-      .from('tradies')
-      .insert(tradie)
+    // 先创建用户记录
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        name: tradie.name,
+        email: tradie.email,
+        phone: tradie.phone,
+        address: tradie.address,
+        company: tradie.company,
+        specialty: tradie.specialty,
+        service_radius: tradie.service_radius,
+        status: tradie.status || 'pending',
+        latitude: tradie.latitude,
+        longitude: tradie.longitude
+      })
       .select()
       .single()
 
-    if (error) throw error
-    return data
+    if (userError) throw userError
+
+    // 然后创建tradie角色
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: userData.id,
+        role_type: 'tradie',
+        is_primary: true
+      })
+
+    if (roleError) throw roleError
+    return userData
   },
 
   // 更新技师
   async update(id: string, updates: TradieUpdate): Promise<Tradie> {
     const { data, error } = await supabase
-      .from('tradies')
+      .from('users')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .single()
 
     if (error) throw error
     return data
   },
 
-  // 删除技师
+  // 删除技师（删除用户和角色）
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('tradies')
+    // 先删除角色（外键约束）
+    const { error: roleError } = await supabase
+      .from('user_roles')
       .delete()
-      .eq('id', id)
+      .eq('user_id', id)
+      .eq('role_type', 'tradie')
 
-    if (error) throw error
+    if (roleError) throw roleError
+
+    // 检查用户是否还有其他角色
+    const { data: remainingRoles, error: checkError } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', id)
+
+    if (checkError) throw checkError
+
+    // 如果没有其他角色，删除用户记录
+    if (!remainingRoles || remainingRoles.length === 0) {
+      const { error: userError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id)
+
+      if (userError) throw userError
+    }
   },
 
   // 根据状态获取技师
   async getByStatus(status: Tradie['status']): Promise<Tradie[]> {
     const { data, error } = await supabase
-      .from('tradies')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('status', status)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return data?.filter(user => 
+      user.user_roles?.some((role: any) => role.role_type === 'tradie')
+    ) || []
   },
 
   // 根据专业获取技师
   async getBySpecialty(specialty: string): Promise<Tradie[]> {
     const { data, error } = await supabase
-      .from('tradies')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('specialty', specialty)
       .eq('status', 'approved')
       .order('rating', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return data?.filter(user => 
+      user.user_roles?.some((role: any) => role.role_type === 'tradie')
+    ) || []
   },
 
   // 根据邮箱查找技师
   async getByEmail(email: string): Promise<Tradie | null> {
     const { data, error } = await supabase
-      .from('tradies')
-      .select('*')
+      .from('users')
+      .select(`
+        *,
+        user_roles(*)
+      `)
       .eq('email', email)
       .single()
 
@@ -402,7 +539,10 @@ export const tradiesApi = {
       }
       throw error
     }
-    return data
+    
+    // 检查用户是否有tradie角色
+    const hasTradieRole = data?.user_roles?.some((role: any) => role.role_type === 'tradie')
+    return hasTradieRole ? data : null
   },
 
   // 获取已认证的技师
@@ -653,29 +793,30 @@ export function getCurrentLocation(): Promise<Coordinates> {
 
 // 用户邮箱检查API
 export const userApi = {
-  // 检查邮箱是否已存在（在owners或tradies表中）
+  // 检查邮箱是否已存在（在统一用户表中）
   async checkEmailExists(email: string): Promise<{ exists: boolean; userType?: 'homeowner' | 'tradie' }> {
     try {
-      // 先检查owners表
-      const { data: ownerData } = await supabase
-        .from('owners')
-        .select('id')
+      // 从统一用户表中查找用户及其角色
+      const { data: userData } = await supabase
+        .from('users')
+        .select(`
+          id,
+          user_roles(role_type)
+        `)
         .eq('email', email)
         .single()
 
-      if (ownerData) {
-        return { exists: true, userType: 'homeowner' }
-      }
-
-      // 再检查tradies表
-      const { data: tradieData } = await supabase
-        .from('tradies')
-        .select('id')
-        .eq('email', email)
-        .single()
-
-      if (tradieData) {
-        return { exists: true, userType: 'tradie' }
+      if (userData && userData.user_roles && userData.user_roles.length > 0) {
+        // 检查用户的主要角色类型
+        const hasOwnerRole = userData.user_roles.some((role: any) => role.role_type === 'owner')
+        const hasTradieRole = userData.user_roles.some((role: any) => role.role_type === 'tradie')
+        
+        // 返回第一个找到的角色类型
+        if (hasOwnerRole) {
+          return { exists: true, userType: 'homeowner' }
+        } else if (hasTradieRole) {
+          return { exists: true, userType: 'tradie' }
+        }
       }
 
       return { exists: false }

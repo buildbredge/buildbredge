@@ -63,6 +63,7 @@ interface ExtendedUserProfileData extends UserProfileData {
   roles?: UserRole[]
   activeRole?: 'owner' | 'tradie'
   address?: string
+  phone_verified?: boolean
   ownerData?: {
     status: string
     balance: number
@@ -116,6 +117,12 @@ export default function TradieDashboardPage() {
       
       if (profileResponse.success && profileResponse.data) {
         const profile = profileResponse.data as ExtendedUserProfileData
+        console.log('Frontend - Received profile data:', {
+          phone_verified: profile.phone_verified,
+          tradieData: profile.tradieData,
+          specialty: profile.tradieData?.specialty
+        })
+        console.log('API Debug Info:', (profileResponse as any).debug)
         setUserProfile(profile)
         
         // Check if user has tradie role

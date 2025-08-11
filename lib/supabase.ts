@@ -154,96 +154,98 @@ export type Database = {
           profession_id?: string
         }
       }
-      owners: {
+      users: {
         Row: {
           id: string
-          name: string | null
-          phone: string | null
+          name: string
+          phone: string
           email: string
-          status: 'pending' | 'approved' | 'closed'
-          balance: number
+          address: string | null
           latitude: number | null
           longitude: number | null
-          address: string | null
+          status: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
           created_at: string
           updated_at: string
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-          phone?: string | null
-          email: string
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
-          latitude?: number | null
-          longitude?: number | null
-          address?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string | null
-          phone?: string | null
-          email?: string
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
-          latitude?: number | null
-          longitude?: number | null
-          address?: string | null
-        }
-      }
-      tradies: {
-        Row: {
-          id: string
-          name: string | null
-          phone: string | null
-          email: string
+          phone_verified: boolean
+          phone_verified_at: string | null
           company: string | null
           specialty: string | null
-          status: 'pending' | 'approved' | 'closed'
+          service_radius: number | null
           balance: number
-          latitude: number | null
-          longitude: number | null
-          address: string | null
-          service_radius: number
-          rating: number | null
+          rating: number
           review_count: number
-          created_at: string
-          updated_at: string
+          hourly_rate: number | null
+          experience_years: number | null
+          bio: string | null
         }
         Insert: {
-          id?: string
-          name?: string | null
-          phone?: string | null
+          id: string
+          name: string
+          phone: string
           email: string
-          company?: string | null
-          specialty?: string | null
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
-          address?: string | null
-          service_radius?: number
-          rating?: number | null
-          review_count?: number
+          status?: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
           created_at?: string
           updated_at?: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
+          company?: string | null
+          specialty?: string | null
+          service_radius?: number | null
+          balance?: number
+          rating?: number
+          review_count?: number
+          hourly_rate?: number | null
+          experience_years?: number | null
+          bio?: string | null
         }
         Update: {
           id?: string
-          name?: string | null
-          phone?: string | null
+          name?: string
+          phone?: string
           email?: string
-          company?: string | null
-          specialty?: string | null
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
-          address?: string | null
-          service_radius?: number
-          rating?: number | null
+          status?: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
+          created_at?: string
+          updated_at?: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
+          company?: string | null
+          specialty?: string | null
+          service_radius?: number | null
+          balance?: number
+          rating?: number
           review_count?: number
+          hourly_rate?: number | null
+          experience_years?: number | null
+          bio?: string | null
+        }
+      }
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role_type: 'owner' | 'tradie'
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role_type: 'owner' | 'tradie'
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role_type?: 'owner' | 'tradie'
+          is_primary?: boolean
+          created_at?: string
         }
       }
       projects: {

@@ -36,6 +36,9 @@ interface UserProfileResponse {
     reviewCount: number
     status: string
     balance: number
+    hourlyRate?: number
+    experienceYears?: number
+    bio?: string
   }
 }
 
@@ -107,41 +110,31 @@ export async function GET(request: NextRequest) {
     let ownerData = null
     let tradieData = null
 
-    // 获取技师信息
+    // 获取技师信息（从users表中的tradie相关字段）
     if (userRoles.some(r => r.role_type === 'tradie')) {
-      const { data: tradieInfo, error: tradieError } = await supabase
-        .from('tradies')
-        .select('company, specialty, service_radius, rating, review_count, status, balance')
-        .eq('email', userProfile.email)
-        .single()
-
-      if (!tradieError && tradieInfo) {
-        tradieData = {
-          company: tradieInfo.company,
-          specialty: tradieInfo.specialty,
-          serviceRadius: tradieInfo.service_radius,
-          rating: tradieInfo.rating,
-          reviewCount: tradieInfo.review_count,
-          status: tradieInfo.status,
-          balance: tradieInfo.balance
-        }
+      console.log('Getting tradie data from users table for user:', userProfile.id)
+      
+      tradieData = {
+        company: userProfile.company || '',
+        specialty: userProfile.specialty || '',
+        serviceRadius: userProfile.service_radius || 50,
+        rating: userProfile.rating || 0,
+        reviewCount: userProfile.review_count || 0,
+        status: userProfile.status,
+        balance: userProfile.balance || 0,
+        hourlyRate: userProfile.hourly_rate || undefined,
+        experienceYears: userProfile.experience_years || undefined,
+        bio: userProfile.bio || undefined
       }
+      console.log('Created tradieData object from users table:', tradieData)
     }
 
-    // 获取业主信息
+    // 获取业主信息（从users表中的owner相关字段）
     if (userRoles.some(r => r.role_type === 'owner')) {
-      const { data: ownerInfo, error: ownerError } = await supabase
-        .from('owners')
-        .select('status, balance')
-        .eq('email', userProfile.email)
-        .single()
-
-      if (!ownerError && ownerInfo) {
-        ownerData = {
-          status: ownerInfo.status,
-          balance: ownerInfo.balance,
-          projectCount: 0 // TODO: 计算项目数量
-        }
+      ownerData = {
+        status: userProfile.status,
+        balance: userProfile.balance || 0,
+        projectCount: 0 // TODO: 计算项目数量
       }
     }
 
@@ -162,9 +155,18 @@ export async function GET(request: NextRequest) {
       tradieData: tradieData || undefined
     }
 
+    console.log('Final API Response - tradieData:', tradieData)
+    console.log('Final API Response - specialty:', tradieData?.specialty)
+
     return NextResponse.json({
       success: true,
-      data: response
+      data: response,
+      debug: {
+        userEmail: userProfile.email,
+        hasTradiRole: userRoles.some(r => r.role_type === 'tradie'),
+        tradieDataExists: !!tradieData,
+        tradieDataContent: tradieData
+      }
     })
 
   } catch (error) {
@@ -199,7 +201,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, address, role, company, specialty, serviceRadius } = body
+    const { name, phone, phone_verified, address, role, company, specialty, serviceRadius, hourlyRate, experienceYears, bio } = body
 
     // 验证必需字段
     if (!name || !phone) {
@@ -248,13 +250,20 @@ export async function PUT(request: NextRequest) {
     }
 
     // 1. 更新统一用户表的基本信息
+    const updateData: any = {
+      name,
+      phone,
+      address
+    }
+    
+    // 如果提供了phone_verified，则更新该字段
+    if (typeof phone_verified === 'boolean') {
+      updateData.phone_verified = phone_verified
+    }
+    
     const { error: userUpdateError } = await supabase
       .from('users')
-      .update({
-        name,
-        phone,
-        address
-      })
+      .update(updateData)
       .eq('id', user.id)
 
     if (userUpdateError) {
@@ -265,53 +274,30 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 2. 根据角色更新角色特定信息
-    if (targetRole === 'tradie' && (company || specialty || serviceRadius)) {
-      // 检查技师记录是否存在
-      const { data: existingTradie, error: checkError } = await supabase
-        .from('tradies')
-        .select('id')
-        .eq('email', userProfile.email)
-        .single()
-
+    // 2. 根据角色更新角色特定信息到users表
+    if (targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)) {
+      console.log('PUT API - Updating tradie info in users table for user:', user.id)
+      console.log('PUT API - Update data:', { company, specialty, serviceRadius, hourlyRate, experienceYears, bio })
+      
       const tradieUpdateData: any = {}
-      if (name) tradieUpdateData.name = name
-      if (phone) tradieUpdateData.phone = phone
-      if (address) tradieUpdateData.address = address
       if (company) tradieUpdateData.company = company
       if (specialty) tradieUpdateData.specialty = specialty
       if (serviceRadius) tradieUpdateData.service_radius = serviceRadius
+      if (hourlyRate !== undefined) tradieUpdateData.hourly_rate = hourlyRate
+      if (experienceYears !== undefined) tradieUpdateData.experience_years = experienceYears
+      if (bio !== undefined) tradieUpdateData.bio = bio
 
-      if (existingTradie && !checkError) {
-        // 更新现有记录
-        const { error: tradieUpdateError } = await supabase
-          .from('tradies')
-          .update(tradieUpdateData)
-          .eq('id', existingTradie.id)
+      const { error: tradieUpdateError } = await supabase
+        .from('users')
+        .update(tradieUpdateData)
+        .eq('id', user.id)
 
-        if (tradieUpdateError) {
-          console.error('Tradie table update error:', tradieUpdateError)
-          return NextResponse.json({
-            success: false,
-            error: "技师信息更新失败"
-          }, { status: 500 })
-        }
-      } else {
-        // 创建新记录
-        const { error: tradieCreateError } = await supabase
-          .from('tradies')
-          .insert({
-            ...tradieUpdateData,
-            email: userProfile.email
-          })
-
-        if (tradieCreateError) {
-          console.error('Tradie table create error:', tradieCreateError)
-          return NextResponse.json({
-            success: false,
-            error: "技师信息创建失败"
-          }, { status: 500 })
-        }
+      if (tradieUpdateError) {
+        console.error('Users table tradie update error:', tradieUpdateError)
+        return NextResponse.json({
+          success: false,
+          error: "技师信息更新失败"
+        }, { status: 500 })
       }
     }
 
@@ -319,6 +305,19 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: {
         message: `${targetRole === 'owner' ? '业主' : '技师'}资料更新成功`
+      },
+      debug: {
+        targetRole: targetRole,
+        receivedData: { 
+          company: company, 
+          specialty: specialty, 
+          serviceRadius: serviceRadius,
+          hourlyRate: hourlyRate,
+          experienceYears: experienceYears,
+          bio: bio
+        },
+        conditionMet: Boolean(targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)),
+        tradieUpdateExecuted: Boolean(targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined))
       }
     })
 

@@ -52,6 +52,9 @@ interface UserProfileData {
   rating?: number
   reviewCount?: number
   location?: string
+  hourlyRate?: number
+  experienceYears?: number
+  bio?: string
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string
@@ -66,6 +69,9 @@ interface UserProfileData {
     reviewCount: number
     status: string
     balance: number
+    hourlyRate?: number
+    experienceYears?: number
+    bio?: string
   }
 }
 
@@ -234,11 +240,15 @@ class ApiClient {
   async updateUserProfile(data: {
     name: string
     phone: string
+    phone_verified?: boolean
     address: string
     role?: 'owner' | 'tradie'
     company?: string
     specialty?: string
     serviceRadius?: number
+    hourlyRate?: number
+    experienceYears?: number
+    bio?: string
   }): Promise<ApiResponse<{ message: string }>> {
     return this.request('/users/profile', {
       method: 'PUT',

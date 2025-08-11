@@ -36,6 +36,7 @@ export default function ProfilePage() {
   // Tradie专用信息
   const [companyName, setCompanyName] = useState("")
   const [specialty, setSpecialty] = useState("")
+  const [serviceRadius, setServiceRadius] = useState("")
   const [specialties, setSpecialties] = useState<string[]>([])
   const [hourlyRate, setHourlyRate] = useState("")
   const [experienceYears, setExperienceYears] = useState("")
@@ -66,6 +67,10 @@ export default function ProfilePage() {
       if (user.tradieData) {
         setCompanyName(user.tradieData.company || "")
         setSpecialty(user.tradieData.specialty || "")
+        setServiceRadius(user.tradieData.serviceRadius?.toString() || "50")
+        setHourlyRate(user.tradieData.hourlyRate?.toString() || "")
+        setExperienceYears(user.tradieData.experienceYears?.toString() || "")
+        setBio(user.tradieData.bio || "")
       }
     }
   }, [user, authLoading, router])
@@ -107,6 +112,36 @@ export default function ProfilePage() {
     setIsSendingOtp(true)
     setOtpError("")
     
+    // Show development message and directly verify the phone
+    setTimeout(async () => {
+      setSuccess("短信验证功能正在开发中，系统已自动完成验证！")
+      
+      // Update phone number in database and mark as verified
+      try {
+        const result = await updateUser({
+          name: fullName,
+          phone: phone,
+          phone_verified: true,
+          address: address,
+          company: user?.activeRole === "tradie" ? companyName : undefined,
+        })
+        
+        if (result.success) {
+          setPhoneVerified(true)
+          setShowPhoneVerificationDialog(false)
+        } else {
+          setOtpError("更新手机验证状态失败，请重试")
+        }
+      } catch (error) {
+        console.error('更新手机验证状态失败:', error)
+        setOtpError("更新手机验证状态失败，请重试")
+      }
+      
+      setTimeout(() => setSuccess(""), 5000)
+      setIsSendingOtp(false)
+    }, 1000)
+    
+    /* Original SMS verification code - disabled
     try {
       const response = await fetch('/api/phone/send-otp', {
         method: 'POST',
@@ -135,6 +170,7 @@ export default function ProfilePage() {
     } finally {
       setIsSendingOtp(false)
     }
+    */
   }
 
   const handleVerifyOtp = async () => {
@@ -151,6 +187,36 @@ export default function ProfilePage() {
     setIsVerifyingOtp(true)
     setOtpError("")
     
+    // Show development message and directly verify the phone
+    setTimeout(async () => {
+      setSuccess("短信验证功能正在开发中，系统已自动完成验证！")
+      
+      // Update phone number in database and mark as verified
+      try {
+        const result = await updateUser({
+          name: fullName,
+          phone: phone,
+          phone_verified: true,
+          address: address,
+          company: user?.activeRole === "tradie" ? companyName : undefined,
+        })
+        
+        if (result.success) {
+          setPhoneVerified(true)
+          setShowPhoneVerificationDialog(false)
+        } else {
+          setOtpError("更新手机验证状态失败，请重试")
+        }
+      } catch (error) {
+        console.error('更新手机验证状态失败:', error)
+        setOtpError("更新手机验证状态失败，请重试")
+      }
+      
+      setTimeout(() => setSuccess(""), 5000)
+      setIsVerifyingOtp(false)
+    }, 1000)
+    
+    /* Original SMS verification code - disabled
     try {
       const response = await fetch('/api/phone/verify-otp', {
         method: 'POST',
@@ -185,6 +251,7 @@ export default function ProfilePage() {
     } finally {
       setIsVerifyingOtp(false)
     }
+    */
   }
 
   const openPhoneVerificationDialog = () => {
@@ -201,12 +268,24 @@ export default function ProfilePage() {
     setIsLoading(true)
 
     try {
-      const result = await updateUser({
+      const updateData: any = {
         name: fullName,
         phone,
         address: address,
-        company: user?.activeRole === "tradie" ? companyName : undefined,
-      })
+      }
+
+      // 如果是tradie角色，添加tradie特定信息
+      if (user?.activeRole === "tradie") {
+        updateData.company = companyName
+        updateData.specialty = specialty
+        updateData.serviceRadius = serviceRadius ? parseInt(serviceRadius) : 50
+        updateData.hourlyRate = hourlyRate ? parseFloat(hourlyRate) : undefined
+        updateData.experienceYears = experienceYears ? parseInt(experienceYears) : undefined
+        updateData.bio = bio || undefined
+      }
+
+      console.log('Submitting profile update data:', updateData)
+      const result = await updateUser(updateData)
 
       if (result.success) {
         setSuccess("个人资料更新成功！")
@@ -217,6 +296,7 @@ export default function ProfilePage() {
         setError(result.message)
       }
     } catch (err) {
+      console.error('Profile update error:', err)
       setError("更新失败，请重试")
     } finally {
       setIsLoading(false)
@@ -417,16 +497,39 @@ export default function ProfilePage() {
 
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
+                            <Label htmlFor="serviceRadius">服务半径（公里）</Label>
+                            <Input 
+                              id="serviceRadius" 
+                              type="number" 
+                              value={serviceRadius} 
+                              onChange={e => setServiceRadius(e.target.value)} 
+                              placeholder="50" 
+                              min="5"
+                              max="200"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              设置您愿意提供服务的范围
+                            </p>
+                          </div>
+                          
+                          <div></div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
                             <Label htmlFor="experienceYears">工作经验（年）</Label>
                             <Input 
                               id="experienceYears" 
                               type="number" 
                               value={experienceYears} 
                               onChange={e => setExperienceYears(e.target.value)} 
-                              placeholder="0" 
+                              placeholder="请输入工作经验年数" 
                               min="0"
                               max="50"
                             />
+                            <p className="text-xs text-gray-500 mt-1">
+                              您从事此行业的工作年数
+                            </p>
                           </div>
                           
                           <div>
@@ -436,43 +539,13 @@ export default function ProfilePage() {
                               type="number" 
                               value={hourlyRate} 
                               onChange={e => setHourlyRate(e.target.value)} 
-                              placeholder="0" 
+                              placeholder="请输入您的时薪" 
                               min="0"
                               step="0.01"
                             />
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label>专业技能</Label>
-                          <div className="space-y-3">
-                            <Select onValueChange={handleAddSpecialty}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="选择专业技能" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {tradieSpecialties.map(specialty => (
-                                  <SelectItem key={specialty} value={specialty}>
-                                    {specialty}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            {specialties.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {specialties.map(specialty => (
-                                  <Badge 
-                                    key={specialty} 
-                                    variant="secondary" 
-                                    className="cursor-pointer hover:bg-red-100"
-                                    onClick={() => handleRemoveSpecialty(specialty)}
-                                  >
-                                    {specialty} ×
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              您的标准时薪，以NZD为单位
+                            </p>
                           </div>
                         </div>
 
@@ -482,9 +555,12 @@ export default function ProfilePage() {
                             id="bio" 
                             value={bio} 
                             onChange={e => setBio(e.target.value)} 
-                            placeholder="简单介绍一下您的工作经验和专长..." 
+                            placeholder="请介绍您的工作经验、专业技能和服务特色..." 
                             rows={4}
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            简短介绍您的专业背景和服务优势
+                          </p>
                         </div>
                       </>
                     )}

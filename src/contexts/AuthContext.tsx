@@ -104,10 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const result = await apiClient.updateUserProfile({
       name: userData.name || user.name,
       phone: userData.phone || user.phone,
+      phone_verified: userData.phone_verified,
       address: userData.address || user.address,
       company: userData.company,
       specialty: userData.specialty,
-      serviceRadius: userData.serviceRadius
+      serviceRadius: userData.serviceRadius,
+      hourlyRate: userData.hourlyRate,
+      experienceYears: userData.experienceYears,
+      bio: userData.bio
     })
 
     if (result.success) {

@@ -74,101 +74,98 @@ export interface Database {
           other_description?: string | null
         }
       }
-      owners: {
+      users: {
         Row: {
           id: string
           name: string
           phone: string
           email: string
+          address: string | null
           latitude: number | null
           longitude: number | null
-          address: string | null
-          status: 'pending' | 'approved' | 'closed'
-          balance: number
+          status: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
           created_at: string
           updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          phone: string
-          email: string
-          latitude?: number | null
-          longitude?: number | null
-          address?: string | null
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          phone?: string
-          email?: string
-          latitude?: number | null
-          longitude?: number | null
-          address?: string | null
-          status?: 'pending' | 'approved' | 'closed'
-          balance?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      tradies: {
-        Row: {
-          id: string
-          name: string
-          phone: string
-          email: string
-          company: string
-          specialty: string
-          latitude: number | null
-          longitude: number | null
-          address: string | null
-          service_radius: number
-          status: 'pending' | 'approved' | 'closed'
+          phone_verified: boolean
+          phone_verified_at: string | null
+          company: string | null
+          specialty: string | null
+          service_radius: number | null
           balance: number
           rating: number
           review_count: number
-          created_at: string
-          updated_at: string
+          hourly_rate: number | null
+          experience_years: number | null
+          bio: string | null
         }
         Insert: {
-          id?: string
+          id: string
           name: string
           phone: string
           email: string
-          company: string
-          specialty: string
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
-          address?: string | null
-          service_radius?: number
-          status?: 'pending' | 'approved' | 'closed'
+          status?: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
+          created_at?: string
+          updated_at?: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
+          company?: string | null
+          specialty?: string | null
+          service_radius?: number | null
           balance?: number
           rating?: number
           review_count?: number
-          created_at?: string
-          updated_at?: string
+          hourly_rate?: number | null
+          experience_years?: number | null
+          bio?: string | null
         }
         Update: {
           id?: string
           name?: string
           phone?: string
           email?: string
-          company?: string
-          specialty?: string
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
-          address?: string | null
-          service_radius?: number
-          status?: 'pending' | 'approved' | 'closed'
+          status?: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
+          created_at?: string
+          updated_at?: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
+          company?: string | null
+          specialty?: string | null
+          service_radius?: number | null
           balance?: number
           rating?: number
           review_count?: number
+          hourly_rate?: number | null
+          experience_years?: number | null
+          bio?: string | null
+        }
+      }
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role_type: 'owner' | 'tradie'
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role_type: 'owner' | 'tradie'
+          is_primary?: boolean
           created_at?: string
-          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role_type?: 'owner' | 'tradie'
+          is_primary?: boolean
+          created_at?: string
         }
       }
       reviews: {
@@ -220,13 +217,13 @@ export interface Database {
           name: string
           phone: string
           email: string
-          company: string
-          specialty: string
+          company: string | null
+          specialty: string | null
           latitude: number | null
           longitude: number | null
           address: string | null
-          service_radius: number
-          status: 'pending' | 'approved' | 'closed'
+          service_radius: number | null
+          status: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
           balance: number
           rating: number
           review_count: number
@@ -321,8 +318,8 @@ export interface ReviewWithDetails {
   created_at: string
   updated_at: string
   project?: Database['public']['Tables']['projects']['Row']
-  owner?: Database['public']['Tables']['owners']['Row']
-  tradie?: Database['public']['Tables']['tradies']['Row']
+  owner?: Database['public']['Tables']['users']['Row']
+  tradie?: Database['public']['Tables']['users']['Row']
 }
 
 // 地理查询参数
@@ -350,7 +347,7 @@ export interface TradieSearchParams {
   specialty?: string
   location?: LocationQuery
   minRating?: number
-  status?: Database['public']['Tables']['tradies']['Row']['status']
+  status?: Database['public']['Tables']['users']['Row']['status']
   sortBy?: 'rating' | 'distance' | 'review_count' | 'created_at'
   sortOrder?: 'asc' | 'desc'
 }

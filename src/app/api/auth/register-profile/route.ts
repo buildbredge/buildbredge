@@ -44,18 +44,25 @@ export async function POST(request: NextRequest) {
 
     // 2. 如果用户不存在，创建新用户记录
     if (!existingUser) {
+      const userData: any = {
+        id: userId,
+        name,
+        phone,
+        email,
+        address: location,
+        status: 'pending',
+        latitude: null,
+        longitude: null
+      }
+
+      // 如果是tradie且提供了company，则保存
+      if (userType === 'tradie' && company) {
+        userData.company = company
+      }
+
       const { error: userError } = await supabase
         .from('users')
-        .insert({
-          id: userId,
-          name,
-          phone,
-          email,
-          address: location,
-          status: 'pending',
-          latitude: null,
-          longitude: null
-        })
+        .insert(userData)
 
       if (userError) {
         console.error('User creation error:', userError)
@@ -67,6 +74,18 @@ export async function POST(request: NextRequest) {
       userMessage = '新用户创建成功，'
     } else {
       userMessage = '现有用户，'
+      
+      // 如果是现有用户添加tradie角色且提供了company，更新company信息
+      if (userType === 'tradie' && company && !existingUser.company) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ company })
+          .eq('id', userId)
+
+        if (updateError) {
+          console.error('Company update error:', updateError)
+        }
+      }
     }
 
     // 3. 检查用户是否已有此角色

@@ -181,6 +181,9 @@ class ApiClient {
     company?: string
     specialty?: string
     serviceRadius?: number
+    hourlyRate?: number
+    experienceYears?: number
+    bio?: string
   }): Promise<ApiResponse<{ message: string }>> {
     return this.request('/users/profile', {
       method: 'PUT',
