@@ -95,7 +95,10 @@ export default function HomePage() {
               <Link href="/post-job">发布需求</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-white border-2 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold">
-              <Link href="/browse-tradies">浏览技师</Link>
+              <Link href="/browse-tradies">寻找技师</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-white border-2 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold">
+              <Link href="/browse-jobs">浏览项目</Link>
             </Button>
           </div>
 

@@ -43,7 +43,8 @@
       "Bash(npx @supabase/mcp-utils:*)",
       "Bash(npx supabase-mcp:*)",
       "mcp__supabase__get_logs",
-      "Bash(next dev:*)"
+      "Bash(next dev:*)",
+      "mcp__supabase__list_migrations"
     ],
     "deny": []
   }

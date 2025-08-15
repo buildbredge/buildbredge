@@ -12,12 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
+import { ProfessionSelector } from "@/components/ProfessionSelector"
 import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
-const tradieSpecialties = [
-  "电工", "水管工", "木工", "油漆工", "瓦工", "焊工",
-  "空调维修", "屋顶维修", "园艺", "清洁服务", "搬家服务", "其他"
-]
 
 export default function ProfilePage() {
   const { user, updateUser, isLoading: authLoading } = useAuth()
@@ -481,6 +478,13 @@ export default function ProfilePage() {
                           />
                         </div>
                       </>
+                    )}
+
+                    {/* Profession Selector for Tradies */}
+                    {isTradie && user?.id && (
+                      <div className="mt-8">
+                        <ProfessionSelector tradieId={user.id} />
+                      </div>
                     )}
 
                     <div className="flex items-center space-x-4 pt-6">

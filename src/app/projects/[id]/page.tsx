@@ -22,12 +22,17 @@ import {
   XCircle,
   AlertCircle,
   Briefcase,
-  Tag
+  Tag,
+  DollarSign
 } from "lucide-react"
 import { type Project, type Category, type Profession } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSignedImageUrls } from "@/hooks/useSignedImageUrl"
 import { ImageGalleryModal } from "@/components/ImageGalleryModal"
+import { TradieRecommendations } from "@/components/TradieRecommendations"
+import { QuoteSubmissionModal } from "@/components/QuoteSubmissionModal"
+import { QuotesList } from "@/components/QuotesList"
+import { ProjectStatusActions } from "@/components/ProjectStatusActions"
 
 export default function ProjectDetailPage() {
   const params = useParams()
@@ -40,6 +45,10 @@ export default function ProjectDetailPage() {
   // 图片画廊状态
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  
+  // 报价相关状态
+  const [showQuoteModal, setShowQuoteModal] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // 稳定化图片URL数组，避免无限重新渲染
   const stableImageUrls = useMemo(() => {
@@ -77,7 +86,7 @@ export default function ProjectDetailPage() {
     if (params.id) {
       fetchProject()
     }
-  }, [params.id])
+  }, [params.id, refreshTrigger])
 
   const openImageGallery = (index: number) => {
     setSelectedImageIndex(index)
@@ -88,12 +97,29 @@ export default function ProjectDetailPage() {
     setIsGalleryOpen(false)
   }
 
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
+  const handleQuoteSubmitted = () => {
+    handleRefresh()
+    setShowQuoteModal(false)
+  }
+
+  // 检查用户权限
+  const isProjectOwner = user?.id && project?.user_id === user.id
+  const isTradie = user?.activeRole === "tradie"
+  const canSubmitQuote = isTradie && !isProjectOwner && 
+    (project?.status === 'published' || project?.status === 'negotiating')
+
   const getStatusBadge = (status: Project['status']) => {
     const statusConfig = {
       published: { label: "已发布", variant: "default" as const, icon: CheckCircle },
       draft: { label: "草稿", variant: "secondary" as const, icon: AlertCircle },
+      negotiating: { label: "协商中", variant: "default" as const, icon: Clock },
       in_progress: { label: "进行中", variant: "default" as const, icon: Clock },
       completed: { label: "已完成", variant: "default" as const, icon: CheckCircle },
+      reviewed: { label: "已评价", variant: "default" as const, icon: Star },
       cancelled: { label: "已取消", variant: "destructive" as const, icon: XCircle }
     }
     
@@ -147,37 +173,6 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="p-2"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">B</span>
-                </div>
-                <span className="text-xl font-bold text-gray-800">BuildBridge</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm">
-                <Heart className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -431,23 +426,39 @@ export default function ProjectDetailPage() {
 
           {/* Action Buttons */}
           <div className="bg-white rounded-xl shadow-sm border p-6 sm:p-8 mb-6 sm:mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">联系并开始合作</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+              {canSubmitQuote ? "提交报价或联系业主" : "联系并开始合作"}
+            </h3>
             <div className="flex flex-col sm:flex-row gap-4">
+              {canSubmitQuote && (
+                <Button 
+                  size="lg"
+                  onClick={() => setShowQuoteModal(true)}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 flex-1 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <DollarSign className="w-5 h-5 mr-3" />
+                  提交报价
+                </Button>
+              )}
               <Button 
                 size="lg"
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 flex-1 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 flex-1 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => window.open(`mailto:${project.email}`)}
               >
                 <Mail className="w-5 h-5 mr-3" />
                 立即联系业主
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="flex-1 py-4 text-lg font-semibold border-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300"
-              >
-                <Phone className="w-5 h-5 mr-3" />
-                电话沟通
-              </Button>
+              {project.phone && (
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="flex-1 py-4 text-lg font-semibold border-2 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300"
+                  onClick={() => window.open(`tel:${project.phone}`)}
+                >
+                  <Phone className="w-5 h-5 mr-3" />
+                  电话沟通
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="lg"
@@ -477,6 +488,35 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
+          {/* Project Status and Actions */}
+          {project && (
+            <ProjectStatusActions
+              projectId={project.id}
+              projectStatus={project.status as any}
+              projectUserId={project.user_id}
+              acceptedQuote={project.accepted_quote_id ? {
+                id: project.accepted_quote_id,
+                tradie_id: (project as any).accepted_quote?.tradie_id || '',
+                price: (project as any).accepted_quote?.price || 0,
+                tradie: (project as any).accepted_quote?.tradie
+              } : null}
+              onStatusChange={handleRefresh}
+            />
+          )}
+
+          {/* Quotes List (for project owners) */}
+          {project && (isProjectOwner || project.status !== 'published') && (
+            <QuotesList
+              projectId={project.id}
+              isOwner={!!isProjectOwner}
+              projectStatus={project.status}
+              onQuoteAccepted={handleRefresh}
+            />
+          )}
+
+          {/* Recommended Tradies Section */}
+          <TradieRecommendations projectId={project.id} />
+
           {/* Project Meta Information */}
           <div className="mt-6 text-center text-sm text-gray-500">
             <p>项目ID: {project.id}</p>
@@ -492,6 +532,17 @@ export default function ProjectDetailPage() {
         initialIndex={selectedImageIndex}
         onClose={closeImageGallery}
       />
+
+      {/* 报价提交模态框 */}
+      {project && (
+        <QuoteSubmissionModal
+          isOpen={showQuoteModal}
+          onClose={() => setShowQuoteModal(false)}
+          projectId={project.id}
+          projectTitle={project.description}
+          onQuoteSubmitted={handleQuoteSubmitted}
+        />
+      )}
     </div>
   )
 }

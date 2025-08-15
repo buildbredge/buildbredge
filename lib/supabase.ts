@@ -260,11 +260,14 @@ export type Database = {
           phone: string | null
           images: string[]
           video: string | null
-          status: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          status: 'draft' | 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
           user_id: string | null
           category_id: string | null
           profession_id: string | null
           other_description: string | null
+          time_option: 'urgent' | 'recent' | 'flexible' | null
+          priority_need: 'cost' | 'quality' | null
+          accepted_quote_id: string | null
           created_at: string
           updated_at: string
         }
@@ -279,11 +282,14 @@ export type Database = {
           phone?: string | null
           images?: string[]
           video?: string | null
-          status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          status?: 'draft' | 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
           user_id?: string | null
           category_id?: string | null
           profession_id?: string | null
           other_description?: string | null
+          time_option?: 'urgent' | 'recent' | 'flexible' | null
+          priority_need?: 'cost' | 'quality' | null
+          accepted_quote_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -298,11 +304,45 @@ export type Database = {
           phone?: string | null
           images?: string[]
           video?: string | null
-          status?: 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+          status?: 'draft' | 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
           user_id?: string
           category_id?: string | null
           profession_id?: string | null
           other_description?: string | null
+          time_option?: 'urgent' | 'recent' | 'flexible' | null
+          priority_need?: 'cost' | 'quality' | null
+          accepted_quote_id?: string | null
+        }
+      }
+      quotes: {
+        Row: {
+          id: string
+          project_id: string
+          tradie_id: string
+          price: number
+          description: string
+          status: 'pending' | 'accepted' | 'rejected'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          tradie_id: string
+          price: number
+          description: string
+          status?: 'pending' | 'accepted' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          tradie_id?: string
+          price?: number
+          description?: string
+          status?: 'pending' | 'accepted' | 'rejected'
+          updated_at?: string
         }
       }
       reviews: {
@@ -474,4 +514,39 @@ export interface AdminFilters {
   search?: string
   limit?: number
   offset?: number
+}
+
+// Quote-related type definitions
+export type QuoteStatus = 'pending' | 'accepted' | 'rejected'
+export type ProjectStatus = 'draft' | 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
+
+export interface Quote {
+  id: string
+  project_id: string
+  tradie_id: string
+  price: number
+  description: string
+  status: QuoteStatus
+  created_at: string
+  updated_at: string
+  // Optional joined data
+  tradie?: Database['public']['Tables']['users']['Row']
+  project?: Database['public']['Tables']['projects']['Row']
+}
+
+export interface QuoteSubmissionData {
+  project_id: string
+  tradie_id: string
+  price: number
+  description: string
+}
+
+export interface QuoteFilters {
+  project_id?: string
+  tradie_id?: string
+  status?: QuoteStatus
+  limit?: number
+  offset?: number
+  sortBy?: 'price' | 'created_at' | 'updated_at'
+  sortOrder?: 'asc' | 'desc'
 }

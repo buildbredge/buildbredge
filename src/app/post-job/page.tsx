@@ -6,11 +6,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { X, FileImage, Video, Upload, AlertCircle, Check } from "lucide-react"
+import { X, FileImage, Upload, AlertCircle, Check } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
-import { uploadProjectImages, uploadProjectVideo, validateFile, formatFileSize } from "../../../lib/storage"
+import { uploadProjectImages, validateFile } from "../../../lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"
@@ -23,7 +23,6 @@ interface JobForm {
   email: string
   phone: string
   images: File[]
-  video: File | null
   // Google Places相关字段
   googlePlace?: PlaceResult
   // 分类和职业相关字段
@@ -38,7 +37,6 @@ interface JobForm {
 
 interface UploadProgress {
   images: { [index: number]: number }
-  video: number
 }
 
 
@@ -54,7 +52,6 @@ export default function PostJobPage() {
     email: "",
     phone: "",
     images: [],
-    video: null,
     googlePlace: undefined,
     categoryId: undefined,
     professionId: undefined,
@@ -64,12 +61,10 @@ export default function PostJobPage() {
     priorityNeed: "quality"
   })
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
-  const [videoPreview, setVideoPreview] = useState<string>("")
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {}, video: 0 })
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {} })
   const [uploadError, setUploadError] = useState<string>("")
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
 
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -146,24 +141,6 @@ export default function PostJobPage() {
         }
       }
 
-      // 上传视频
-      if (jobForm.video) {
-        console.log('🎬 开始上传视频...')
-        try {
-          uploadedVideoUrl = await uploadProjectVideo(
-            jobForm.video,
-            tempProjectId,
-            (progress) => {
-              setUploadProgress(prev => ({ ...prev, video: progress }))
-            }
-          )
-          console.log('✅ 视频上传成功:', uploadedVideoUrl)
-        } catch (error) {
-          console.error('❌ 视频上传失败:', error)
-          setUploadError(`视频上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
-          // 继续执行，不阻断流程
-        }
-      }
 
       // 创建项目记录，包含已上传的文件URL
       const projectData: any = {
@@ -175,14 +152,13 @@ export default function PostJobPage() {
         email: jobForm.email,
         phone: jobForm.phone || null,
         images: uploadedImageUrls, // 直接包含上传的图片URL
-        video: uploadedVideoUrl,
         status: 'published' as const,
         user_id: userId || null, // 如果是匿名用户则为null
         category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
         profession_id: jobForm.isOther ? null : (jobForm.professionId || null),
         other_description: jobForm.isOther ? jobForm.otherDescription : null,
-        time_option: jobForm.timeOption || null,
-        priority_need: jobForm.priorityNeed || null
+        time_option: jobForm.timeOption || 'urgent',
+        priority_need: jobForm.priorityNeed || 'quality'
       }
 
       console.log('📋 创建项目记录（包含文件URL）...', projectData)
@@ -195,15 +171,70 @@ export default function PostJobPage() {
       const projectId = createdProject.id
       console.log('✅ 项目创建成功，ID:', projectId)
 
-      // 保存成功，跳转到项目详情页
-      router.push(`/projects/${projectId}`)
+      // 发送邮件通知
+      try {
+        console.log('📧 开始发送邮件通知...')
+        const notificationResponse = await fetch('/api/projects/notify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ projectId })
+        })
+
+        if (notificationResponse.ok) {
+          const notificationResult = await notificationResponse.json()
+          console.log('✅ 邮件通知发送成功:', notificationResult)
+        } else {
+          console.error('❌ 邮件通知发送失败:', await notificationResponse.text())
+          // 不影响主流程，继续跳转
+        }
+      } catch (error) {
+        console.error('❌ 发送邮件通知时出错:', error)
+        // 不影响主流程，继续跳转
+      }
+
+      // 保存成功，显示成功提示或跳转
+      if (!user) {
+        // 匿名用户显示特别的成功信息
+        setShowSuccessModal(true)
+      } else {
+        // 注册用户直接跳转到项目详情页
+        router.push(`/projects/${projectId}`)
+      }
 
     } catch (error) {
       console.error('❌ 发布项目时出错:', error)
-      setUploadError(`发布项目时出错: ${error instanceof Error ? error.message : '未知错误'}`)
+      
+      // 为匿名用户提供更友好的错误信息
+      let errorMessage = '发布项目时出错'
+      
+      if (error instanceof Error) {
+        // 检查常见错误类型并提供友好信息
+        if (error.message.includes('email')) {
+          errorMessage = '邮箱地址有误，请检查后重试'
+        } else if (error.message.includes('location') || error.message.includes('address')) {
+          errorMessage = '位置信息有误，请重新选择地址'
+        } else if (error.message.includes('category') || error.message.includes('profession')) {
+          errorMessage = '服务类别选择有误，请重新选择'
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = '网络连接失败，请检查网络后重试'
+        } else if (error.message.includes('timeout')) {
+          errorMessage = '提交超时，请重试'
+        } else {
+          errorMessage = `发布项目时出错: ${error.message}`
+        }
+      }
+      
+      // 如果是匿名用户，添加额外的帮助信息
+      if (!user) {
+        errorMessage += '\n\n💡 提示：如果问题持续存在，您可以：\n• 检查邮箱地址是否正确\n• 确保选择了正确的位置\n• 稍后重试\n• 或考虑注册账户以获得更好的支持'
+      }
+      
+      setUploadError(errorMessage)
     } finally {
       setIsUploading(false)
-      setUploadProgress({ images: {}, video: 0 })
+      setUploadProgress({ images: {} })
     }
   }
 
@@ -269,32 +300,6 @@ export default function PostJobPage() {
     }
   }
 
-  const handleVideoUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || isUploading) return
-    
-    setUploadError("") // 清除之前的错误
-
-    const file = files[0]
-    
-    // 验证文件
-    const validation = validateFile(file, 'video')
-    if (!validation.valid) {
-      setUploadError(`视频文件上传失败: ${validation.error}`)
-      if (videoInputRef.current) {
-        videoInputRef.current.value = ''
-      }
-      return
-    }
-
-    // 创建预览
-    const videoUrl = URL.createObjectURL(file)
-    setVideoPreview(videoUrl)
-    setJobForm(prev => ({ ...prev, video: file }))
-
-    if (videoInputRef.current) {
-      videoInputRef.current.value = ''
-    }
-  }
 
   const removeImage = (index: number) => {
     const newPreviews = imagePreviews.filter((_, i) => i !== index)
@@ -305,13 +310,6 @@ export default function PostJobPage() {
     setJobForm(prev => ({ ...prev, images: newImages }))
   }
 
-  const removeVideo = () => {
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview)
-    }
-    setVideoPreview('')
-    setJobForm(prev => ({ ...prev, video: null }))
-  }
 
   // 增强的表单验证函数（用于提交时的完整验证）
   const validateForm = (): string[] => {
@@ -417,8 +415,15 @@ export default function PostJobPage() {
                 {/* 隐私提示 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-700">
-                    我们会问您几个问题，以便在几分钟内帮您联系到合适的商家或技工。带照片或视频的介绍可提高 20% 的技工兴趣。为保护您的隐私，请勿在职位名称或描述中包含姓名、电话或地址。
+                    我们会问您几个问题，以便在几分钟内帮您联系到合适的商家或技工。带照片的介绍可提高 20% 的技工兴趣。为保护您的隐私，请勿在职位名称或描述中包含姓名、电话或地址。
                   </p>
+                  {!user && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        <strong>匿名发布提醒：</strong>您正在以匿名用户身份发布项目。项目发布后，我们会向您的邮箱发送确认邮件，请保存邮件作为项目凭证。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* 简单描述 */}
@@ -547,10 +552,8 @@ export default function PostJobPage() {
                       </div>
                     </div>
 
-                    {/* 媒体上传 */}
-                    <div className="grid gap-6 md:grid-cols-2">
-                      {/* 图片上传 */}
-                      <div>
+                    {/* 图片上传 */}
+                    <div>
                         <Label className="text-lg font-medium">上传相关图片（最多5张）</Label>
 
                         {imagePreviews.length > 0 && (
@@ -604,57 +607,6 @@ export default function PostJobPage() {
                           onChange={(e) => handleImageUpload(e.target.files)}
                           className="hidden"
                         />
-                      </div>
-
-                      {/* 视频上传 */}
-                      <div>
-                        <Label className="text-lg font-medium">上传视频（可选）</Label>
-
-                        {videoPreview && (
-                          <div className="mt-3 mb-4">
-                            <div className="relative group">
-                              <video
-                                src={videoPreview}
-                                controls
-                                className="w-full max-h-64 rounded-lg bg-gray-100"
-                              />
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={removeVideo}
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {!videoPreview && (
-                          <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
-                            <CardContent className="p-6">
-                              <div
-                                className="text-center cursor-pointer"
-                                onClick={() => videoInputRef.current?.click()}
-                              >
-                                <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-700 font-medium mb-2">点击上传视频</p>
-                                <p className="text-sm text-gray-500">
-                                  支持 MP4、MOV、AVI、WMV 格式，最大 100MB
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-
-                        <input
-                          ref={videoInputRef}
-                          type="file"
-                          accept="video/mp4,video/quicktime,video/avi,video/x-ms-wmv,.mp4,.mov,.avi,.wmv"
-                          onChange={(e) => handleVideoUpload(e.target.files)}
-                          className="hidden"
-                        />
-                      </div>
                     </div>
 
                     {/* 错误信息显示 */}
@@ -696,24 +648,6 @@ export default function PostJobPage() {
                           </div>
                         )}
 
-                        {/* 视频上传进度 */}
-                        {jobForm.video && (
-                          <div className="space-y-2">
-                            <p className="text-sm text-blue-700">视频上传进度:</p>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-blue-600">
-                                <span>{jobForm.video.name}</span>
-                                <span>{uploadProgress.video}%</span>
-                              </div>
-                              <div className="w-full bg-blue-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${uploadProgress.video}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -770,9 +704,24 @@ export default function PostJobPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">任务发布成功！</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {user ? '任务发布成功！' : '项目发布成功！'}
+              </h3>
               <p className="text-gray-600">
-                您的任务已成功发送到所有相关商家和技师，回复信息会发送到您的邮箱或会员区。
+                {user ? (
+                  '您的任务已成功发送到所有相关商家和技师，回复信息会发送到您的邮箱或会员区。'
+                ) : (
+                  <>
+                    您的项目已成功发布！我们已向您的邮箱 <strong>{jobForm.email}</strong> 发送确认邮件。
+                    <br /><br />
+                    <span className="text-sm">
+                      • 符合条件的技师会通过邮件联系您<br />
+                      • 请查收邮件获取项目详情和管理方式<br />
+                      • 如需修改项目，请回复确认邮件<br />
+                      • <strong>注册账户后，您可以认领此项目并在仪表盘中管理</strong>
+                    </span>
+                  </>
+                )}
               </p>
             </div>
             <Button

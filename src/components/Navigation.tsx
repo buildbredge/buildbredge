@@ -47,6 +47,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
   const navItems = [
     { href: "/post-job", label: "发布需求" },
     { href: "/browse-tradies", label: "寻找技师" },
+    { href: "/browse-jobs", label: "浏览项目" },
     { href: "/cost-estimator", label: "费用估算" },
     { href: "/how-it-works", label: "如何运作" },
     { href: "/blog", label: "案例分享" }
