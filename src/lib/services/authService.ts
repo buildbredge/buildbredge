@@ -20,6 +20,7 @@ interface RegisterData {
   userType: 'homeowner' | 'tradie'
   location: string
   company?: string
+  categoryId?: string
 }
 
 interface AuthResponse {

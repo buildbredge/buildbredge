@@ -85,9 +85,24 @@ export async function POST(
 
     // Insert new professions
     if (profession_ids.length > 0) {
-      const professionsToInsert = profession_ids.map(professionId => ({
+      // First, get the category_id for each profession
+      const { data: professionsData, error: fetchError } = await supabase
+        .from('professions')
+        .select('id, category_id')
+        .in('id', profession_ids)
+
+      if (fetchError) {
+        console.error("Error fetching profession categories:", fetchError)
+        return NextResponse.json(
+          { error: "Failed to update professions" },
+          { status: 500 }
+        )
+      }
+
+      const professionsToInsert = professionsData.map(profession => ({
         tradie_id: tradieId,
-        profession_id: professionId
+        profession_id: profession.id,
+        category_id: profession.category_id
       }))
 
       const { error: insertError } = await supabase

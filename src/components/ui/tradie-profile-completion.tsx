@@ -5,25 +5,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { 
   Phone, 
   CheckCircle, 
   AlertCircle, 
-  Briefcase, 
   Loader2,
   User
 } from "lucide-react"
 import { authService } from "@/lib/services/authService"
 
-interface Category {
-  id: string
-  name_en: string
-  name_zh: string
-  description?: string
-}
 
 interface TradieProfileCompletionProps {
   userProfile: {
@@ -59,12 +51,8 @@ export function TradieProfileCompletion({
   emailVerified, 
   onProfileUpdate 
 }: TradieProfileCompletionProps) {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [selectedCategory, setSelectedCategory] = useState("")
   const [phoneNumber, setPhoneNumber] = useState(userProfile.phone || "")
-  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false)
   const [showPhoneDialog, setShowPhoneDialog] = useState(false)
-  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   
   // OTP verification state
   const [otpStep, setOtpStep] = useState<'input' | 'verify' | 'completed'>('input')
@@ -76,24 +64,19 @@ export function TradieProfileCompletion({
   
   // 本地状态跟踪更新
   const [localPhoneVerified, setLocalPhoneVerified] = useState(false)
-  const [localCategoryUpdated, setLocalCategoryUpdated] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState("")
 
   const isTradie = userProfile.roles?.some(role => role.role_type === 'tradie')
   
   // 主要依赖数据库数据，本地状态只在更新过程中临时使用
   const phoneVerified = !!(userProfile.phone_verified) || localPhoneVerified
-  const categorySelected = !!(userProfile.tradieData?.specialty) || localCategoryUpdated
   
   // 如果数据库中已有数据，清除本地状态标记（避免重复计算）
   useEffect(() => {
     if (userProfile.phone_verified && localPhoneVerified) {
       setLocalPhoneVerified(false)
     }
-    if (userProfile.tradieData?.specialty && localCategoryUpdated) {
-      setLocalCategoryUpdated(false)
-    }
-  }, [userProfile.phone_verified, userProfile.tradieData?.specialty])
+  }, [userProfile.phone_verified])
   
   const completionSteps: CompletionStep[] = [
     {
@@ -109,24 +92,12 @@ export function TradieProfileCompletion({
         setOtpError("")
         setShowPhoneDialog(true)
       }
-    },
-    {
-      id: "category",
-      title: "选择工作类别",
-      description: "选择您的专业服务类别，让客户更容易找到您",
-      completed: categorySelected,
-      critical: true,
-      icon: <Briefcase className="w-4 h-4" />,
-      action: () => setShowCategoryDialog(true)
     }
   ]
 
   const incompleteSteps = completionSteps.filter(step => !step.completed)
   const completionPercentage = Math.round(((completionSteps.length - incompleteSteps.length) / completionSteps.length) * 100)
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
 
   // 倒计时定时器
   useEffect(() => {
@@ -148,19 +119,6 @@ export function TradieProfileCompletion({
     return session?.session?.access_token
   }
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setCategories(result.data)
-        }
-      }
-    } catch (error) {
-      console.error('获取类别失败:', error)
-    }
-  }
 
   const handleSendOtp = async () => {
     if (!phoneNumber.trim()) {
@@ -193,8 +151,7 @@ export function TradieProfileCompletion({
             phone: phoneNumber,
             phone_verified: true,
             address: userProfile.address || "",
-            company: userProfile.tradieData?.company,
-            specialty: userProfile.tradieData?.specialty
+            company: userProfile.tradieData?.company
           })
         })
         
@@ -252,69 +209,6 @@ export function TradieProfileCompletion({
     console.log("handleVerifyOtp called - this should not happen with the new flow")
   }
 
-  const handleCategoryUpdate = async () => {
-    if (!selectedCategory) return
-    
-    console.log('Frontend - Starting category update for category:', selectedCategory)
-    
-    setIsUpdatingCategory(true)
-    try {
-      const category = categories.find(c => c.id === selectedCategory)
-      if (!category) {
-        console.log('Frontend - Category not found')
-        return
-      }
-
-      console.log('Frontend - Selected category:', category)
-
-      const requestData = {
-        name: userProfile.name || "",
-        phone: userProfile.phone || "",
-        address: userProfile.address || "",
-        role: 'tradie',
-        company: userProfile.tradieData?.company,
-        specialty: category.name_zh
-      }
-      
-      console.log('Frontend - Sending request with data:', requestData)
-
-      const response = await fetch('/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getAuthToken()}`
-        },
-        body: JSON.stringify(requestData)
-      })
-      
-      console.log('Frontend - API response status:', response.status)
-      
-      if (response.ok) {
-        const result = await response.json()
-        console.log('Frontend - API response:', result)
-        
-        if (result.success) {
-          console.log('Frontend - PUT API debug info:', result.debug)
-          setLocalCategoryUpdated(true)
-          setShowSuccessMessage("工作类别更新成功！")
-          setShowCategoryDialog(false)
-          onProfileUpdate?.()
-          
-          // 3秒后隐藏成功消息
-          setTimeout(() => setShowSuccessMessage(""), 3000)
-        } else {
-          console.log('Frontend - API returned success: false')
-        }
-      } else {
-        const errorResult = await response.json()
-        console.log('Frontend - API error response:', errorResult)
-      }
-    } catch (error) {
-      console.error('更新服务类别失败:', error)
-    } finally {
-      setIsUpdatingCategory(false)
-    }
-  }
 
   // 如果不是技师角色，不显示
   if (!isTradie) {
@@ -560,52 +454,6 @@ export function TradieProfileCompletion({
         </DialogContent>
       </Dialog>
 
-      {/* Category Selection Dialog */}
-      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>选择工作类别</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="category">服务类别</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="请选择您的专业服务类别" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div>
-                        <div className="font-medium">{category.name_zh}</div>
-                        <div className="text-sm text-gray-500">{category.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                onClick={handleCategoryUpdate}
-                disabled={!selectedCategory || isUpdatingCategory}
-                className="flex-1"
-              >
-                {isUpdatingCategory ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : null}
-                保存类别选择
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowCategoryDialog(false)}
-              >
-                取消
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   )
 }

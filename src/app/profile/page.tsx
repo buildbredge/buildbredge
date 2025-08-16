@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { ProfessionSelector } from "@/components/ProfessionSelector"
 import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 
@@ -37,6 +36,7 @@ export default function ProfilePage() {
   const [hourlyRate, setHourlyRate] = useState("")
   const [experienceYears, setExperienceYears] = useState("")
   const [bio, setBio] = useState("")
+  const [tradieCategories, setTradieCategories] = useState<string[]>([])
   
   // OTP verification states
   const [showPhoneVerificationDialog, setShowPhoneVerificationDialog] = useState(false)
@@ -64,8 +64,66 @@ export default function ProfilePage() {
         setCompanyName(user.tradieData.company || "")
         setSpecialty(user.tradieData.specialty || "")
       }
+      
+      // Load tradie categories if user is a tradie
+      console.log("User data:", user)
+      console.log("User active role:", user.activeRole)
+      console.log("User roles:", user.roles)
+      
+      // Check if user has tradie role (either as activeRole or in roles array)
+      const isTradie = user.activeRole === "tradie" || 
+                       (user.roles && user.roles.some((role: any) => role.role_type === 'tradie'))
+      
+      if (isTradie && user.id) {
+        console.log("User is tradie, fetching categories")
+        fetchTradieCategories(user.id)
+      } else {
+        console.log("User is not tradie or no user ID")
+      }
     }
   }, [user, authLoading, router])
+
+  const fetchTradieCategories = async (tradieId: string) => {
+    try {
+      console.log("Fetching categories for tradie:", tradieId)
+      const response = await fetch(`/api/tradies/${tradieId}/professions/`)
+      console.log("API response status:", response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("API response data:", data)
+        
+        if (data.professions && Array.isArray(data.professions)) {
+          // Get unique category names
+          const categoryNames = [...new Set(
+            data.professions
+              .filter((p: any) => p.categories)
+              .map((p: any) => p.categories.name_zh || p.categories.name_en)
+          )]
+          console.log("Extracted category names:", categoryNames)
+          setTradieCategories(categoryNames as string[])
+          
+          // Update specialty display with categories
+          if (categoryNames.length > 0) {
+            setSpecialty(categoryNames.join(", "))
+            console.log("Updated specialty:", categoryNames.join(", "))
+          } else {
+            console.log("No categories found, setting default message")
+            setSpecialty("未设置专业领域")
+          }
+        } else {
+          console.log("No professions data found")
+          setSpecialty("未设置专业领域")
+        }
+      } else {
+        console.error("API request failed with status:", response.status)
+        setSpecialty("未设置专业领域")
+      }
+    } catch (error) {
+      console.error("Error fetching tradie categories:", error)
+      setSpecialty("未设置专业领域")
+    }
+  }
 
   // 倒计时定时器
   useEffect(() => {
@@ -421,19 +479,19 @@ export default function ProfilePage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="specialty">专业技能</Label>
+                            <Label htmlFor="specialty">专业领域</Label>
                             <Input 
                               id="specialty" 
-                              value={specialty}
-                              onChange={e => setSpecialty(e.target.value)}
-                              placeholder="您的主要专业技能"
-                              readOnly={specialty ? true : false}
+                              value={specialty || "未设置专业领域"}
+                              readOnly
+                              className="bg-gray-50"
                             />
-                            {specialty && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                专业技能来自系统设置，如需修改请联系管理员
-                              </p>
-                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                              {tradieCategories.length > 0 
+                                ? `已设置 ${tradieCategories.length} 个专业领域，如需修改请联系管理员`
+                                : "未设置专业领域，如需设置请联系管理员"
+                              }
+                            </p>
                           </div>
                         </div>
 
@@ -480,12 +538,6 @@ export default function ProfilePage() {
                       </>
                     )}
 
-                    {/* Profession Selector for Tradies */}
-                    {isTradie && user?.id && (
-                      <div className="mt-8">
-                        <ProfessionSelector tradieId={user.id} />
-                      </div>
-                    )}
 
                     <div className="flex items-center space-x-4 pt-6">
                       <Button 

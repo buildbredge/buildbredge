@@ -55,3 +55,19 @@
   1. 房主发布项目 → 选择类别和专业 → 项目详情页自动显示推荐技师
   2. 技师设置专业 → 个人资料页选择专业技能 → 工作台显示匹配项目
   3. 双向匹配 → 点击查看详情 → 一键联系合作
+
+  1.tradie_professions表里没有category_id,需要添加这个column   
+  2 技师用户再刚刚注册完，选择专业技能时，只选择了一个专业技能（CATEGORIES表) 需要把这个存到tradie_professions表里,
+  记录下所选的category_id
+  3.在profile页面出现下面的错误
+   </Label>
+  248 |           <div className="space-y-3">
+> 249 |             {categories.map((category) => {
+      |                         ^
+  250 |               const categoryProfessions = getProfessionsForCategory(category.id)
+  251 |               const isOpen = openCategories.includes(category.id)
+  252 |               const selectedCount = categoryProfessions.filter(p => 
+
+
+  技师工作台中的选择工作类别验证功能可以去掉了,因为注册的时候已经选择了工作领域.这两个是一回事.
+  只需要读取tradie_professions表中的category_id就可以了.

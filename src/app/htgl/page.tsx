@@ -65,6 +65,7 @@ import {
   TrendingUp
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string
@@ -74,7 +75,7 @@ interface User {
   userType: 'homeowner' | 'tradie' | 'supplier'
   location: string
   joinDate: string
-  status: 'active' | 'inactive' | 'suspended' | 'approved' | 'pending'
+  status: 'active' | 'inactive' | 'suspended' | 'approved' | 'pending' | 'closed'
   avatar?: string
   lastLogin: string
   projectsCount: number
@@ -118,6 +119,7 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [stats, setStats] = useState<AdminStats>({
@@ -131,73 +133,103 @@ export default function AdminDashboard() {
     newProjectsThisMonth: 0
   })
   const [loading, setLoading] = useState(true)
+  const [adminUser, setAdminUser] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [userFilter, setUserFilter] = useState("all")
   const [projectFilter, setProjectFilter] = useState("all")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [statusChanging, setStatusChanging] = useState<string | null>(null)
 
-  // 从真实数据库获取数据
+  // 检查admin权限
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const checkAdminAuth = () => {
+      const token = localStorage.getItem("adminToken")
+      const user = localStorage.getItem("adminUser")
+
+      if (!token || !user) {
+        router.push("/htgl/login")
+        return false
+      }
+
       try {
-        setLoading(true)
-        
-        // 并行获取所有数据
-        const [statsResponse, usersResponse, projectsResponse] = await Promise.all([
-          fetch('/api/admin/stats'),
-          fetch('/api/admin/users-list?limit=10'), // 只获取前10个用户用于显示
-          fetch('/api/admin/projects-list?limit=10') // 只获取前10个项目用于显示
-        ])
-
-        // 处理统计数据
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json()
-          if (statsData.success) {
-            setStats({
-              totalUsers: statsData.stats.totalUsers,
-              totalProjects: statsData.stats.totalProjects,
-              activeProjects: statsData.stats.activeProjects,
-              completedProjects: statsData.stats.completedProjects,
-              totalRevenue: statsData.stats.totalRevenue,
-              monthlyGrowth: statsData.stats.monthlyGrowth,
-              newUsersThisMonth: statsData.stats.newUsersThisMonth,
-              newProjectsThisMonth: statsData.stats.newProjectsThisMonth
-            })
-          }
-        } else {
-          console.error('Failed to fetch stats:', await statsResponse.text())
-        }
-
-        // 处理用户数据
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json()
-          if (usersData.success) {
-            setUsers(usersData.users)
-          }
-        } else {
-          console.error('Failed to fetch users:', await usersResponse.text())
-        }
-
-        // 处理项目数据
-        if (projectsResponse.ok) {
-          const projectsData = await projectsResponse.json()
-          if (projectsData.success) {
-            setProjects(projectsData.projects)
-          }
-        } else {
-          console.error('Failed to fetch projects:', await projectsResponse.text())
-        }
-
+        const adminUserData = JSON.parse(user)
+        setAdminUser(adminUserData)
+        return true
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
+        console.error("Invalid admin user data:", error)
+        localStorage.removeItem("adminToken")
+        localStorage.removeItem("adminUser")
+        router.push("/htgl/login")
+        return false
       }
     }
 
+    if (!checkAdminAuth()) {
+      return
+    }
+
+    // 只有通过admin验证后才继续加载数据
     fetchDashboardData()
-  }, [])
+  }, [router])
+
+  // 从真实数据库获取数据
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // 并行获取所有数据
+      const [statsResponse, usersResponse, projectsResponse] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/users-list?limit=10'), // 只获取前10个用户用于显示
+        fetch('/api/admin/projects-list?limit=10') // 只获取前10个项目用于显示
+      ])
+
+      // 处理统计数据
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        if (statsData.success) {
+          setStats({
+            totalUsers: statsData.stats.totalUsers,
+            totalProjects: statsData.stats.totalProjects,
+            activeProjects: statsData.stats.activeProjects,
+            completedProjects: statsData.stats.completedProjects,
+            totalRevenue: statsData.stats.totalRevenue,
+            monthlyGrowth: statsData.stats.monthlyGrowth,
+            newUsersThisMonth: statsData.stats.newUsersThisMonth,
+            newProjectsThisMonth: statsData.stats.newProjectsThisMonth
+          })
+        }
+      } else {
+        console.error('Failed to fetch stats:', await statsResponse.text())
+      }
+
+      // 处理用户数据
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json()
+        if (usersData.success) {
+          setUsers(usersData.users)
+        }
+      } else {
+        console.error('Failed to fetch users:', await usersResponse.text())
+      }
+
+      // 处理项目数据
+      if (projectsResponse.ok) {
+        const projectsData = await projectsResponse.json()
+        if (projectsData.success) {
+          setProjects(projectsData.projects)
+        }
+      } else {
+        console.error('Failed to fetch projects:', await projectsResponse.text())
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -245,12 +277,69 @@ export default function AdminDashboard() {
     document.body.removeChild(link)
   }
 
-  if (loading) {
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("adminUser")
+    router.push("/htgl/login")
+  }
+
+  const handleStatusChange = async (userId: string, newStatus: 'pending' | 'approved' | 'closed' | 'active' | 'inactive' | 'suspended') => {
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+
+    const statusText = {
+      pending: '待审核',
+      approved: '已开通', 
+      closed: '已关闭',
+      active: '激活',
+      inactive: '未激活',
+      suspended: '已暂停'
+    }[newStatus]
+
+    if (!confirm(`确定要将用户 ${user.name} 的状态更改为 "${statusText}" 吗？`)) {
+      return
+    }
+
+    try {
+      setStatusChanging(userId)
+      
+      const response = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Update local state
+        setUsers(users.map(u => 
+          u.id === userId ? { ...u, status: newStatus } : u
+        ))
+        alert(`用户状态已成功更新为 "${statusText}"`)
+      } else {
+        alert(`更新失败: ${result.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('Status change error:', error)
+      alert('更新用户状态时发生错误，请稍后重试')
+    } finally {
+      setStatusChanging(null)
+    }
+  }
+
+  // 如果还没有验证admin权限或正在加载数据，显示加载状态
+  if (!adminUser || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载数据中...</p>
+          <p className="mt-4 text-gray-600">
+            {!adminUser ? "验证管理员权限中..." : "加载数据中..."}
+          </p>
         </div>
       </div>
     )
@@ -293,7 +382,7 @@ export default function AdminDashboard() {
                     <Settings className="w-4 h-4 mr-2" />
                     系统设置
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600">
+                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                     <LogOut className="w-4 h-4 mr-2" />
                     退出登录
                   </DropdownMenuItem>
@@ -514,10 +603,42 @@ export default function AdminDashboard() {
                                   发送消息
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  暂停账户
-                                </DropdownMenuItem>
+                                {/* 只为技师用户显示状态更改选项 */}
+                                {user.userType === 'tradie' && (
+                                  <>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleStatusChange(user.id, 'approved')}
+                                      disabled={user.status === 'approved' || statusChanging === user.id}
+                                      className="text-green-600"
+                                    >
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      审核通过
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleStatusChange(user.id, 'pending')}
+                                      disabled={user.status === 'pending' || statusChanging === user.id}
+                                      className="text-yellow-600"
+                                    >
+                                      <AlertCircle className="w-4 h-4 mr-2" />
+                                      设为待审核
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleStatusChange(user.id, 'closed')}
+                                      disabled={user.status === 'closed' || statusChanging === user.id}
+                                      className="text-red-600"
+                                    >
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      拒绝审核
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {/* 房主用户只显示暂停选项 */}
+                                {user.userType === 'homeowner' && (
+                                  <DropdownMenuItem className="text-red-600">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    暂停账户
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>

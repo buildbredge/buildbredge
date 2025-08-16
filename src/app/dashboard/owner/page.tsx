@@ -332,7 +332,10 @@ export default function OwnerDashboardPage() {
         )}
 
         {/* Anonymous Project Claim Notification */}
-        <AnonymousProjectClaimNotification onClaim={checkUser} />
+        <AnonymousProjectClaimNotification onClaim={() => {
+          checkUser()
+          fetchDashboardData()
+        }} />
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}

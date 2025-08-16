@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   Users,
   Search,
@@ -28,7 +29,8 @@ import {
   Download,
   RefreshCw,
   Star,
-  Eye
+  Eye,
+  XCircle
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -214,6 +216,7 @@ export default function UsersManagePage() {
   const [sortOrder, setSortOrder] = useState("desc")
   const [showUserDetailDialog, setShowUserDetailDialog] = useState(false)
   const [selectedUserDetail, setSelectedUserDetail] = useState<any>(null)
+  const [statusChanging, setStatusChanging] = useState<string | null>(null)
 
   // 加载统计数据
   const loadStats = async () => {
@@ -288,6 +291,51 @@ export default function UsersManagePage() {
     if (confirm("确定要删除这个用户吗？")) {
       setUsers(users.filter(user => user.id !== userId))
       setSelectedUsers(selectedUsers.filter(id => id !== userId))
+    }
+  }
+
+  const handleStatusChange = async (userId: string, newStatus: 'pending' | 'approved' | 'closed') => {
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+
+    const statusText = {
+      pending: '待审核',
+      approved: '已开通', 
+      closed: '已关闭'
+    }[newStatus]
+
+    if (!confirm(`确定要将用户 ${user.name || user.email} 的状态更改为 "${statusText}" 吗？`)) {
+      return
+    }
+
+    try {
+      setStatusChanging(userId)
+      
+      const response = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Update local state
+        setUsers(users.map(u => 
+          u.id === userId ? { ...u, status: newStatus } : u
+        ))
+        alert(`用户状态已成功更新为 "${statusText}"`)
+      } else {
+        alert(`更新失败: ${result.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('Status change error:', error)
+      alert('更新用户状态时发生错误，请稍后重试')
+    } finally {
+      setStatusChanging(null)
     }
   }
 
@@ -785,6 +833,58 @@ export default function UsersManagePage() {
                           >
                             <Edit className="w-3 h-3" />
                           </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={statusChanging === user.id}
+                                title="更改状态"
+                              >
+                                {statusChanging === user.id ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Shield className="w-3 h-3" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/* 只为技师用户显示状态更改选项 */}
+                              {user.userType === 'tradie' ? (
+                                <>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleStatusChange(user.id, 'approved')}
+                                    disabled={user.status === 'approved' || statusChanging === user.id}
+                                    className="text-green-600"
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-2" />
+                                    审核通过
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleStatusChange(user.id, 'pending')}
+                                    disabled={user.status === 'pending' || statusChanging === user.id}
+                                    className="text-yellow-600"
+                                  >
+                                    <AlertTriangle className="w-3 h-3 mr-2" />
+                                    设为待审核
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleStatusChange(user.id, 'closed')}
+                                    disabled={user.status === 'closed' || statusChanging === user.id}
+                                    className="text-red-600"
+                                  >
+                                    <XCircle className="w-3 h-3 mr-2" />
+                                    拒绝审核
+                                  </DropdownMenuItem>
+                                </>
+                              ) : (
+                                <DropdownMenuItem disabled className="text-gray-400">
+                                  <CheckCircle className="w-3 h-3 mr-2" />
+                                  房主用户无需审核
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Button
                             variant="outline"
                             size="sm"

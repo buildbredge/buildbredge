@@ -67,15 +67,20 @@ export function ProfessionSelector({ tradieId, onProfessionsChange }: Profession
         const tradieData = await tradieResponse.json()
 
         if (categoriesResponse.ok && professionsResponse.ok && tradieResponse.ok) {
-          setCategories(categoriesData || [])
-          setProfessions(professionsData.professions || [])
+          // Ensure we have valid arrays
+          const categoriesArray = Array.isArray(categoriesData) ? categoriesData : []
+          const professionsArray = Array.isArray(professionsData?.professions) ? professionsData.professions : []
+          const currentProfessions = Array.isArray(tradieData?.professions) ? tradieData.professions : []
           
-          const currentProfessionIds = tradieData.professions?.map((p: Profession) => p.id) || []
+          setCategories(categoriesArray)
+          setProfessions(professionsArray)
+          
+          const currentProfessionIds = currentProfessions.map((p: Profession) => p.id)
           setSelectedProfessions(currentProfessionIds)
 
           // Auto-open categories that have selected professions
           const categoriesToOpen = new Set<string>()
-          tradieData.professions?.forEach((prof: Profession) => {
+          currentProfessions.forEach((prof: Profession) => {
             if (prof.category_id) {
               categoriesToOpen.add(prof.category_id)
             }
@@ -246,7 +251,7 @@ export function ProfessionSelector({ tradieId, onProfessionsChange }: Profession
             选择服务类别和专业技能
           </Label>
           <div className="space-y-3">
-            {categories.map((category) => {
+            {(categories || []).map((category) => {
               const categoryProfessions = getProfessionsForCategory(category.id)
               const isOpen = openCategories.includes(category.id)
               const selectedCount = categoryProfessions.filter(p => 

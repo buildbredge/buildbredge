@@ -52,6 +52,8 @@ export async function GET(
       .single()
 
     // Build the base query for matching projects
+    // Only show projects that are available for tradies to accept
+    // Exclude: in-progress, completed, reviewed projects
     let query = supabase
       .from("projects")
       .select(`
@@ -82,27 +84,10 @@ export async function GET(
           category_id
         )
       `)
-      .eq("status", "published")
+      .eq("status", "published")  // Only published projects (exclude draft, completed, cancelled)
       .order("created_at", { ascending: false })
 
-    // First try exact profession matches
-    let { data: exactMatches, count: exactCount } = await query
-      .in("profession_id", professionIds)
-      .range(offset, offset + limit - 1)
-
-    if (exactMatches && exactMatches.length >= limit) {
-      const processedProjects = processProjectResults(exactMatches, tradieData)
-      return NextResponse.json({
-        projects: processedProjects,
-        total: exactCount || 0,
-        page,
-        limit,
-        totalPages: Math.ceil((exactCount || 0) / limit),
-        matchType: "exact"
-      })
-    }
-
-    // Then try category matches
+    // Primary matching: by category_id (as requested)
     let { data: categoryMatches, count: categoryCount } = await query
       .in("category_id", categoryIds)
       .range(offset, offset + limit - 1)
@@ -116,6 +101,23 @@ export async function GET(
         limit,
         totalPages: Math.ceil((categoryCount || 0) / limit),
         matchType: "category"
+      })
+    }
+
+    // Secondary: exact profession matches (if no category matches)
+    let { data: exactMatches, count: exactCount } = await query
+      .in("profession_id", professionIds)
+      .range(offset, offset + limit - 1)
+
+    if (exactMatches && exactMatches.length > 0) {
+      const processedProjects = processProjectResults(exactMatches, tradieData)
+      return NextResponse.json({
+        projects: processedProjects,
+        total: exactCount || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((exactCount || 0) / limit),
+        matchType: "exact"
       })
     }
 

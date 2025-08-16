@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Clock, MapPin, DollarSign, Calendar, MessageCircle, Star, Eye,
   CheckCircle, AlertCircle, User, Phone, Mail, ChevronRight,
-  FileText, Camera, Plus, Filter, Search
+  FileText, Camera, Plus, Filter, Search, LogIn, Lock
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -51,16 +52,29 @@ interface Quote {
 
 function MyProjectsContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user, authUser, isLoading } = useAuth()
   const highlightedProjectId = searchParams?.get('project')
 
   const [projects, setProjects] = useState<Project[]>([])
   const [activeTab, setActiveTab] = useState('active')
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   useEffect(() => {
-    loadProjects()
-    generateMockQuotes()
-  }, [])
+    if (!isLoading) {
+      if (!authUser) {
+        setShowLoginPrompt(true)
+      } else {
+        loadProjects()
+        generateMockQuotes()
+      }
+    }
+  }, [isLoading, authUser])
+
+  const handleLoginRedirect = () => {
+    router.push('/auth/login?redirect=/my-projects')
+  }
 
   const loadProjects = () => {
     if (typeof window !== 'undefined') {
@@ -198,9 +212,86 @@ function MyProjectsContent() {
 
   const filteredProjects = filterProjects(activeTab)
 
+  // 显示加载状态
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 显示登录提示
+  if (!authUser || showLoginPrompt) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">需要登录</h2>
+              <p className="text-gray-600 mb-6">
+                您需要登录才能查看和管理您的项目。登录后您可以：
+              </p>
+              <div className="text-left space-y-2 mb-6">
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                  查看您发布的所有项目
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                  管理收到的技师报价
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                  跟踪项目进度状态
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                  与技师直接沟通
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleLoginRedirect}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  登录账户
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  asChild
+                >
+                  <Link href="/auth/register">
+                    还没有账户？立即注册
+                  </Link>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-sm"
+                  asChild
+                >
+                  <Link href="/">
+                    返回首页
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">

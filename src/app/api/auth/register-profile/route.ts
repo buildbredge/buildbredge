@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, phone, email, location, userType, company } = body
+    const { userId, name, phone, email, location, userType, company, categoryId } = body
 
     // 验证必需字段
     if (!userId || !name || !phone || !email || !userType) {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         address: location,
-        status: 'pending',
+        status: userType === 'homeowner' ? 'approved' : 'pending', // 房主直接开通，技师需要审核
         latitude: null,
         longitude: null
       }
@@ -128,8 +128,31 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 5. 注意：不再需要创建 owners 和 tradies 表的记录
-    // 所有信息都存储在 users 和 user_roles 表中
+    // 5. 如果是技师且提供了categoryId，在tradie_professions表中创建记录
+    if (userType === 'tradie' && categoryId) {
+      // First, get the first profession in this category to use as default
+      const { data: professions, error: professionsFetchError } = await supabase
+        .from('professions')
+        .select('id')
+        .eq('category_id', categoryId)
+        .limit(1)
+
+      if (!professionsFetchError && professions && professions.length > 0) {
+        const { error: professionError } = await supabase
+          .from('tradie_professions')
+          .insert({
+            tradie_id: userId,
+            profession_id: professions[0].id,
+            category_id: categoryId
+          })
+
+        if (professionError) {
+          console.error('Profession creation error:', professionError)
+          // Don't fail the entire registration for this, just log it
+          console.warn('Failed to create tradie profession record, but continuing with registration')
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

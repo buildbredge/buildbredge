@@ -140,18 +140,21 @@ export type Database = {
           id: string
           tradie_id: string
           profession_id: string
+          category_id: string
           created_at: string
         }
         Insert: {
           id?: string
           tradie_id: string
           profession_id: string
+          category_id: string
           created_at?: string
         }
         Update: {
           id?: string
           tradie_id?: string
           profession_id?: string
+          category_id?: string
         }
       }
       users: {

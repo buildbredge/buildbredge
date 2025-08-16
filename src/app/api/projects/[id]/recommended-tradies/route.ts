@@ -54,26 +54,12 @@ export async function GET(
       .eq("user_roles.role_type", "tradie")
       .eq("status", "approved")
 
-    // Filter by profession and category
-    if (project.profession_id) {
-      // First priority: exact profession match
-      const { data: exactMatches } = await query
-        .eq("tradie_professions.profession_id", project.profession_id)
-        .order("rating", { ascending: false })
-        .limit(5)
-
-      if (exactMatches && exactMatches.length > 0) {
-        const processedTradies = processTradieResults(exactMatches, project)
-        return NextResponse.json({ tradies: processedTradies })
-      }
-    }
-
+    // Primary matching: by category_id (as requested) - show ALL matching tradies
     if (project.category_id) {
-      // Second priority: same category, different profession
+      // First priority: same category match - no limit to show all
       const { data: categoryMatches } = await query
         .eq("tradie_professions.professions.category_id", project.category_id)
         .order("rating", { ascending: false })
-        .limit(10)
 
       if (categoryMatches && categoryMatches.length > 0) {
         const processedTradies = processTradieResults(categoryMatches, project)
@@ -81,10 +67,22 @@ export async function GET(
       }
     }
 
-    // Fallback: return any available tradies
+    // Secondary matching: exact profession match (if no category matches) - show ALL
+    if (project.profession_id) {
+      const { data: exactMatches } = await query
+        .eq("tradie_professions.profession_id", project.profession_id)
+        .order("rating", { ascending: false })
+
+      if (exactMatches && exactMatches.length > 0) {
+        const processedTradies = processTradieResults(exactMatches, project)
+        return NextResponse.json({ tradies: processedTradies })
+      }
+    }
+
+    // Fallback: return any available tradies - limit fallback to avoid too many irrelevant results
     const { data: fallbackMatches } = await query
       .order("rating", { ascending: false })
-      .limit(8)
+      .limit(10)
 
     const processedTradies = processTradieResults(fallbackMatches || [], project)
     return NextResponse.json({ tradies: processedTradies })
@@ -99,7 +97,20 @@ export async function GET(
 }
 
 function processTradieResults(tradies: any[], project: any) {
-  return tradies.map((tradie: any) => {
+  // First, deduplicate tradies by ID since they might appear multiple times due to multiple professions
+  const uniqueTradies = new Map()
+  
+  tradies.forEach((tradie: any) => {
+    if (!uniqueTradies.has(tradie.id)) {
+      uniqueTradies.set(tradie.id, tradie)
+    } else {
+      // Merge professions if tradie already exists
+      const existing = uniqueTradies.get(tradie.id)
+      existing.tradie_professions = existing.tradie_professions.concat(tradie.tradie_professions)
+    }
+  })
+
+  return Array.from(uniqueTradies.values()).map((tradie: any) => {
     // Calculate distance if coordinates are available
     let distance = null
     if (
@@ -116,13 +127,17 @@ function processTradieResults(tradies: any[], project: any) {
       )
     }
 
-    // Get profession details
-    const professions = tradie.tradie_professions?.map((tp: any) => ({
-      id: tp.professions.id,
-      category_id: tp.professions.category_id,
-      name_en: tp.professions.name_en,
-      name_zh: tp.professions.name_zh,
-    })) || []
+    // Get profession details - deduplicate professions too
+    const professionsMap = new Map()
+    tradie.tradie_professions?.forEach((tp: any) => {
+      professionsMap.set(tp.professions.id, {
+        id: tp.professions.id,
+        category_id: tp.professions.category_id,
+        name_en: tp.professions.name_en,
+        name_zh: tp.professions.name_zh,
+      })
+    })
+    const professions = Array.from(professionsMap.values())
 
     return {
       id: tradie.id,
