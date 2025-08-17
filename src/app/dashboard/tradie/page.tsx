@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Wrench, Briefcase, MessageCircle, Star,
   Settings, DollarSign, TrendingUp,
@@ -380,129 +379,146 @@ export default function TradieDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-green-50 to-blue-50 p-1 rounded-lg">
-                    <TabsTrigger 
-                      value="matched" 
-                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                <div className="w-full">
+                  <div className="grid grid-cols-5 gap-3 p-1">
+                    <button
+                      onClick={() => setActiveTab("matched")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "matched"
+                          ? "border-green-500 bg-gradient-to-br from-green-50 to-green-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50 hover:shadow-md"
+                      }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Target className="w-4 h-4" />
-                        <span className="font-medium">匹配项目</span>
-                      </div>
+                      <Target className="w-5 h-5 mb-1 text-green-600" />
+                      <span className="text-xs font-medium text-gray-700">匹配项目</span>
                       {tabCounts.matched > 0 && (
-                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.matched}
-                        </Badge>
+                        </div>
                       )}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="projects" 
-                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("projects")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "projects"
+                          ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-md"
+                      }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Briefcase className="w-4 h-4" />
-                        <span className="font-medium">我的项目</span>
-                      </div>
+                      <Briefcase className="w-5 h-5 mb-1 text-blue-600" />
+                      <span className="text-xs font-medium text-gray-700">我的项目</span>
                       {tabCounts.projects > 0 && (
-                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.projects}
-                        </Badge>
+                        </div>
                       )}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="quotes" 
-                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("quotes")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "quotes"
+                          ? "border-yellow-500 bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-yellow-300 hover:bg-yellow-50 hover:shadow-md"
+                      }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="w-4 h-4" />
-                        <span className="font-medium">我的报价</span>
-                      </div>
+                      <DollarSign className="w-5 h-5 mb-1 text-yellow-600" />
+                      <span className="text-xs font-medium text-gray-700">我的报价</span>
                       {tabCounts.quotes > 0 && (
-                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-yellow-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.quotes}
-                        </Badge>
+                        </div>
                       )}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="messages" 
-                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("messages")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "messages"
+                          ? "border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 hover:shadow-md"
+                      }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="font-medium">客户沟通</span>
-                      </div>
+                      <MessageCircle className="w-5 h-5 mb-1 text-orange-600" />
+                      <span className="text-xs font-medium text-gray-700">客户沟通</span>
                       {tabCounts.messages > 0 && (
-                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.messages}
-                        </Badge>
+                        </div>
                       )}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="schedule" 
-                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("schedule")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "schedule"
+                          ? "border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 hover:shadow-md"
+                      }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4" />
-                        <span className="font-medium">日程管理</span>
-                      </div>
-                    </TabsTrigger>
-                  </TabsList>
+                      <Calendar className="w-5 h-5 mb-1 text-purple-600" />
+                      <span className="text-xs font-medium text-gray-700">日程管理</span>
+                    </button>
+                  </div>
 
-                  <TabsContent value="matched" className="mt-6">
-                    <MatchedProjectsList 
-                      tradieId={user.id} 
-                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, matched: count }))}
-                    />
-                  </TabsContent>
+                  {/* Tab Content */}
+                  <div className="mt-6">
+                    {activeTab === "matched" && (
+                      <MatchedProjectsList 
+                        tradieId={user.id} 
+                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, matched: count }))}
+                      />
+                    )}
 
-                  <TabsContent value="projects" className="mt-6">
-                    <TradieProjectsList 
-                      tradieId={user.id}
-                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, projects: count }))}
-                    />
-                  </TabsContent>
+                    {activeTab === "projects" && (
+                      <TradieProjectsList 
+                        tradieId={user.id}
+                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, projects: count }))}
+                      />
+                    )}
 
-                  <TabsContent value="quotes" className="mt-6">
-                    <TradieQuotesList 
-                      tradieId={user.id}
-                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, quotes: count }))}
-                    />
-                  </TabsContent>
+                    {activeTab === "quotes" && (
+                      <TradieQuotesList 
+                        tradieId={user.id}
+                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, quotes: count }))}
+                      />
+                    )}
 
-                  <TabsContent value="messages" className="mt-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center py-8">
-                          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 mb-2">暂无客户消息</p>
-                          <p className="text-sm text-gray-400">
-                            当有客户联系您时，消息会显示在这里
-                          </p>
-                          <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/messages">
-                              查看所有消息
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
+                    {activeTab === "messages" && (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="text-center py-8">
+                            <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-2">暂无客户消息</p>
+                            <p className="text-sm text-gray-400">
+                              当有客户联系您时，消息会显示在这里
+                            </p>
+                            <Button className="mt-4" variant="outline" asChild>
+                              <Link href="/messages">
+                                查看所有消息
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
-                  <TabsContent value="schedule" className="mt-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center py-8">
-                          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 mb-2">日程管理功能即将推出</p>
-                          <p className="text-sm text-gray-400">
-                            您将能够在这里管理工作日程和客户预约
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
+                    {activeTab === "schedule" && (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="text-center py-8">
+                            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-2">日程管理功能即将推出</p>
+                            <p className="text-sm text-gray-400">
+                              您将能够在这里管理工作日程和客户预约
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

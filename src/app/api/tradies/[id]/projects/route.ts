@@ -32,59 +32,91 @@ export async function GET(
       )
     }
 
-    // 获取技师已接受报价的项目
-    const { data: projects, error } = await supabase
+    // 先获取技师已被接受的报价
+    const { data: acceptedQuotes, error: quotesError } = await supabase
       .from('quotes')
       .select(`
         id,
+        project_id,
         price,
         description,
         created_at,
-        tradie_id,
-        status,
-        projects!inner(
-          id,
-          description,
-          location,
-          status,
-          created_at,
-          email,
-          user_id,
-          accepted_quote_id,
-          users(
-            name,
-            email
-          )
-        )
+        tradie_id
       `)
       .eq('tradie_id', tradieId)
       .eq('status', 'accepted')
-      .not('projects.accepted_quote_id', 'is', null)
-      .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error("Error fetching tradie projects:", error)
-      console.error("Error details:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
+    console.log("📊 Accepted quotes query result:", { acceptedQuotes, quotesError })
+
+    if (quotesError) {
+      console.error("Error fetching accepted quotes:", quotesError)
       return NextResponse.json(
         { 
-          error: "Failed to fetch projects",
-          debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+          error: "Failed to fetch quotes",
+          debug: process.env.NODE_ENV === 'development' ? quotesError.message : undefined
         },
         { status: 500 }
       )
+    }
+
+    if (!acceptedQuotes || acceptedQuotes.length === 0) {
+      console.log("📋 No accepted quotes found")
+      return NextResponse.json({
+        success: true,
+        projects: []
+      })
+    }
+
+    // 获取这些报价对应的项目信息
+    const projectIds = acceptedQuotes.map(quote => quote.project_id)
+    
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        description,
+        location,
+        status,
+        created_at,
+        email,
+        user_id,
+        accepted_quote_id
+      `)
+      .in('id', projectIds)
+      .order('created_at', { ascending: false })
+
+    console.log("📋 Projects query result:", { projects, projectsError })
+
+    if (projectsError) {
+      console.error("Error fetching projects:", projectsError)
+      return NextResponse.json(
+        { 
+          error: "Failed to fetch projects",
+          debug: process.env.NODE_ENV === 'development' ? projectsError.message : undefined
+        },
+        { status: 500 }
+      )
+    }
+
+    // 获取项目业主信息
+    const userIds = projects?.map(p => p.user_id).filter(Boolean) || []
+    let owners: any[] = []
+    
+    if (userIds.length > 0) {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds)
+      
+      owners = usersData || []
     }
 
     console.log(`Found ${projects?.length || 0} projects for tradie ${tradieId}`)
 
     // 处理数据结构
     const processedProjects = projects?.map(project => {
-      const acceptedQuote = Array.isArray(project.quotes) ? project.quotes[0] : project.quotes
-      const owner = Array.isArray(project.users) ? project.users[0] : project.users
+      const acceptedQuote = acceptedQuotes.find(q => q.project_id === project.id)
+      const owner = owners.find(o => o.id === project.user_id)
       
       return {
         id: project.id,

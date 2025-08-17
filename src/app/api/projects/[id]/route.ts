@@ -17,7 +17,7 @@ interface ProjectDetailResponse {
   location: string | null
 }
 
-// 获取单个项目详情 - 公开访问
+// 获取单个项目详情 - 支持不同访问级别
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -25,7 +25,16 @@ export async function GET(
   try {
     const { id } = await params
 
-    // 查询项目详情 - 只返回已发布的项目
+    // 检查用户身份以确定访问权限
+    let currentUser = null
+    const authHeader = request.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      const { data: { user } } = await supabase.auth.getUser(token)
+      currentUser = user
+    }
+
+    // 查询项目详情
     const { data: project, error } = await supabase
       .from('projects')
       .select(`
@@ -34,7 +43,6 @@ export async function GET(
         profession:professions(id, name_en, name_zh)
       `)
       .eq('id', id)
-      .eq('status', 'published') // 只允许访问已发布的项目
       .single()
 
     if (error) {
@@ -48,6 +56,19 @@ export async function GET(
       return NextResponse.json({
         error: "获取项目详情失败"
       }, { status: 500 })
+    }
+
+    // 访问权限检查
+    if (project) {
+      // 项目所有者可以访问任何状态的项目
+      const isOwner = currentUser && project.user_id === currentUser.id
+      
+      // 非所有者只能访问已发布的项目
+      if (!isOwner && project.status !== 'published') {
+        return NextResponse.json({
+          error: "项目不存在或已被删除"
+        }, { status: 404 })
+      }
     }
 
     // 直接返回项目数据，保持与原来API相同的格式

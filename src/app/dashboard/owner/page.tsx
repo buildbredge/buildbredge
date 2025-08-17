@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Home, Briefcase, MessageCircle, Star,
   Settings, Plus, Eye, DollarSign,
@@ -96,6 +95,12 @@ export default function OwnerDashboardPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [totalProjects, setTotalProjects] = useState(0)
   const [activeTab, setActiveTab] = useState("projects")
+  const [tabCounts, setTabCounts] = useState({
+    projects: 0,
+    quotes: 0,
+    messages: 0,
+    reviews: 0
+  })
 
   useEffect(() => {
     checkUser()
@@ -369,72 +374,130 @@ export default function OwnerDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="projects" className="flex items-center space-x-2">
-                      <Briefcase className="w-4 h-4" />
-                      <span>我的项目</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="quotes" className="flex items-center space-x-2">
-                      <DollarSign className="w-4 h-4" />
-                      <span>报价管理</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="messages" className="flex items-center space-x-2">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>消息中心</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="reviews" className="flex items-center space-x-2">
-                      <Star className="w-4 h-4" />
-                      <span>评价管理</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="projects" className="mt-6">
-                    <OwnerProjectsList userId={user.id} />
-                  </TabsContent>
-
-                  <TabsContent value="quotes" className="mt-6">
-                    <OwnerQuotesManagement userId={user.id} />
-                  </TabsContent>
-
-                  <TabsContent value="messages" className="mt-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center py-8">
-                          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 mb-2">暂无新消息</p>
-                          <p className="text-sm text-gray-400">
-                            当技师联系您时，消息会显示在这里
-                          </p>
-                          <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/messages">
-                              查看所有消息
-                            </Link>
-                          </Button>
+                <div className="w-full">
+                  <div className="grid grid-cols-4 gap-3 p-1">
+                    <button
+                      onClick={() => setActiveTab("projects")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "projects"
+                          ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 hover:shadow-md"
+                      }`}
+                    >
+                      <Briefcase className="w-5 h-5 mb-1 text-blue-600" />
+                      <span className="text-xs font-medium text-gray-700">我的项目</span>
+                      {tabCounts.projects > 0 && (
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
+                          {tabCounts.projects}
                         </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  <TabsContent value="reviews" className="mt-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center py-8">
-                          <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 mb-2">暂无评价</p>
-                          <p className="text-sm text-gray-400">
-                            项目完成后您可以在这里管理对技师的评价
-                          </p>
-                          <Button className="mt-4" variant="outline" asChild>
-                            <Link href="/reviews">
-                              查看评价历史
-                            </Link>
-                          </Button>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("quotes")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "quotes"
+                          ? "border-green-500 bg-gradient-to-br from-green-50 to-green-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50 hover:shadow-md"
+                      }`}
+                    >
+                      <DollarSign className="w-5 h-5 mb-1 text-green-600" />
+                      <span className="text-xs font-medium text-gray-700">报价管理</span>
+                      {tabCounts.quotes > 0 && (
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
+                          {tabCounts.quotes}
                         </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("messages")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "messages"
+                          ? "border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50 hover:shadow-md"
+                      }`}
+                    >
+                      <MessageCircle className="w-5 h-5 mb-1 text-orange-600" />
+                      <span className="text-xs font-medium text-gray-700">消息中心</span>
+                      {tabCounts.messages > 0 && (
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
+                          {tabCounts.messages}
+                        </div>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => setActiveTab("reviews")}
+                      className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
+                        activeTab === "reviews"
+                          ? "border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg"
+                          : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 hover:shadow-md"
+                      }`}
+                    >
+                      <Star className="w-5 h-5 mb-1 text-purple-600" />
+                      <span className="text-xs font-medium text-gray-700">评价管理</span>
+                      {tabCounts.reviews > 0 && (
+                        <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
+                          {tabCounts.reviews}
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Tab Content */}
+                  <div className="mt-6">
+                    {activeTab === "projects" && (
+                      <OwnerProjectsList 
+                        userId={user.id} 
+                      />
+                    )}
+
+                    {activeTab === "quotes" && (
+                      <OwnerQuotesManagement 
+                        userId={user.id}
+                      />
+                    )}
+
+                    {activeTab === "messages" && (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="text-center py-8">
+                            <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-2">暂无新消息</p>
+                            <p className="text-sm text-gray-400">
+                              当技师联系您时，消息会显示在这里
+                            </p>
+                            <Button className="mt-4" variant="outline" asChild>
+                              <Link href="/messages">
+                                查看所有消息
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {activeTab === "reviews" && (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="text-center py-8">
+                            <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 mb-2">暂无评价</p>
+                            <p className="text-sm text-gray-400">
+                              项目完成后您可以在这里管理对技师的评价
+                            </p>
+                            <Button className="mt-4" variant="outline" asChild>
+                              <Link href="/reviews">
+                                查看评价历史
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

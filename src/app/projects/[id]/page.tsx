@@ -28,6 +28,7 @@ import {
 import { type Project, type Category, type Profession } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSignedImageUrls } from "@/hooks/useSignedImageUrl"
+import { authService } from "@/lib/services/authService"
 import { ImageGalleryModal } from "@/components/ImageGalleryModal"
 import { TradieRecommendations } from "@/components/TradieRecommendations"
 import { QuoteSubmissionModal } from "@/components/QuoteSubmissionModal"
@@ -68,8 +69,18 @@ export default function ProjectDetailPage() {
         setLoading(true)
         const projectId = params.id as string
         
+        // 获取认证令牌
+        const session = await authService.getCurrentSession()
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json'
+        }
+        
+        if (session?.session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.session.access_token}`
+        }
+        
         // 使用API路由而不是直接的Supabase查询
-        const response = await fetch(`/api/projects/${projectId}`)
+        const response = await fetch(`/api/projects/${projectId}`, { headers })
         if (!response.ok) {
           throw new Error('项目不存在或已被删除')
         }
