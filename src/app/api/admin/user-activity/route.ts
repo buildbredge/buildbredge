@@ -94,7 +94,6 @@ export async function GET(request: Request) {
         ...owner,
         userType: 'owner' as const,
         company: null,
-        specialty: null,
         service_radius: null,
         rating: null,
         review_count: null,

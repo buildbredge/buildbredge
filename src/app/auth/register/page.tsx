@@ -9,6 +9,7 @@ import { EmailVerificationDialog } from "@/components/ui/email-verification-dial
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("")
   const [userType, setUserType] = useState<"homeowner" | "tradie" | "">("")
   const [location, setLocation] = useState("")
+  const [googlePlace, setGooglePlace] = useState<PlaceResult | undefined>(undefined)
   const [companyName, setCompanyName] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [categories, setCategories] = useState<Array<{id: string, name_en: string, name_zh: string}>>([])
@@ -54,6 +56,12 @@ export default function RegisterPage() {
       console.error('Error fetching categories:', error)
       setError('加载专业领域失败，请检查网络连接')
     }
+  }
+
+  // 处理Google Places地址选择
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setGooglePlace(place)
+    setLocation(place.address) // 同时更新location字段以保持兼容性
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,13 +190,24 @@ export default function RegisterPage() {
             
             <div>
               <Label htmlFor="location">地址 *</Label>
-              <Input 
-                id="location" 
-                value={location} 
-                onChange={e => setLocation(e.target.value)} 
-                placeholder="请输入地址" 
-                required 
-              />
+              <div className="mt-2">
+                {!googlePlace ? (
+                  <GooglePlacesAutocomplete
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="请输入您的地址..."
+                    label=""
+                    className="h-10"
+                  />
+                ) : (
+                  <SelectedAddressDisplay
+                    place={googlePlace}
+                    onEdit={() => {
+                      setGooglePlace(undefined)
+                      setLocation("")
+                    }}
+                  />
+                )}
+              </div>
             </div>
             
             {userType === "tradie" && (

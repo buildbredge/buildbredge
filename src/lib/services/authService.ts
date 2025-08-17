@@ -135,7 +135,8 @@ class AuthService {
             email: userData.email,
             location: userData.location,
             userType: userData.userType,
-            company: userData.company
+            company: userData.company,
+            categoryId: userData.categoryId
           })
         })
 

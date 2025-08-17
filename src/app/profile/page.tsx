@@ -62,24 +62,17 @@ export default function ProfilePage() {
       // Load tradie data if available
       if (user.tradieData) {
         setCompanyName(user.tradieData.company || "")
-        setSpecialty(user.tradieData.specialty || "")
+        setSpecialty(user.tradieData.specialty || "未设置专业领域")
+        
+        // If specialty is available, extract it as a category
+        if (user.tradieData.specialty && user.tradieData.specialty !== "未设置专业领域") {
+          setTradieCategories([user.tradieData.specialty])
+        }
       }
       
-      // Load tradie categories if user is a tradie
       console.log("User data:", user)
-      console.log("User active role:", user.activeRole)
-      console.log("User roles:", user.roles)
-      
-      // Check if user has tradie role (either as activeRole or in roles array)
-      const isTradie = user.activeRole === "tradie" || 
-                       (user.roles && user.roles.some((role: any) => role.role_type === 'tradie'))
-      
-      if (isTradie && user.id) {
-        console.log("User is tradie, fetching categories")
-        fetchTradieCategories(user.id)
-      } else {
-        console.log("User is not tradie or no user ID")
-      }
+      console.log("User tradieData:", user.tradieData)
+      console.log("Loaded specialty:", user.tradieData?.specialty)
     }
   }, [user, authLoading, router])
 
@@ -482,13 +475,13 @@ export default function ProfilePage() {
                             <Label htmlFor="specialty">专业领域</Label>
                             <Input 
                               id="specialty" 
-                              value={specialty || "未设置专业领域"}
+                              value={specialty}
                               readOnly
                               className="bg-gray-50"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                              {tradieCategories.length > 0 
-                                ? `已设置 ${tradieCategories.length} 个专业领域，如需修改请联系管理员`
+                              {specialty && specialty !== "未设置专业领域"
+                                ? "如需修改专业领域请联系管理员"
                                 : "未设置专业领域，如需设置请联系管理员"
                               }
                             </p>

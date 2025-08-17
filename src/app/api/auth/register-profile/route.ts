@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export const dynamic = "force-dynamic"
 
@@ -130,27 +136,19 @@ export async function POST(request: NextRequest) {
 
     // 5. 如果是技师且提供了categoryId，在tradie_professions表中创建记录
     if (userType === 'tradie' && categoryId) {
-      // First, get the first profession in this category to use as default
-      const { data: professions, error: professionsFetchError } = await supabase
-        .from('professions')
-        .select('id')
-        .eq('category_id', categoryId)
-        .limit(1)
+      const { error: professionError } = await supabase
+        .from('tradie_professions')
+        .insert({
+          tradie_id: userId,
+          category_id: categoryId
+        })
 
-      if (!professionsFetchError && professions && professions.length > 0) {
-        const { error: professionError } = await supabase
-          .from('tradie_professions')
-          .insert({
-            tradie_id: userId,
-            profession_id: professions[0].id,
-            category_id: categoryId
-          })
-
-        if (professionError) {
-          console.error('Profession creation error:', professionError)
-          // Don't fail the entire registration for this, just log it
-          console.warn('Failed to create tradie profession record, but continuing with registration')
-        }
+      if (professionError) {
+        console.error('Profession creation error:', professionError)
+        return NextResponse.json({
+          success: false,
+          error: `专业技能记录创建失败: ${professionError.message}`
+        }, { status: 500 })
       }
     }
 

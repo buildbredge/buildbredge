@@ -13,18 +13,10 @@ export async function GET(
     const limit = parseInt(searchParams.get("limit") || "10")
     const offset = (page - 1) * limit
 
-    // First get the tradie's professions
+    // First get the tradie's categories
     const { data: tradieProfessions, error: professionError } = await supabase
       .from("tradie_professions")
-      .select(`
-        profession_id,
-        professions!inner(
-          id,
-          category_id,
-          name_en,
-          name_zh
-        )
-      `)
+      .select("category_id")
       .eq("tradie_id", tradieId)
 
     if (professionError || !tradieProfessions || tradieProfessions.length === 0) {
@@ -37,12 +29,8 @@ export async function GET(
       })
     }
 
-    // Get the profession IDs and category IDs
-    const professionIds = tradieProfessions.map(tp => tp.profession_id)
-    const categoryIds = [...new Set(tradieProfessions.map(tp => {
-      const professions = Array.isArray(tp.professions) ? tp.professions[0] : tp.professions
-      return professions?.category_id
-    }).filter(Boolean))]
+    // Get the category IDs
+    const categoryIds = [...new Set(tradieProfessions.map(tp => tp.category_id).filter(Boolean))]
 
     // Get the tradie's location for distance calculation
     const { data: tradieData } = await supabase
@@ -71,29 +59,22 @@ export async function GET(
         created_at,
         updated_at,
         category_id,
-        profession_id,
         categories(
           id,
           name_en,
           name_zh
-        ),
-        professions(
-          id,
-          name_en,
-          name_zh,
-          category_id
         )
       `)
       .eq("status", "published")  // Only published projects (exclude draft, completed, cancelled)
       .order("created_at", { ascending: false })
 
-    // Primary matching: by category_id (as requested)
-    let { data: categoryMatches, count: categoryCount } = await query
-      .in("category_id", categoryIds)
-      .range(offset, offset + limit - 1)
+    // Only matching by category_id
+    if (categoryIds.length > 0) {
+      let { data: categoryMatches, count: categoryCount } = await query
+        .in("category_id", categoryIds)
+        .range(offset, offset + limit - 1)
 
-    if (categoryMatches && categoryMatches.length > 0) {
-      const processedProjects = processProjectResults(categoryMatches, tradieData)
+      const processedProjects = processProjectResults(categoryMatches || [], tradieData)
       return NextResponse.json({
         projects: processedProjects,
         total: categoryCount || 0,
@@ -104,35 +85,14 @@ export async function GET(
       })
     }
 
-    // Secondary: exact profession matches (if no category matches)
-    let { data: exactMatches, count: exactCount } = await query
-      .in("profession_id", professionIds)
-      .range(offset, offset + limit - 1)
-
-    if (exactMatches && exactMatches.length > 0) {
-      const processedProjects = processProjectResults(exactMatches, tradieData)
-      return NextResponse.json({
-        projects: processedProjects,
-        total: exactCount || 0,
-        page,
-        limit,
-        totalPages: Math.ceil((exactCount || 0) / limit),
-        matchType: "exact"
-      })
-    }
-
-    // Fallback: return recent projects
-    const { data: fallbackMatches, count: fallbackCount } = await query
-      .range(offset, offset + limit - 1)
-
-    const processedProjects = processProjectResults(fallbackMatches || [], tradieData)
+    // No categories found for this tradie
     return NextResponse.json({
-      projects: processedProjects,
-      total: fallbackCount || 0,
+      projects: [],
+      total: 0,
       page,
       limit,
-      totalPages: Math.ceil((fallbackCount || 0) / limit),
-      matchType: "fallback"
+      totalPages: 0,
+      matchType: "none"
     })
 
   } catch (error) {
@@ -178,12 +138,6 @@ function processProjectResults(projects: any[], tradieData: any) {
         id: project.categories.id,
         name_en: project.categories.name_en,
         name_zh: project.categories.name_zh,
-      } : null,
-      profession: project.professions ? {
-        id: project.professions.id,
-        name_en: project.professions.name_en,
-        name_zh: project.professions.name_zh,
-        category_id: project.professions.category_id,
       } : null,
       distance: distance,
       // Flag if the project is within service radius

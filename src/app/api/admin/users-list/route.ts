@@ -67,7 +67,6 @@ export async function GET(request: NextRequest) {
         totalSpent: 0, // Would need calculation from projects
         rating: null, // Would need calculation from reviews
         company: null, // Not stored in users table currently
-        specialty: null, // Not stored in users table currently
         roles: user.user_roles.map(r => r.role_type)
       }
     })

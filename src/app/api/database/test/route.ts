@@ -22,7 +22,7 @@ export async function GET() {
     }
 
     // 测试所有表是否存在以及新字段
-    const tables = ['projects', 'owners', 'tradies', 'reviews']
+    const tables = ['projects', 'users', 'user_roles', 'reviews', 'categories', 'professions', 'tradie_professions']
     const tableStatus: Record<string, any> = {}
 
     for (const table of tables) {
@@ -49,47 +49,51 @@ export async function GET() {
           // 检查项目表的坐标字段
           const { data: projectSample } = await supabase
             .from('projects')
-            .select('latitude, longitude')
+            .select('latitude, longitude, category_id, profession_id')
             .limit(1)
             .single()
 
           enhancedFields = {
             hasCoordinates: projectSample && 'latitude' in projectSample && 'longitude' in projectSample,
+            hasCategoryProfession: projectSample && 'category_id' in projectSample && 'profession_id' in projectSample,
             coordinatesSample: projectSample ? `${projectSample.latitude}, ${projectSample.longitude}` : null
           }
         }
 
-        if (table === 'owners') {
-          // 检查业主表的坐标和地址字段
-          const { data: ownerSample } = await supabase
-            .from('owners')
-            .select('latitude, longitude, address')
+        if (table === 'users') {
+          // 检查统一用户表的字段
+          const { data: userSample } = await supabase
+            .from('users')
+            .select('latitude, longitude, address, company, service_radius, rating, review_count, hourly_rate, experience_years, bio')
             .limit(1)
             .single()
 
           enhancedFields = {
-            hasCoordinates: ownerSample && 'latitude' in ownerSample && 'longitude' in ownerSample,
-            hasAddress: ownerSample && 'address' in ownerSample,
-            coordinatesSample: ownerSample ? `${ownerSample.latitude}, ${ownerSample.longitude}` : null
+            hasCoordinates: userSample && 'latitude' in userSample && 'longitude' in userSample,
+            hasAddress: userSample && 'address' in userSample,
+            hasTradieFields: userSample && 'company' in userSample && 'service_radius' in userSample,
+            hasRatingSystem: userSample && 'rating' in userSample && 'review_count' in userSample,
+            hasProfileFields: userSample && 'hourly_rate' in userSample && 'experience_years' in userSample && 'bio' in userSample,
+            coordinatesSample: userSample ? `${userSample.latitude}, ${userSample.longitude}` : null,
+            serviceRadiusSample: userSample?.service_radius,
+            ratingSample: userSample ? `${userSample.rating} (${userSample.review_count} reviews)` : null
           }
         }
 
-        if (table === 'tradies') {
-          // 检查技师表的增强字段
-          const { data: tradieSample } = await supabase
-            .from('tradies')
-            .select('latitude, longitude, address, service_radius, rating, review_count')
+        if (table === 'user_roles') {
+          // 检查用户角色表
+          const { data: roleSample } = await supabase
+            .from('user_roles')
+            .select('user_id, role_type, is_primary')
             .limit(1)
             .single()
 
           enhancedFields = {
-            hasCoordinates: tradieSample && 'latitude' in tradieSample && 'longitude' in tradieSample,
-            hasAddress: tradieSample && 'address' in tradieSample,
-            hasServiceRadius: tradieSample && 'service_radius' in tradieSample,
-            hasRatingSystem: tradieSample && 'rating' in tradieSample && 'review_count' in tradieSample,
-            coordinatesSample: tradieSample ? `${tradieSample.latitude}, ${tradieSample.longitude}` : null,
-            serviceRadiusSample: tradieSample?.service_radius,
-            ratingSample: tradieSample ? `${tradieSample.rating} (${tradieSample.review_count} reviews)` : null
+            hasCompleteStructure: roleSample &&
+              'user_id' in roleSample &&
+              'role_type' in roleSample &&
+              'is_primary' in roleSample,
+            sampleRole: roleSample?.role_type
           }
         }
 
@@ -109,6 +113,36 @@ export async function GET() {
             hasRatingField: reviewSample && 'rating' in reviewSample,
             hasApprovalSystem: reviewSample && 'is_approved' in reviewSample,
             sampleRating: reviewSample?.rating
+          }
+        }
+
+        if (table === 'categories' || table === 'professions') {
+          // 检查分类和职业表
+          const { data: sample } = await supabase
+            .from(table)
+            .select('name_en, name_zh')
+            .limit(1)
+            .single()
+
+          enhancedFields = {
+            hasMultiLanguage: sample && 'name_en' in sample && 'name_zh' in sample,
+            sampleName: sample ? `${sample.name_en} / ${sample.name_zh}` : null
+          }
+        }
+
+        if (table === 'tradie_professions') {
+          // 检查技师职业关联表
+          const { data: sample } = await supabase
+            .from('tradie_professions')
+            .select('tradie_id, profession_id, category_id')
+            .limit(1)
+            .single()
+
+          enhancedFields = {
+            hasCompleteStructure: sample &&
+              'tradie_id' in sample &&
+              'profession_id' in sample,
+            hasCategoryId: sample && 'category_id' in sample
           }
         }
 

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Lock, User, Building, AlertCircle } from "lucide-react"
 import Link from "next/link"
-// 直接使用fetch调用API
+import { supabase } from "@/lib/supabase"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -25,42 +25,36 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError("")
 
-    console.log('管理员登录尝试:', formData.email)
-
     try {
-      // 使用数据库验证登录
-      const response = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'login',
-          email: formData.email,
-          password: formData.password
-        })
+      // 使用 Supabase 进行登录
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       })
 
-      const data = await response.json()
-      const adminSession = response.ok ? data.admin : null
-
-      if (adminSession) {
-        // 存储管理员会话
-        if (typeof window !== 'undefined') {
-          const tokenData = {
-            token: 'admin_token_' + Date.now(),
-            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24小时过期
-          }
-          
-          localStorage.setItem('adminToken', JSON.stringify(tokenData))
-          localStorage.setItem('adminUser', JSON.stringify(adminSession))
-
-          console.log('登录成功，跳转到管理面板')
-          router.push("/htgl")
-        }
-      } else {
-        setError("邮箱或密码错误，或账户已被停用")
+      if (authError || !authData.user) {
+        setError("邮箱或密码错误")
+        setIsLoading(false)
+        return
       }
+
+      // 检查用户是否是管理员
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('email', authData.user.email)
+        .single()
+
+      if (adminError || !adminData) {
+        setError("您没有管理员权限")
+        // 登出非管理员用户
+        await supabase.auth.signOut()
+        setIsLoading(false)
+        return
+      }
+
+      // 管理员登录成功，跳转到管理面板
+      router.push("/htgl")
     } catch (error) {
       console.error('登录错误:', error)
       setError("登录过程中出现错误，请稍后重试")

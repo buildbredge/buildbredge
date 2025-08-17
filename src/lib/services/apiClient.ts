@@ -47,7 +47,6 @@ interface UserProfileData {
   activeRole?: 'owner' | 'tradie'
   // Legacy properties for backward compatibility
   company?: string
-  specialty?: string
   serviceRadius?: number
   rating?: number
   reviewCount?: number
@@ -244,7 +243,6 @@ class ApiClient {
     address: string
     role?: 'owner' | 'tradie'
     company?: string
-    specialty?: string
     serviceRadius?: number
     hourlyRate?: number
     experienceYears?: number

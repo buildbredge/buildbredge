@@ -9,10 +9,10 @@ export async function GET(
   try {
     const projectId = params.id
 
-    // First get the project details to know the category and profession
+    // First get the project details to know the category
     const { data: project, error: projectError } = await supabase
       .from("projects")
-      .select("category_id, profession_id, latitude, longitude")
+      .select("category_id, latitude, longitude")
       .eq("id", projectId)
       .single()
 
@@ -42,8 +42,9 @@ export async function GET(
         service_radius,
         user_roles!inner(role_type),
         tradie_professions!inner(
+          category_id,
           profession_id,
-          professions!inner(
+          professions(
             id,
             category_id,
             name_en,
@@ -54,11 +55,10 @@ export async function GET(
       .eq("user_roles.role_type", "tradie")
       .eq("status", "approved")
 
-    // Primary matching: by category_id (as requested) - show ALL matching tradies
+    // Only matching by category_id
     if (project.category_id) {
-      // First priority: same category match - no limit to show all
       const { data: categoryMatches } = await query
-        .eq("tradie_professions.professions.category_id", project.category_id)
+        .eq("tradie_professions.category_id", project.category_id)
         .order("rating", { ascending: false })
 
       if (categoryMatches && categoryMatches.length > 0) {
@@ -67,25 +67,8 @@ export async function GET(
       }
     }
 
-    // Secondary matching: exact profession match (if no category matches) - show ALL
-    if (project.profession_id) {
-      const { data: exactMatches } = await query
-        .eq("tradie_professions.profession_id", project.profession_id)
-        .order("rating", { ascending: false })
-
-      if (exactMatches && exactMatches.length > 0) {
-        const processedTradies = processTradieResults(exactMatches, project)
-        return NextResponse.json({ tradies: processedTradies })
-      }
-    }
-
-    // Fallback: return any available tradies - limit fallback to avoid too many irrelevant results
-    const { data: fallbackMatches } = await query
-      .order("rating", { ascending: false })
-      .limit(10)
-
-    const processedTradies = processTradieResults(fallbackMatches || [], project)
-    return NextResponse.json({ tradies: processedTradies })
+    // No matches found
+    return NextResponse.json({ tradies: [] })
 
   } catch (error) {
     console.error("Error fetching recommended tradies:", error)
@@ -127,17 +110,29 @@ function processTradieResults(tradies: any[], project: any) {
       )
     }
 
-    // Get profession details - deduplicate professions too
+    // Get profession details - deduplicate professions
     const professionsMap = new Map()
+    const categoriesMap = new Map()
+    
     tradie.tradie_professions?.forEach((tp: any) => {
-      professionsMap.set(tp.professions.id, {
-        id: tp.professions.id,
-        category_id: tp.professions.category_id,
-        name_en: tp.professions.name_en,
-        name_zh: tp.professions.name_zh,
+      // Add category info
+      categoriesMap.set(tp.category_id, {
+        id: tp.category_id,
       })
+      
+      // Add profession info only if profession_id is not null and professions data exists
+      if (tp.profession_id && tp.professions) {
+        professionsMap.set(tp.professions.id, {
+          id: tp.professions.id,
+          category_id: tp.professions.category_id,
+          name_en: tp.professions.name_en,
+          name_zh: tp.professions.name_zh,
+        })
+      }
     })
+    
     const professions = Array.from(professionsMap.values())
+    const categories = Array.from(categoriesMap.values())
 
     return {
       id: tradie.id,
@@ -153,8 +148,11 @@ function processTradieResults(tradies: any[], project: any) {
       service_radius: tradie.service_radius,
       distance: distance,
       professions: professions,
-      // Include primary profession for display
+      categories: categories,
+      // Include primary profession for display (for backward compatibility)
       primary_profession: professions[0] || null,
+      // Include primary category for display
+      primary_category: categories[0] || null,
     }
   })
   .filter((tradie: any) => {

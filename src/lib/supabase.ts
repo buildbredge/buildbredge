@@ -89,7 +89,6 @@ export interface Database {
           phone_verified: boolean
           phone_verified_at: string | null
           company: string | null
-          specialty: string | null
           service_radius: number | null
           balance: number
           rating: number
@@ -112,7 +111,6 @@ export interface Database {
           phone_verified?: boolean
           phone_verified_at?: string | null
           company?: string | null
-          specialty?: string | null
           service_radius?: number | null
           balance?: number
           rating?: number
@@ -135,7 +133,6 @@ export interface Database {
           phone_verified?: boolean
           phone_verified_at?: string | null
           company?: string | null
-          specialty?: string | null
           service_radius?: number | null
           balance?: number
           rating?: number

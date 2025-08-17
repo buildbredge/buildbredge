@@ -114,9 +114,35 @@ export async function GET(request: NextRequest) {
     if (userRoles.some(r => r.role_type === 'tradie')) {
       console.log('Getting tradie data from users table for user:', userProfile.id)
       
+      // 从tradie_professions表中获取技师的专业领域信息
+      console.log('Fetching specialty from tradie_professions table')
+      const { data: tradieProfessions, error: professionsError } = await supabase
+        .from('tradie_professions')
+        .select(`
+          categories(name_zh, name_en)
+        `)
+        .eq('tradie_id', userProfile.id)
+        .limit(1)
+        .single()
+
+      let specialtyName = ''
+      if (!professionsError && tradieProfessions && tradieProfessions.categories) {
+        // Handle both single object and array cases
+        const category = Array.isArray(tradieProfessions.categories) 
+          ? tradieProfessions.categories[0]
+          : tradieProfessions.categories
+        
+        if (category && typeof category === 'object' && 'name_zh' in category) {
+          specialtyName = (category as any).name_zh || (category as any).name_en || ''
+          console.log('Found specialty from tradie_professions:', specialtyName)
+        }
+      } else {
+        console.log('No specialty found in tradie_professions table', professionsError)
+      }
+      
       tradieData = {
         company: userProfile.company || '',
-        specialty: userProfile.specialty || '',
+        specialty: specialtyName,
         serviceRadius: userProfile.service_radius || 50,
         rating: userProfile.rating || 0,
         reviewCount: userProfile.review_count || 0,
@@ -126,7 +152,7 @@ export async function GET(request: NextRequest) {
         experienceYears: userProfile.experience_years || undefined,
         bio: userProfile.bio || undefined
       }
-      console.log('Created tradieData object from users table:', tradieData)
+      console.log('Created tradieData object with specialty:', tradieData)
     }
 
     // 获取业主信息（从users表中的owner相关字段）
@@ -201,7 +227,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, phone_verified, address, role, company, specialty, serviceRadius, hourlyRate, experienceYears, bio } = body
+    const { name, phone, phone_verified, address, role, company, serviceRadius, hourlyRate, experienceYears, bio } = body
 
     // 验证必需字段
     if (!name || !phone) {
@@ -275,13 +301,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // 2. 根据角色更新角色特定信息到users表
-    if (targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)) {
+    if (targetRole === 'tradie' && (company || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)) {
       console.log('PUT API - Updating tradie info in users table for user:', user.id)
-      console.log('PUT API - Update data:', { company, specialty, serviceRadius, hourlyRate, experienceYears, bio })
+      console.log('PUT API - Update data:', { company, serviceRadius, hourlyRate, experienceYears, bio })
       
       const tradieUpdateData: any = {}
       if (company) tradieUpdateData.company = company
-      if (specialty) tradieUpdateData.specialty = specialty
       if (serviceRadius) tradieUpdateData.service_radius = serviceRadius
       if (hourlyRate !== undefined) tradieUpdateData.hourly_rate = hourlyRate
       if (experienceYears !== undefined) tradieUpdateData.experience_years = experienceYears
@@ -310,14 +335,13 @@ export async function PUT(request: NextRequest) {
         targetRole: targetRole,
         receivedData: { 
           company: company, 
-          specialty: specialty, 
           serviceRadius: serviceRadius,
           hourlyRate: hourlyRate,
           experienceYears: experienceYears,
           bio: bio
         },
-        conditionMet: Boolean(targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)),
-        tradieUpdateExecuted: Boolean(targetRole === 'tradie' && (company || specialty || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined))
+        conditionMet: Boolean(targetRole === 'tradie' && (company || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined)),
+        tradieUpdateExecuted: Boolean(targetRole === 'tradie' && (company || serviceRadius || hourlyRate !== undefined || experienceYears !== undefined || bio !== undefined))
       }
     })
 
