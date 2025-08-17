@@ -165,6 +165,21 @@ export async function POST(
       )
     }
 
+    // 如果项目状态是"已发布"，自动更改为"协商中"
+    if (project.status === 'published') {
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ status: 'negotiating' })
+        .eq('id', projectId)
+
+      if (updateError) {
+        console.error("Error updating project status:", updateError)
+        // 不让状态更新错误影响报价提交成功
+      } else {
+        console.log("✅ Project status updated to 'negotiating'")
+      }
+    }
+
     // 发送邮件通知项目拥有者
     try {
       await smtpEmailService.sendQuoteSubmissionNotification({

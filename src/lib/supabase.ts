@@ -30,6 +30,7 @@ export interface Database {
           category_id: string | null
           profession_id: string | null
           other_description: string | null
+          accepted_quote_id: string | null
         }
         Insert: {
           id?: string
@@ -51,6 +52,7 @@ export interface Database {
           category_id?: string | null
           profession_id?: string | null
           other_description?: string | null
+          accepted_quote_id?: string | null
         }
         Update: {
           id?: string
@@ -72,6 +74,7 @@ export interface Database {
           category_id?: string | null
           profession_id?: string | null
           other_description?: string | null
+          accepted_quote_id?: string | null
         }
       }
       users: {
@@ -202,6 +205,38 @@ export interface Database {
           images?: string[]
           video?: string | null
           is_approved?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      quotes: {
+        Row: {
+          id: string
+          project_id: string
+          tradie_id: string
+          price: number
+          description: string
+          status: 'pending' | 'accepted' | 'rejected' | 'withdrawn'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          tradie_id: string
+          price: number
+          description: string
+          status?: 'pending' | 'accepted' | 'rejected' | 'withdrawn'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          tradie_id?: string
+          price?: number
+          description?: string
+          status?: 'pending' | 'accepted' | 'rejected' | 'withdrawn'
           created_at?: string
           updated_at?: string
         }

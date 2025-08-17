@@ -21,7 +21,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -39,7 +38,6 @@ import {
 import {
   Users,
   User,
-  Home,
   BarChart3,
   Search,
   Filter,
@@ -57,15 +55,126 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Settings,
-  LogOut,
   FileText,
   MessageSquare,
   Star,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+
+// AdminLayout component
+function AdminLayout({ children, title }: { children: React.ReactNode; title: string }) {
+  const router = useRouter()
+  const [adminUser, setAdminUser] = useState<any>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken")
+    const user = localStorage.getItem("adminUser")
+
+    if (!token || !user) {
+      router.push("/htgl/login")
+      return
+    }
+
+    setAdminUser(JSON.parse(user))
+  }, [router])
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("adminUser")
+    router.push("/htgl/login")
+  }
+
+  if (!adminUser) {
+    return <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">检查登录状态...</p>
+      </div>
+    </div>
+  }
+
+  const navItems = [
+    { href: "/htgl", icon: BarChart3, label: "仪表板", active: title === "仪表板" },
+    { href: "/htgl/users", icon: Users, label: "用户管理" },
+    { href: "/htgl/tradies", icon: Users, label: "技师管理" },
+    { href: "/htgl/suppliers", icon: Users, label: "供应商管理" },
+    { href: "/htgl/support", icon: Users, label: "客服管理" },
+    { href: "/htgl/complaints", icon: Users, label: "投诉管理" },
+    { href: "/htgl/reviews", icon: Users, label: "评价管理" },
+    { href: "/htgl/admins", icon: Shield, label: "管理员管理" }
+  ]
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">BuildBridge</h1>
+                  <p className="text-xs text-gray-500">管理后台</p>
+                </div>
+              </div>
+              <div className="text-gray-300">|</div>
+              <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 font-semibold text-sm">
+                    {adminUser.name?.charAt(0) || "A"}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">{adminUser.name}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                退出
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)]">
+          <nav className="p-4">
+            <ul className="space-y-2">
+              {navItems.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      item.active
+                        ? "bg-green-100 text-green-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}
 
 interface User {
   id: string
@@ -119,7 +228,6 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [stats, setStats] = useState<AdminStats>({
@@ -133,7 +241,6 @@ export default function AdminDashboard() {
     newProjectsThisMonth: 0
   })
   const [loading, setLoading] = useState(true)
-  const [adminUser, setAdminUser] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [userFilter, setUserFilter] = useState("all")
   const [projectFilter, setProjectFilter] = useState("all")
@@ -141,37 +248,10 @@ export default function AdminDashboard() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [statusChanging, setStatusChanging] = useState<string | null>(null)
 
-  // 检查admin权限
+  // Load dashboard data
   useEffect(() => {
-    const checkAdminAuth = () => {
-      const token = localStorage.getItem("adminToken")
-      const user = localStorage.getItem("adminUser")
-
-      if (!token || !user) {
-        router.push("/htgl/login")
-        return false
-      }
-
-      try {
-        const adminUserData = JSON.parse(user)
-        setAdminUser(adminUserData)
-        return true
-      } catch (error) {
-        console.error("Invalid admin user data:", error)
-        localStorage.removeItem("adminToken")
-        localStorage.removeItem("adminUser")
-        router.push("/htgl/login")
-        return false
-      }
-    }
-
-    if (!checkAdminAuth()) {
-      return
-    }
-
-    // 只有通过admin验证后才继续加载数据
     fetchDashboardData()
-  }, [router])
+  }, [])
 
   // 从真实数据库获取数据
   const fetchDashboardData = async () => {
@@ -277,12 +357,6 @@ export default function AdminDashboard() {
     document.body.removeChild(link)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken")
-    localStorage.removeItem("adminUser")
-    router.push("/htgl/login")
-  }
-
   const handleStatusChange = async (userId: string, newStatus: 'pending' | 'approved' | 'closed' | 'active' | 'inactive' | 'suspended') => {
     const user = users.find(u => u.id === userId)
     if (!user) return
@@ -331,69 +405,21 @@ export default function AdminDashboard() {
     }
   }
 
-  // 如果还没有验证admin权限或正在加载数据，显示加载状态
-  if (!adminUser || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {!adminUser ? "验证管理员权限中..." : "加载数据中..."}
-          </p>
+          <p className="mt-4 text-gray-600">加载数据中...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                  <Home className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-green-600">BuildBridge</h1>
-                <Badge className="bg-blue-100 text-blue-800">管理后台</Badge>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/">
-                  <Home className="w-4 h-4 mr-2" />
-                  返回前台
-                </Link>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="w-4 h-4 mr-2" />
-                    管理员
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>系统管理</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Settings className="w-4 h-4 mr-2" />
-                    系统设置
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    退出登录
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+    <AdminLayout title="仪表板">
+      <div className="space-y-6">
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -938,8 +964,9 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+    </AdminLayout>
 
-      {/* User Detail Dialog */}
+    {/* User Detail Dialog */}
       {selectedUser && (
         <AlertDialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
           <AlertDialogContent>
@@ -1069,6 +1096,6 @@ export default function AdminDashboard() {
           </AlertDialogContent>
         </AlertDialog>
       )}
-    </div>
+    </>
   )
 }

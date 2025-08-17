@@ -59,9 +59,10 @@ interface MatchedProjectsResponse {
 interface MatchedProjectsListProps {
   tradieId: string
   className?: string
+  onCountChange?: (count: number) => void
 }
 
-export function MatchedProjectsList({ tradieId, className = "" }: MatchedProjectsListProps) {
+export function MatchedProjectsList({ tradieId, className = "", onCountChange }: MatchedProjectsListProps) {
   const router = useRouter()
   const [data, setData] = useState<MatchedProjectsResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -83,6 +84,7 @@ export function MatchedProjectsList({ tradieId, className = "" }: MatchedProject
         
         const responseData = await response.json()
         setData(responseData)
+        onCountChange?.(responseData.total || 0)
       } catch (err) {
         console.error("Error fetching matched projects:", err)
         setError("无法获取匹配项目，请稍后再试")

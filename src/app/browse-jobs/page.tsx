@@ -226,120 +226,223 @@ export default function BrowseJobsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <Briefcase className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">浏览项目</h1>
-          </div>
-          <p className="text-gray-600 text-lg">
-            发现最新的项目机会，提交您的报价并开始合作
-          </p>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">搜索项目</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="搜索项目描述或位置..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">服务类别</label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择类别" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">所有类别</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name_zh || category.name_en}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">项目状态</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择状态" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">所有状态</SelectItem>
-                    <SelectItem value="published">已发布</SelectItem>
-                    <SelectItem value="negotiating">协商中</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Sort */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">排序方式</label>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="排序方式" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="latest">最新发布</SelectItem>
-                    <SelectItem value="oldest">最早发布</SelectItem>
-                    <SelectItem value="quotes">报价最多</SelectItem>
-                  </SelectContent>
-                </Select>
+      <div className="flex">
+        {/* Left Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <Briefcase className="w-8 h-8 text-blue-600" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">项目筛选</h2>
+                <p className="text-sm text-gray-500">快速筛选项目</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Results Summary */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <p className="text-gray-600">
-              找到 <strong>{filteredProjects.length}</strong> 个项目
-            </p>
+          <nav className="p-4 space-y-6">
+            {/* Status Filters */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">项目状态</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setSelectedStatus("all")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStatus === "all"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>所有项目</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedStatus("published")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStatus === "published"
+                      ? "bg-green-100 text-green-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>已发布</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.status === 'published').length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedStatus("negotiating")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStatus === "negotiating"
+                      ? "bg-orange-100 text-orange-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>协商中</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.status === 'negotiating').length}
+                    </Badge>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filters */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">服务类别</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedCategory === "all"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>所有类别</span>
+                  </div>
+                </button>
+                {categories.map((category) => {
+                  const categoryCount = projects.filter(p => p.category?.id === category.id).length
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedCategory === category.id
+                          ? "bg-blue-100 text-blue-700"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{category.name_zh || category.name_en}</span>
+                        {categoryCount > 0 && (
+                          <Badge variant="secondary" className="text-xs ml-2">
+                            {categoryCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">排序方式</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setSortBy("latest")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    sortBy === "latest"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  最新发布
+                </button>
+                <button
+                  onClick={() => setSortBy("oldest")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    sortBy === "oldest"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  最早发布
+                </button>
+                <button
+                  onClick={() => setSortBy("quotes")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    sortBy === "quotes"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  报价最多
+                </button>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
             {(searchTerm || selectedCategory !== "all" || selectedStatus !== "all") && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setSearchTerm("")
-                  setSelectedCategory("all")
-                  setSelectedStatus("all")
-                }}
-              >
-                清除筛选
-              </Button>
+              <div className="pt-4 border-t border-gray-200">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setSearchTerm("")
+                    setSelectedCategory("all")
+                    setSelectedStatus("all")
+                    setSortBy("latest")
+                  }}
+                >
+                  清除所有筛选
+                </Button>
+              </div>
             )}
-          </div>
-        </div>
+          </nav>
+        </aside>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">加载项目中...</p>
-          </div>
-        )}
+        {/* Main Content */}
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-8">
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex items-center space-x-3 mb-4">
+                <Briefcase className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900">浏览项目</h1>
+              </div>
+              <p className="text-gray-600 text-lg">
+                发现最新的项目机会，提交您的报价并开始合作
+              </p>
+            </div>
 
-        {/* Projects Grid */}
-        {!loading && (
-          <div className="grid gap-6">
+            {/* Search Bar */}
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">搜索项目</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="搜索项目描述或位置..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Results Summary */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <p className="text-gray-600">
+                  找到 <strong>{filteredProjects.length}</strong> 个项目
+                </p>
+              </div>
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">加载项目中...</p>
+              </div>
+            )}
+
+            {/* Projects Grid */}
+            {!loading && (
+              <div className="grid gap-6">
             {filteredProjects.length === 0 ? (
               <Card>
                 <CardContent className="py-12">
@@ -446,29 +549,31 @@ export default function BrowseJobsPage() {
               ))
             )}
           </div>
-        )}
+            )}
 
-        {/* Call to Action */}
-        {!loading && filteredProjects.length > 0 && (
-          <Card className="mt-8">
-            <CardContent className="py-8">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  想要发布您自己的项目？
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  免费发布项目，获得专业技师的报价和服务
-                </p>
-                <Button asChild size="lg">
-                  <a href="/post-job">
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    发布项目
-                  </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {/* Call to Action */}
+            {!loading && filteredProjects.length > 0 && (
+              <Card className="mt-8">
+                <CardContent className="py-8">
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      想要发布您自己的项目？
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      免费发布项目，获得专业技师的报价和服务
+                    </p>
+                    <Button asChild size="lg">
+                      <a href="/post-job">
+                        <DollarSign className="w-5 h-5 mr-2" />
+                        发布项目
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   )

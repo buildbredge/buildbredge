@@ -85,6 +85,33 @@ export interface AnonymousProjectClaimEmail {
   projectTitles: string[]
 }
 
+export interface QuoteUpdateEmail {
+  to: string
+  projectId: string
+  projectTitle: string
+  projectLocation: string
+  tradieId: string
+  tradieName: string
+  tradieCompany?: string
+  tradieEmail: string
+  oldPrice: number
+  newPrice: number
+  quoteDescription: string
+}
+
+export interface QuoteDeletionEmail {
+  to: string
+  projectId: string
+  projectTitle: string
+  projectLocation: string
+  tradieId: string
+  tradieName: string
+  tradieCompany?: string
+  tradieEmail: string
+  quotePrice: number
+  quoteDescription: string
+}
+
 // 邮件模板
 export const emailTemplates = {
   // 匿名用户项目确认邮件
@@ -107,7 +134,7 @@ export const emailTemplates = {
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看完整项目信息
           </a>
         </div>
@@ -183,7 +210,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看项目详情
           </a>
         </div>
@@ -261,7 +288,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看完整报价详情
           </a>
         </div>
@@ -329,7 +356,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看项目详情
           </a>
         </div>
@@ -401,7 +428,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看项目详情
           </a>
         </div>
@@ -423,7 +450,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}?tab=review" 
-             style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #f59e0b; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #f59e0b; box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);">
             立即评价
           </a>
         </div>
@@ -482,7 +509,7 @@ BuildBridge - 连接业主与专业技师的平台
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/my-projects" 
-             style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
             查看我的项目
           </a>
         </div>
@@ -530,6 +557,134 @@ ${data.projectTitles.map(title => `- ${title}`).join('\n')}
 
 BuildBridge - 连接业主与专业技师的平台
     `
+  }),
+
+  // 报价更新通知邮件（发送给项目拥有者）
+  quoteUpdateNotification: (data: QuoteUpdateEmail) => ({
+    subject: `报价已更新 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">📝 报价已更新</h2>
+        
+        <p>您好，</p>
+        
+        <p>技师 <strong>${data.tradieName}</strong> 已更新了对您项目的报价：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目信息</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>位置：</strong>${data.projectLocation}</p>
+        </div>
+
+        <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+          <h3 style="margin-top: 0; color: #92400e;">报价变更详情</h3>
+          <div style="margin: 15px 0;">
+            <p style="margin: 5px 0;"><strong>技师：</strong>${data.tradieName}${data.tradieCompany ? ` (${data.tradieCompany})` : ''}</p>
+            <p style="margin: 5px 0; color: #dc2626;"><strong>原报价：</strong>NZD $${data.oldPrice}</p>
+            <p style="margin: 5px 0; color: #059669;"><strong>新报价：</strong>NZD $${data.newPrice}</p>
+            <p style="margin: 10px 0 5px 0;"><strong>报价说明：</strong></p>
+            <div style="background-color: #fff; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db;">
+              ${data.quoteDescription.split('\n').map(line => `<p style="margin: 5px 0;">${line}</p>`).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
+             style="background-color: #2563eb; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #2563eb; box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);">
+            查看更新的报价
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请访问我们的网站。
+        </p>
+      </div>
+    `,
+    text: `报价已更新 - ${data.projectTitle}
+
+您好，
+
+技师 ${data.tradieName} 已更新了对您项目的报价：
+
+项目信息：
+- 项目：${data.projectTitle}
+- 位置：${data.projectLocation}
+
+报价变更详情：
+- 技师：${data.tradieName}${data.tradieCompany ? ` (${data.tradieCompany})` : ''}
+- 原报价：NZD $${data.oldPrice}
+- 新报价：NZD $${data.newPrice}
+- 报价说明：${data.quoteDescription}
+
+查看更新的报价：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
+
+BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 报价删除通知邮件（发送给项目拥有者）
+  quoteDeletionNotification: (data: QuoteDeletionEmail) => ({
+    subject: `报价已撤回 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #dc2626;">🗑️ 报价已撤回</h2>
+        
+        <p>您好，</p>
+        
+        <p>技师 <strong>${data.tradieName}</strong> 已撤回了对您项目的报价：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目信息</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>位置：</strong>${data.projectLocation}</p>
+        </div>
+
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
+          <h3 style="margin-top: 0; color: #991b1b;">已撤回的报价详情</h3>
+          <div style="margin: 15px 0;">
+            <p style="margin: 5px 0;"><strong>技师：</strong>${data.tradieName}${data.tradieCompany ? ` (${data.tradieCompany})` : ''}</p>
+            <p style="margin: 5px 0;"><strong>原报价：</strong>NZD $${data.quotePrice}</p>
+            <p style="margin: 10px 0 5px 0;"><strong>原报价说明：</strong></p>
+            <div style="background-color: #fff; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db;">
+              ${data.quoteDescription.split('\n').map(line => `<p style="margin: 5px 0;">${line}</p>`).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
+            查看项目详情
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请访问我们的网站。
+        </p>
+      </div>
+    `,
+    text: `报价已撤回 - ${data.projectTitle}
+
+您好，
+
+技师 ${data.tradieName} 已撤回了对您项目的报价：
+
+项目信息：
+- 项目：${data.projectTitle}
+- 位置：${data.projectLocation}
+
+已撤回的报价详情：
+- 技师：${data.tradieName}${data.tradieCompany ? ` (${data.tradieCompany})` : ''}
+- 原报价：NZD $${data.quotePrice}
+- 原报价说明：${data.quoteDescription}
+
+查看项目详情：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
+
+BuildBridge - 连接业主与专业技师的平台`
   })
 }
 
@@ -699,6 +854,28 @@ class SMTPEmailService {
   // 发送匿名项目认领通知邮件
   async sendAnonymousProjectClaimNotification(data: AnonymousProjectClaimEmail) {
     const template = emailTemplates.anonymousProjectClaimNotification(data)
+    return this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 发送报价更新通知邮件
+  async sendQuoteUpdateNotification(data: QuoteUpdateEmail) {
+    const template = emailTemplates.quoteUpdateNotification(data)
+    return this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 发送报价删除通知邮件
+  async sendQuoteDeletionNotification(data: QuoteDeletionEmail) {
+    const template = emailTemplates.quoteDeletionNotification(data)
     return this.sendEmail({
       to: data.to,
       subject: template.subject,

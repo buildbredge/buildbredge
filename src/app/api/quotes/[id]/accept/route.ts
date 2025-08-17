@@ -13,6 +13,8 @@ export async function PUT(
   try {
     const quoteId = params.id
 
+    console.log("🔍 Looking for quote with ID:", quoteId)
+
     // 获取报价详情和相关信息
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
@@ -23,7 +25,7 @@ export async function PUT(
         price,
         description,
         status,
-        project:projects(
+        projects!quotes_project_id_fkey(
           id,
           description,
           location,
@@ -31,7 +33,7 @@ export async function PUT(
           user_id,
           status
         ),
-        tradie:users(
+        users!quotes_tradie_id_fkey(
           id,
           name,
           email,
@@ -41,6 +43,8 @@ export async function PUT(
       `)
       .eq('id', quoteId)
       .single()
+
+    console.log("📊 Quote query result:", { quote, error: quoteError })
 
     if (quoteError || !quote) {
       return NextResponse.json(
@@ -58,8 +62,14 @@ export async function PUT(
     }
 
     // 获取项目信息（处理可能的数组）
-    const project = Array.isArray(quote.project) ? quote.project[0] : quote.project
-    const tradie = Array.isArray(quote.tradie) ? quote.tradie[0] : quote.tradie
+    const project = Array.isArray(quote.projects) ? quote.projects[0] : quote.projects
+    const tradie = Array.isArray(quote.users) ? quote.users[0] : quote.users
+
+    console.log("📋 Extracted data:", { 
+      project: project, 
+      tradie: tradie,
+      quoteStatus: quote.status 
+    })
     
     // 检查项目状态
     if (project?.status !== 'negotiating' && project?.status !== 'published') {
@@ -72,14 +82,19 @@ export async function PUT(
     // TODO: 添加权限检查 - 确保只有项目拥有者可以接受报价
     // 这里应该检查请求者是否是项目的拥有者
 
-    // 接受报价（数据库触发器会自动：拒绝其他报价，更新项目状态为in_progress）
-    const { error: updateError } = await supabase
+    console.log("✅ All checks passed, updating quote and project status...")
+
+    // 开始事务处理：接受报价、拒绝其他报价、更新项目状态
+    const { data: updatedQuote, error: updateError } = await supabase
       .from('quotes')
       .update({
         status: 'accepted',
         updated_at: new Date().toISOString()
       })
       .eq('id', quoteId)
+      .select()
+
+    console.log("📝 Quote update result:", { updatedQuote, updateError })
 
     if (updateError) {
       console.error("Error accepting quote:", updateError)
@@ -87,6 +102,44 @@ export async function PUT(
         { error: "Failed to accept quote" },
         { status: 500 }
       )
+    }
+
+    // 拒绝同项目的其他待处理报价
+    const { error: rejectError } = await supabase
+      .from('quotes')
+      .update({
+        status: 'rejected',
+        updated_at: new Date().toISOString()
+      })
+      .eq('project_id', quote.project_id)
+      .eq('status', 'pending')
+      .neq('id', quoteId)
+
+    if (rejectError) {
+      console.error("Error rejecting other quotes:", rejectError)
+      // 不中断流程，但记录错误
+    } else {
+      console.log("✅ Other pending quotes rejected")
+    }
+
+    // 更新项目状态为进行中，并设置接受的报价ID
+    const { error: projectUpdateError } = await supabase
+      .from('projects')
+      .update({
+        status: 'in_progress',
+        accepted_quote_id: quoteId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', quote.project_id)
+
+    if (projectUpdateError) {
+      console.error("Error updating project status:", projectUpdateError)
+      return NextResponse.json(
+        { error: "Failed to update project status" },
+        { status: 500 }
+      )
+    } else {
+      console.log("✅ Project status updated to in_progress")
     }
 
     // 获取项目拥有者信息（如果是注册用户）

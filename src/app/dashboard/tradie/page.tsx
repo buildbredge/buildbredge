@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Wrench, Briefcase, MessageCircle, Star,
   Settings, DollarSign, TrendingUp,
@@ -21,6 +22,8 @@ import { RoleSwitcher } from "@/components/ui/role-switcher"
 import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion"
 import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
 import { MatchedProjectsList } from "@/components/MatchedProjectsList"
+import { TradieQuotesList } from "@/components/TradieQuotesList"
+import { TradieProjectsList } from "@/components/TradieProjectsList"
 import type { ProjectData, UserProfileData } from "../../../../lib/services/apiClient"
 
 interface UserRole {
@@ -93,6 +96,13 @@ export default function TradieDashboardPage() {
   const [userProfile, setUserProfile] = useState<ExtendedUserProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [activeTab, setActiveTab] = useState("matched")
+  const [tabCounts, setTabCounts] = useState({
+    matched: 0,
+    projects: 0,
+    quotes: 0,
+    messages: 0
+  })
 
   useEffect(() => {
     checkUser()
@@ -352,52 +362,149 @@ export default function TradieDashboardPage() {
               emailVerified={user.emailConfirmed}
             />
             
-            {/* Quick Actions - Tradie Focused */}
+            {/* Primary CTA - Browse Jobs */}
+            <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-green-600 hover:bg-green-700 text-white text-xl font-medium mb-6" asChild>
+              <Link href="/browse-jobs">
+                <Target className="w-8 h-8" />
+                <span>浏览最新项目</span>
+              </Link>
+            </Button>
+
+            {/* Tabbed Content */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Wrench className="w-5 h-5 mr-2 text-green-600" />
-                  技师专属功能
+                  技师工作台
                   <Badge className="ml-2 text-xs bg-green-100 text-green-800">专业服务</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Primary CTA - Browse Jobs */}
-                  <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-green-600 hover:bg-green-700 text-white text-xl font-medium" asChild>
-                    <Link href="/browse-jobs">
-                      <Target className="w-8 h-8" />
-                      <span>浏览最新项目</span>
-                    </Link>
-                  </Button>
-                  
-                  {/* Secondary Actions */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
-                      <Briefcase className="w-5 h-5" />
-                      <span className="text-xs">我的服务</span>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline" asChild>
-                      <Link href="/messages">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="text-xs">客户沟通</span>
-                      </Link>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
-                      <DollarSign className="w-5 h-5" />
-                      <span className="text-xs">我的报价</span>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-green-200 text-green-700 hover:bg-green-50" variant="outline">
-                      <Calendar className="w-5 h-5" />
-                      <span className="text-xs">日程管理</span>
-                    </Button>
-                  </div>
-                </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-5 bg-gradient-to-r from-green-50 to-blue-50 p-1 rounded-lg">
+                    <TabsTrigger 
+                      value="matched" 
+                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-4 h-4" />
+                        <span className="font-medium">匹配项目</span>
+                      </div>
+                      {tabCounts.matched > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                          {tabCounts.matched}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="projects" 
+                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Briefcase className="w-4 h-4" />
+                        <span className="font-medium">我的项目</span>
+                      </div>
+                      {tabCounts.projects > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                          {tabCounts.projects}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="quotes" 
+                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="w-4 h-4" />
+                        <span className="font-medium">我的报价</span>
+                      </div>
+                      {tabCounts.quotes > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">
+                          {tabCounts.quotes}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="messages" 
+                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <MessageCircle className="w-4 h-4" />
+                        <span className="font-medium">客户沟通</span>
+                      </div>
+                      {tabCounts.messages > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                          {tabCounts.messages}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="schedule" 
+                      className="flex flex-col items-center space-y-1 p-3 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4" />
+                        <span className="font-medium">日程管理</span>
+                      </div>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="matched" className="mt-6">
+                    <MatchedProjectsList 
+                      tradieId={user.id} 
+                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, matched: count }))}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="projects" className="mt-6">
+                    <TradieProjectsList 
+                      tradieId={user.id}
+                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, projects: count }))}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="quotes" className="mt-6">
+                    <TradieQuotesList 
+                      tradieId={user.id}
+                      onCountChange={(count) => setTabCounts(prev => ({ ...prev, quotes: count }))}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="messages" className="mt-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="text-center py-8">
+                          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">暂无客户消息</p>
+                          <p className="text-sm text-gray-400">
+                            当有客户联系您时，消息会显示在这里
+                          </p>
+                          <Button className="mt-4" variant="outline" asChild>
+                            <Link href="/messages">
+                              查看所有消息
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="schedule" className="mt-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="text-center py-8">
+                          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">日程管理功能即将推出</p>
+                          <p className="text-sm text-gray-400">
+                            您将能够在这里管理工作日程和客户预约
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
-
-            {/* Matched Projects */}
-            <MatchedProjectsList tradieId={user.id} />
           </div>
 
           {/* Sidebar */}

@@ -132,7 +132,7 @@ export function QuoteSubmissionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <DollarSign className="w-5 h-5 mr-2 text-green-600" />
@@ -211,9 +211,10 @@ export function QuoteSubmissionModal({
                     placeholder="请详细说明您的服务内容、工期安排、材料使用等..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
+                    rows={6}
                     required
                     disabled={isSubmitting}
+                    className="min-h-[120px]"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     详细的说明有助于获得客户信任（至少10个字符）

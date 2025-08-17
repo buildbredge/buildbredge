@@ -32,6 +32,7 @@ import { ImageGalleryModal } from "@/components/ImageGalleryModal"
 import { TradieRecommendations } from "@/components/TradieRecommendations"
 import { QuoteSubmissionModal } from "@/components/QuoteSubmissionModal"
 import { QuotesList } from "@/components/QuotesList"
+import { TradieQuoteManagement } from "@/components/TradieQuoteManagement"
 import { ProjectStatusActions } from "@/components/ProjectStatusActions"
 
 export default function ProjectDetailPage() {
@@ -504,13 +505,23 @@ export default function ProjectDetailPage() {
             />
           )}
 
-          {/* Quotes List (for project owners) */}
-          {project && (isProjectOwner || project.status !== 'published') && (
+          {/* Quotes List - Different views based on user role */}
+          {project && isProjectOwner && (
             <QuotesList
               projectId={project.id}
-              isOwner={!!isProjectOwner}
+              isOwner={true}
               projectStatus={project.status}
               onQuoteAccepted={handleRefresh}
+            />
+          )}
+
+          {/* Tradie's Own Quote Management */}
+          {project && isTradie && !isProjectOwner && (
+            <TradieQuoteManagement
+              projectId={project.id}
+              tradieId={user.id}
+              projectStatus={project.status}
+              onQuoteUpdated={handleRefresh}
             />
           )}
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Home, Briefcase, MessageCircle, Star,
   Settings, Plus, Eye, DollarSign,
@@ -20,6 +21,8 @@ import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
 import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding"
 import { RoleSwitcher } from "@/components/ui/role-switcher"
 import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
+import { OwnerProjectsList } from "@/components/OwnerProjectsList"
+import { OwnerQuotesManagement } from "@/components/OwnerQuotesManagement"
 import type { ProjectData, UserProfileData } from "../../../../lib/services/apiClient"
 
 interface UserRole {
@@ -92,6 +95,7 @@ export default function OwnerDashboardPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [totalProjects, setTotalProjects] = useState(0)
+  const [activeTab, setActiveTab] = useState("projects")
 
   useEffect(() => {
     checkUser()
@@ -348,206 +352,89 @@ export default function OwnerDashboardPage() {
               emailVerified={user.emailConfirmed}
             />
             
-            {/* Quick Actions - Owner Focused */}
+            {/* Primary CTA - Post Job */}
+            <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium mb-6" asChild>
+              <Link href="/post-job">
+                <Plus className="w-8 h-8" />
+                <span>发布新项目</span>
+              </Link>
+            </Button>
+
+            {/* Tabbed Content */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Home className="w-5 h-5 mr-2 text-blue-600" />
-                  业主专属功能
+                  业主工作台
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Primary CTA - Post Job */}
-                  <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium" asChild>
-                    <Link href="/post-job">
-                      <Plus className="w-8 h-8" />
-                      <span>发布新项目</span>
-                    </Link>
-                  </Button>
-                  
-                  {/* Secondary Actions */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
-                      <Link href="/my-projects">
-                        <Briefcase className="w-5 h-5" />
-                        <span className="text-xs">我的项目</span>
-                      </Link>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
-                      <Link href="/browse-tradies">
-                        <Users className="w-5 h-5" />
-                        <span className="text-xs">寻找技师</span>
-                      </Link>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
-                      <Link href="/messages">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="text-xs">消息中心</span>
-                      </Link>
-                    </Button>
-                    <Button className="h-16 flex flex-col items-center space-y-1 border-blue-200 text-blue-700 hover:bg-blue-50" variant="outline" asChild>
-                      <Link href="/reviews">
-                        <Star className="w-5 h-5" />
-                        <span className="text-xs">评价管理</span>
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="projects" className="flex items-center space-x-2">
+                      <Briefcase className="w-4 h-4" />
+                      <span>我的项目</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="quotes" className="flex items-center space-x-2">
+                      <DollarSign className="w-4 h-4" />
+                      <span>报价管理</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="messages" className="flex items-center space-x-2">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>消息中心</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="reviews" className="flex items-center space-x-2">
+                      <Star className="w-4 h-4" />
+                      <span>评价管理</span>
+                    </TabsTrigger>
+                  </TabsList>
 
-            {/* Recent Projects */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>我的项目</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500">每页显示:</span>
-                  <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                    setItemsPerPage(Number(value))
-                    setCurrentPage(1)
-                  }}>
-                    <SelectTrigger className="w-16">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loadingProjects ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">加载中...</p>
-                  </div>
-                ) : (
-                  <>
-                    {projects.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Briefcase className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm mb-4">您还没有发布任何项目</p>
-                        <Button asChild>
-                          <Link href="/post-job">
-                            <Plus className="w-4 h-4 mr-2" />
-                            发布第一个项目
-                          </Link>
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="space-y-3">
-                          {(dashboardData?.recentProjects || projects).slice(0, 5).map((project: any) => (
-                            <div
-                              key={project.id}
-                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              onClick={() => router.push(`/projects/${project.id}`)}
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <span className="font-medium text-gray-900">
-                                    {project.category || '未分类'}
-                                  </span>
-                                  <span className="text-gray-500">•</span>
-                                  <span className="text-gray-600">
-                                    {project.profession || '未指定专业'}
-                                  </span>
-                                  <span className="text-gray-500">•</span>
-                                  <span className="text-xs text-gray-500">
-                                    {new Date(project.createdAt).toLocaleDateString('zh-CN', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })}
-                                  </span>
-                                  <Badge 
-                                    variant={
-                                      project.status === 'published' ? 'default' :
-                                      project.status === 'negotiating' ? 'secondary' :
-                                      project.status === 'in_progress' ? 'secondary' :
-                                      project.status === 'completed' ? 'outline' :
-                                      project.status === 'reviewed' ? 'outline' : 'destructive'
-                                    }
-                                    className="text-xs"
-                                  >
-                                    {project.status === 'published' && '已发布'}
-                                    {project.status === 'draft' && '草稿'}
-                                    {project.status === 'negotiating' && '协商中'}
-                                    {project.status === 'in_progress' && '进行中'}
-                                    {project.status === 'completed' && '已完成'}
-                                    {project.status === 'reviewed' && '已评价'}
-                                    {project.status === 'cancelled' && '已取消'}
-                                  </Badge>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {project.location || '位置未指定'}
-                                </div>
-                              </div>
-                              <div className="ml-4">
-                                <Eye className="w-5 h-5 text-gray-400" />
-                              </div>
-                            </div>
-                          ))}
+                  <TabsContent value="projects" className="mt-6">
+                    <OwnerProjectsList userId={user.id} />
+                  </TabsContent>
+
+                  <TabsContent value="quotes" className="mt-6">
+                    <OwnerQuotesManagement userId={user.id} />
+                  </TabsContent>
+
+                  <TabsContent value="messages" className="mt-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="text-center py-8">
+                          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">暂无新消息</p>
+                          <p className="text-sm text-gray-400">
+                            当技师联系您时，消息会显示在这里
+                          </p>
+                          <Button className="mt-4" variant="outline" asChild>
+                            <Link href="/messages">
+                              查看所有消息
+                            </Link>
+                          </Button>
                         </div>
-                        
-                        {/* Pagination */}
-                        {totalProjects > itemsPerPage && (
-                          <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                            <div className="text-sm text-gray-500">
-                              显示 {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalProjects)} 共 {totalProjects} 条
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                disabled={currentPage === 1}
-                              >
-                                <ChevronLeft className="w-4 h-4" />
-                                上一页
-                              </Button>
-                              <div className="flex items-center space-x-1">
-                                {Array.from({ length: Math.ceil(totalProjects / itemsPerPage) }, (_, i) => i + 1)
-                                  .filter(page => {
-                                    const totalPages = Math.ceil(totalProjects / itemsPerPage)
-                                    return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1
-                                  })
-                                  .map((page, index, array) => {
-                                    const showEllipsis = index > 0 && page - array[index - 1] > 1
-                                    return (
-                                      <div key={page} className="flex items-center">
-                                        {showEllipsis && <span className="px-2 text-gray-400">...</span>}
-                                        <Button
-                                          variant={currentPage === page ? "default" : "outline"}
-                                          size="sm"
-                                          className="w-8 h-8 p-0"
-                                          onClick={() => setCurrentPage(page)}
-                                        >
-                                          {page}
-                                        </Button>
-                                      </div>
-                                    )
-                                  })}
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalProjects / itemsPerPage), prev + 1))}
-                                disabled={currentPage >= Math.ceil(totalProjects / itemsPerPage)}
-                              >
-                                下一页
-                                <ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="reviews" className="mt-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="text-center py-8">
+                          <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">暂无评价</p>
+                          <p className="text-sm text-gray-400">
+                            项目完成后您可以在这里管理对技师的评价
+                          </p>
+                          <Button className="mt-4" variant="outline" asChild>
+                            <Link href="/reviews">
+                              查看评价历史
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
