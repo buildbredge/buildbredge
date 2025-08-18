@@ -91,8 +91,8 @@ export default function ServicesPage() {
 
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/post-job" className="text-gray-600 hover:text-green-600">发布需求</Link>
-            <Link href="/browse-tradies" className="text-gray-600 hover:text-green-600">寻找技师</Link>
-            <Link href="/suppliers" className="text-gray-600 hover:text-green-600">配件供应商</Link>
+            <Link href="/browse-tradies" className="text-gray-600 hover:text-green-600">行业目录</Link>
+            <Link href="/suppliers" className="text-gray-600 hover:text-green-600">会员折扣</Link>
             <Link href="/cost-estimator" className="text-gray-600 hover:text-green-600">费用估算</Link>
             <Link href="/blog" className="text-gray-600 hover:text-green-600">案例分享</Link>
           </div>

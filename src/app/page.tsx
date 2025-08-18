@@ -80,11 +80,11 @@ export default function HomePage() {
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold mb-6">
-            连接<span className="text-green-200">业主</span>与<span className="text-green-200">专业人员</span>的桥梁
+            为<span className="text-green-200">您</span>与<span className="text-green-200">当地值得信赖的专业人员</span>连接
           </h1>
           
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-white">我能帮你做什么？</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-white">专业的事交给专业的人。</h2>
             <p className="text-lg text-green-100 max-w-3xl mx-auto leading-relaxed">
               向我简单描述你的需求我会为你匹配所有的适合的商家或技师，主动为您提供帮助和报价，供您对比选择
             </p>
@@ -95,10 +95,10 @@ export default function HomePage() {
               <Link href="/post-job">发布需求</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-white border-2 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold">
-              <Link href="/browse-tradies">寻找技师</Link>
+              <Link href="/browse-tradies">行业目录</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-white border-2 text-white bg-white/10 backdrop-blur-sm hover:bg-white hover:text-green-600 px-8 py-3 text-lg font-semibold">
-              <Link href="/browse-jobs">浏览项目</Link>
+              <Link href="/browse-jobs">最新任务</Link>
             </Button>
           </div>
 
@@ -120,9 +120,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-4 text-center">发布需求</h3>
               <div className="space-y-3 text-gray-600">
-                <p><strong>选择服务：</strong>从14大类84项服务中精确选择</p>
-                <p><strong>详细描述：</strong>用中文描述具体需求和期望</p>
-                <p><strong>设定预算：</strong>透明的价格范围和时间要求</p>
+                
+                <p><strong>描述需求：</strong>用您的语言简单描述您的需求和期望</p>
+                <p><strong>服务地区：</strong>告诉我们需要服务的区域</p>
                 <p><strong>上传图片：</strong>可添加现场照片帮助技师了解</p>
                 <div className="bg-green-50 p-3 rounded mt-4">
                   <p className="text-sm text-green-700">⏱️ <strong>发布时间：</strong>5-10分钟即可完成</p>
@@ -137,9 +137,9 @@ export default function HomePage() {
               <h3 className="text-xl font-semibold mb-4 text-center">匹配技师</h3>
               <div className="space-y-3 text-gray-600">
                 <p><strong>智能推荐：</strong>系统自动匹配附近的认证技师</p>
-                <p><strong>多重验证：</strong>身份认证、资质证书、保险齐全</p>
-                <p><strong>中文沟通：</strong>优先推荐会中文的技师</p>
-                <p><strong>透明报价：</strong>详细的工作计划和材料清单</p>
+                <p><strong>多重验证：</strong>所有技师都经过严格的技能资质认证</p>
+                <p><strong>信息透明：</strong>对技师的评价以及履历完整展示</p>
+                <p><strong>价格透明：</strong>工作计划，材料清单清晰明了</p>
                 <div className="bg-blue-50 p-3 rounded mt-4">
                   <p className="text-sm text-blue-700">📞 <strong>响应时间：</strong>24小时内收到多个报价</p>
                 </div>
@@ -152,9 +152,9 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-semibold mb-4 text-center">安全完工</h3>
               <div className="space-y-3 text-gray-600">
-                <p><strong>资金托管：</strong>费用由平台代管，完工后释放</p>
-                <p><strong>进度跟踪：</strong>实时更新工作进展和照片</p>
-                <p><strong>质量保证：</strong>提供工作保修和售后服务</p>
+                <p><strong>买家保护：</strong>为业主提供长达15天的退款保障</p>
+                <p><strong>紧急停工：</strong>业主发现工程问题可随时叫停</p>
+                <p><strong>专家保护：</strong>提供各工种的资深专家评审服务</p>
                 <p><strong>评价体系：</strong>双向评价确保服务质量</p>
                 <div className="bg-purple-50 p-3 rounded mt-4">
                   <p className="text-sm text-purple-700">🛡️ <strong>安全保障：</strong>全程保险覆盖，无忧售后</p>
@@ -306,20 +306,20 @@ export default function HomePage() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">热门服务类别</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">热门行业类别</h2>
             <p className="text-gray-600">专业技师为您提供全方位住房服务</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {[
-              { icon: Hammer, name: "建筑施工" },
+              { icon: Hammer, name: "房屋装修" },
               { icon: Home, name: "水管维修" },
               { icon: Zap, name: "电工服务" },
               { icon: Paintbrush, name: "油漆装饰" },
               { icon: Settings, name: "木工制作" },
               { icon: Leaf, name: "园艺绿化" },
               { icon: Wrench, name: "设备安装" },
-              { icon: Settings, name: "建材供应" },
+              { icon: Settings, name: "房屋出租" },
             ].map((service, index) => (
               <Link key={index} href="/services">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
@@ -334,7 +334,7 @@ export default function HomePage() {
 
           <div className="text-center mt-8">
             <Button variant="outline" asChild>
-              <Link href="/services">查看全部服务类别</Link>
+              <Link href="/services">查看全部行业类别</Link>
             </Button>
           </div>
         </div>
@@ -407,8 +407,8 @@ export default function HomePage() {
               <h4 className="font-semibold mb-4">房主服务</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/post-job" className="hover:text-white">发布项目</Link></li>
-                <li><Link href="/cost-estimator" className="hover:text-white">费用估算</Link></li>
-                <li><Link href="/browse-tradies" className="hover:text-white">技师目录</Link></li>
+              
+                <li><Link href="/browse-tradies" className="hover:text-white">行业目录</Link></li>
                 <li><Link href="/faq" className="hover:text-white">常见问题</Link></li>
               </ul>
             </div>

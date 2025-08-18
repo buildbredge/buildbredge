@@ -79,7 +79,7 @@ export default function TermsPage() {
                     <strong>"用户"或"您"</strong>：指使用BuildBridge平台的任何个人或实体。
                   </div>
                   <div>
-                    <strong>"业主"</strong>：指在平台上发布项目需求、寻找技师服务的用户。
+                    <strong>"业主"</strong>：指在平台上发布项目需求、行业目录服务的用户。
                   </div>
                   <div>
                     <strong>"技师"</strong>：指在平台上提供专业服务、响应项目需求的注册服务提供者。

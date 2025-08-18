@@ -193,8 +193,8 @@ export default function BrowseTradiesPage() {
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">寻找技师</h1>
-            <p className="text-xl text-green-100">找到您附近的专业技师工人</p>
+            <h1 className="text-4xl font-bold mb-4">行业目录</h1>
+            <p className="text-xl text-green-100">详细了解我们涵盖的行业</p>
           </div>
 
           {/* Search Filters */}
@@ -273,7 +273,7 @@ export default function BrowseTradiesPage() {
       {/* Categories Grid */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">按类别浏览</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">热门行业</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {tradeCategories.map((category, index) => (
               <Card
@@ -293,74 +293,7 @@ export default function BrowseTradiesPage() {
         </div>
       </section>
 
-      {/* Tradies List */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">技师列表</h2>
-            <p className="text-gray-600">找到 {filteredTradies.length} 位技师</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTradies.map((tradie) => (
-              <Card key={tradie.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <img
-                    src={tradie.avatar}
-                    alt={tradie.name || '技师'}
-                    className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                  />
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold">{tradie.name || '未知技师'}</h3>
-                    <Badge variant={tradie.type === "company" ? "default" : "secondary"}>
-                      {tradie.type === "company" ? "公司" : "个人"}
-                    </Badge>
-                  </div>
-                  <p className="text-green-600 font-medium">{tradie.company || '个人服务'}</p>
-                  <p className="text-sm text-gray-500">{tradie.category || '综合服务'}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="font-semibold">{tradie.rating}</span>
-                      <span className="text-gray-500">({tradie.reviews} 评价)</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>{tradie.location}</span>
-                    </div>
-
-                    <p className="text-sm text-gray-700">{tradie.description}</p>
-
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span>{tradie.phone || '未提供'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        <span>{tradie.email}</span>
-                      </div>
-                    </div>
-
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      联系技师
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredTradies.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">暂无符合条件的技师，请调整筛选条件</p>
-            </div>
-          )}
-        </div>
-      </section>
+    
     </div>
   )
 }

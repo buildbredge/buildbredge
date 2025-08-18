@@ -171,13 +171,13 @@ export function TradieQuotesList({ tradieId, onCountChange }: TradieQuotesListPr
             <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-2">您还没有提交任何报价</p>
             <p className="text-sm text-gray-400">
-              浏览项目并提交报价来开始您的业务
+              最新任务并提交报价来开始您的业务
             </p>
             <Button 
               className="mt-4" 
               onClick={() => router.push('/browse-jobs')}
             >
-              浏览项目
+              最新任务
             </Button>
           </div>
         ) : (

@@ -46,8 +46,8 @@ export default function Navigation({ currentPage }: NavigationProps) {
 
   const navItems = [
     { href: "/post-job", label: "发布需求" },
-    { href: "/browse-tradies", label: "寻找技师" },
-    { href: "/browse-jobs", label: "浏览项目" },
+    { href: "/browse-tradies", label: "行业目录" },
+    { href: "/browse-jobs", label: "最新任务" },
     { href: "/cost-estimator", label: "费用估算" },
     { href: "/how-it-works", label: "如何运作" },
     { href: "/blog", label: "案例分享" }
@@ -96,7 +96,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
                 ? "text-green-600 font-medium"
                 : "text-gray-600 hover:text-green-600"
             }`}>
-              <span>配件供应商</span>
+              <span>会员折扣</span>
               <ChevronDown className="w-3 h-3" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
@@ -257,7 +257,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
 
             {/* Mobile Suppliers Section */}
             <div className="pt-2 border-t">
-              <div className="text-sm text-gray-500 mb-2">配件供应商</div>
+              <div className="text-sm text-gray-500 mb-2">会员折扣</div>
               {supplierItems.map((item) => (
                 <Link
                   key={item.href}

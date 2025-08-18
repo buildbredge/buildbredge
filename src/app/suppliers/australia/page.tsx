@@ -25,7 +25,7 @@ export default function AustraliaSuppliersPage() {
           <div className="flex items-center space-x-2 text-sm">
             <Link href="/" className="text-gray-500 hover:text-green-600">首页</Link>
             <span className="text-gray-400">/</span>
-            <Link href="/suppliers" className="text-gray-500 hover:text-green-600">配件供应商</Link>
+            <Link href="/suppliers" className="text-gray-500 hover:text-green-600">会员折扣</Link>
             <span className="text-gray-400">/</span>
             <span className="text-green-600 font-medium">澳大利亚</span>
           </div>
@@ -37,7 +37,7 @@ export default function AustraliaSuppliersPage() {
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <span className="text-3xl">🇦🇺</span>
-            <h1 className="text-3xl font-bold">澳大利亚配件供应商网络</h1>
+            <h1 className="text-3xl font-bold">澳大利亚会员折扣网络</h1>
           </div>
           <p className="text-green-100 max-w-2xl mx-auto">
             专为澳大利亚华人群体设计的配件采购网络，享受集团议价优势
@@ -67,9 +67,9 @@ export default function AustraliaSuppliersPage() {
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">澳大利亚配件供应商网络</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">澳大利亚会员折扣网络</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            加入BuildBridge澳大利亚配件供应商网络，享受集团采购优势，获得专业配件折扣优惠
+            加入BuildBridge澳大利亚会员折扣网络，享受集团采购优势，获得专业配件折扣优惠
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export default function AustraliaSuppliersPage() {
               </h2>
             </div>
             <p className="text-gray-600 mb-4">
-              我们精选了澳大利亚最优质的配件供应商，涵盖您生活，服务，建筑和装修项目所需的几乎所有配件。
+              我们精选了澳大利亚最优质的会员折扣，涵盖您生活，服务，建筑和装修项目所需的几乎所有配件。
             </p>
             <p className="text-gray-600">
               我们与澳大利亚范围内的值得信赖的本地供应商签订了合作协议。
@@ -233,7 +233,7 @@ export default function AustraliaSuppliersPage() {
             <div>
               <h4 className="font-semibold mb-4">供应商</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/suppliers/australia" className="hover:text-white">澳大利亚配件供应商</Link></li>
+                <li><Link href="/suppliers/australia" className="hover:text-white">澳大利亚会员折扣</Link></li>
                 <li><Link href="/suppliers" className="hover:text-white">加入网络</Link></li>
               </ul>
             </div>

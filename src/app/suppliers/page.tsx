@@ -27,7 +27,7 @@ export default function SuppliersPage() {
       savings: "$250,000",
       suppliers: "80+",
       status: "available",
-      description: "我们在新西兰的主要服务区域，提供完整的配件供应商网络",
+      description: "我们在新西兰的主要服务区域，提供完整的会员折扣网络",
       cities: ["奥克兰", "惠灵顿", "基督城", "汉密尔顿"]
     },
     {
@@ -75,7 +75,7 @@ export default function SuppliersPage() {
       <div className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold mb-6">
-            全球配件供应商网络
+            全球会员折扣网络
           </h1>
           <p className="text-xl text-green-100 max-w-3xl mx-auto mb-8">
             选择您所在的国家，享受BuildBridge专为海外华人设计的配件采购网络
@@ -113,7 +113,7 @@ export default function SuppliersPage() {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">选择您的国家</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            点击下方国家卡片，了解我们在该国家的配件供应商网络和服务详情
+            点击下方国家卡片，了解我们在该国家的会员折扣网络和服务详情
           </p>
         </div>
 
