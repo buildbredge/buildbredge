@@ -1,36 +1,44 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Star, MapPin, Mail, ArrowLeft, Users, Briefcase } from "lucide-react"
 import Link from "next/link"
+import { professionsApi, Profession } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
 
-interface Tradie {
+// 技师信息接口（从 tradie_professions 关联查询）
+interface TradieWithProfession {
+  id: string
   name: string
-  company: string
+  email: string
+  phone: string | null
+  company: string | null
+  address: string | null
   rating: number
-  region: string
-  orgType: string
-  avatar: string
-  desc: string
-}
-
-const tradeCategories: Record<string, { trades: Tradie[] }> = {
-  "电气服务": {
-    trades: [
-      { name: "张师傅", company: "奥克兰专业电气公司", rating: 4.9, region: "新西兰-奥克兰-CBD", orgType: "company", avatar: "https://ext.same-assets.com/1633456512/electrician1.jpeg", desc: "20年经验，保障安全高效，承接家庭与商用" },
-      { name: "王工", company: "惠灵顿家电电工", rating: 4.8, region: "新西兰-惠灵顿-Te Aro", orgType: "company", avatar: "https://ext.same-assets.com/1633456512/electrician2.jpeg", desc: "新西兰注册，承诺专业服务，全年无休" },
-      { name: "电力快修队", company: "专业团队", rating: 4.7, region: "新西兰-基督城-CBD", orgType: "company", avatar: "https://ext.same-assets.com/1633456512/electrician3.jpeg", desc: "团队作业，紧急出动，覆盖整个南岛" }
-    ]
-  },
-  // 可扩展其他类别...
+  review_count: number
+  status: string
+  created_at: string
+  bio: string | null
+  experience_years: number | null
+  hourly_rate: number | null
 }
 
 export async function generateStaticParams() {
-  const categories = ["电气服务", "水管维修", "建筑施工", "油漆装饰", "木工制作", "园艺绿化", "设备安装", "建材供应", "清洁服务", "搬家服务"]
-
-  return categories.map((category) => ({
-    category: encodeURIComponent(category),
-  }))
+  try {
+    // 从数据库获取所有专业名称来生成静态路径
+    const professions = await professionsApi.getAll()
+    return professions.map((profession) => ({
+      category: encodeURIComponent(profession.name_zh),
+    }))
+  } catch (error) {
+    console.error('Error generating static params:', error)
+    // fallback 路径
+    return [
+      { category: encodeURIComponent("电气服务") },
+      { category: encodeURIComponent("水管维修") }
+    ]
+  }
 }
 
 interface PageProps {
@@ -39,58 +47,228 @@ interface PageProps {
   }>
 }
 
-export default async function CategoryPage({ params }: PageProps) {
+async function loadTradiesForProfession(professionName: string) {
+  try {
+    // 首先查找专业信息
+    const professionsData = await professionsApi.getAll()
+    const professionData = professionsData.find(p => p.name_zh === professionName)
+
+    // 通过 tradie_professions 表查找该专业的技师
+    const { data: tradieData, error } = await supabase
+      .from('tradie_professions')
+      .select(`
+        tradie_id,
+        users!inner(
+          id,
+          name,
+          email,
+          phone,
+          company,
+          address,
+          rating,
+          review_count,
+          status,
+          created_at,
+          bio,
+          experience_years,
+          hourly_rate
+        ),
+        professions!inner(
+          name_zh,
+          name_en
+        )
+      `)
+      .eq('professions.name_zh', professionName)
+      .eq('users.status', 'approved') // 只显示已认证的技师
+
+    if (error) {
+      console.error('Error loading tradies:', error)
+      return { profession: professionData, tradies: [] }
+    }
+
+    // 转换数据格式
+    const formattedTradies: TradieWithProfession[] = (tradieData || []).map((item: any) => ({
+      ...item.users,
+      tradie_profession_id: item.id
+    }))
+
+    return { profession: professionData, tradies: formattedTradies }
+  } catch (error) {
+    console.error('Error loading tradies for profession:', error)
+    return { profession: null, tradies: [] }
+  }
+}
+
+export default async function ProfessionPage({ params }: PageProps) {
   const { category } = await params
-  const rawCategory = decodeURIComponent(category)
-  const categoryKey = Object.keys(tradeCategories).find(key => rawCategory.includes(key) || key.includes(rawCategory)) || rawCategory
-  const trades = tradeCategories[categoryKey]?.trades || []
+  const professionName = decodeURIComponent(category)
+  
+  // 服务端数据加载
+  const { profession, tradies } = await loadTradiesForProfession(professionName)
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-10">
-        {/* 顶部返回与类别标题 */}
-        <div className="mb-8 flex items-center gap-4">
-          <Button size="sm" variant="outline" asChild>
-            <Link href="/browse-tradies">返回全部类别</Link>
-          </Button>
-          <h1 className="text-3xl font-bold text-green-700">{categoryKey} 注册技师</h1>
+      <div className="container mx-auto px-4 py-8">
+        {/* 顶部导航和标题 */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/browse-tradies" className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                返回专业目录
+              </Link>
+            </Button>
+          </div>
+          
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{professionName} 专业技师</h1>
+            {profession && (
+              <p className="text-gray-600 mb-4">{profession.name_en}</p>
+            )}
+            
+            <div className="flex items-center gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>共 {tradies.length} 位认证技师</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                <span>专业 {professionName} 服务</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 发布需求横幅 */}
-        <div className="mb-10 bg-green-100 border-l-4 border-green-500 px-6 py-4 rounded flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-green-800 mb-2">需要{categoryKey}服务？</h3>
-            <p className="text-green-700">发布您的需求，获得多个专业技师报价对比选择</p>
+        <div className="mb-8 bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-green-900 mb-2">需要 {professionName} 服务？</h3>
+              <p className="text-green-700 text-sm">发布您的需求，获得多个专业技师报价，选择最合适的服务方案</p>
+            </div>
+            <Button className="bg-green-600 hover:bg-green-700 flex-shrink-0" asChild>
+              <Link href="/post-job">发布需求</Link>
+            </Button>
           </div>
-          <Button className="bg-green-600 hover:bg-green-700" asChild>
-            <Link href="/post-job">发布需求</Link>
-          </Button>
         </div>
 
         {/* 技师列表 */}
-        {trades.length === 0 ? (
-          <div className="p-8 bg-white text-center text-gray-500 rounded shadow">当前暂无{categoryKey}技师，请稍后再试或切换到其它类别！</div>
+        {tradies.length === 0 ? (
+          <div className="bg-white rounded-lg p-12 text-center shadow-sm">
+            <div className="text-gray-400 mb-4">
+              <Users className="w-16 h-16 mx-auto" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无 {professionName} 技师</h3>
+            <p className="text-gray-600 mb-6">
+              我们正在积极招募该专业的技师，您可以先发布需求，我们会尽快为您匹配合适的专业人员。
+            </p>
+            <Button className="bg-green-600 hover:bg-green-700" asChild>
+              <Link href="/post-job">发布需求</Link>
+            </Button>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {trades.map((t: Tradie, idx: number) => (
-              <Card key={idx} className="h-full shadow group border hover:border-green-300 transition">
-                <CardHeader className="text-center flex flex-col items-center">
-                  <img src={t.avatar} alt={t.name} className="w-20 h-20 rounded-full object-cover mb-3 border border-gray-200" />
-                  <div className="flex items-center justify-center mb-2">
-                    <span className="font-bold text-lg text-gray-900 mr-2">{t.name}</span>
-                    <Badge variant="secondary">{t.orgType === "company" ? "公司" : "个人"}</Badge>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tradies.map((tradie) => (
+              <Card key={tradie.id} className="hover:shadow-lg transition-all duration-200">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start gap-4">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage 
+                        src={`https://ext.same-assets.com/1633456512/professional-${Math.abs(tradie.id.length) % 5 + 1}.jpeg`} 
+                        alt={tradie.name} 
+                      />
+                      <AvatarFallback className="text-lg font-bold bg-green-100 text-green-700">
+                        {tradie.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-gray-900">{tradie.name}</h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {tradie.company ? "公司" : "个人"}
+                        </Badge>
+                      </div>
+                      
+                      {tradie.company && (
+                        <p className="text-sm text-gray-600 mb-2">{tradie.company}</p>
+                      )}
+                      
+                      <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(tradie.rating)
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {tradie.rating.toFixed(1)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({tradie.review_count} 评价)
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-1 text-xs text-gray-500">
+                        {tradie.experience_years && (
+                          <div>{tradie.experience_years} 年经验</div>
+                        )}
+                        {tradie.address && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {tradie.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-green-700 font-medium mb-1">{t.company}</div>
-                  <div className="flex items-center justify-center mb-2">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                    <span className="font-semibold text-base">{t.rating}</span>
-                  </div>
-                  <div className="text-gray-500 text-xs mb-1">服务区域：{t.region}</div>
-                  <div className="text-gray-700 text-sm mb-2">{t.desc}</div>
                 </CardHeader>
-                <CardContent />
+
+                <CardContent className="pt-0">
+                  {tradie.bio && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {tradie.bio}
+                    </p>
+                  )}
+                  
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" asChild>
+                      <Link href={`/tradies/${tradie.id}`}>
+                        查看详情
+                      </Link>
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      联系
+                    </Button>
+                  </div>
+                </CardContent>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* 相关专业推荐 */}
+        {tradies.length > 0 && profession && (
+          <div className="mt-12 bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">相关服务</h2>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
+                电气维修
+              </Badge>
+              <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
+                电路安装
+              </Badge>
+              <Badge variant="outline" className="cursor-pointer hover:bg-gray-50">
+                故障排除
+              </Badge>
+            </div>
           </div>
         )}
       </div>

@@ -1,299 +1,178 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, Phone, Mail } from "lucide-react"
+import { ChevronRight, Users, Wrench } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { tradiesApi, Tradie } from "@/lib/api"
+import { categoriesApi, professionsApi, Category, Profession } from "@/lib/api"
 
-const locationData = {
-  "新西兰": {
-    "奥克兰": [
-      "CBD", "Ponsonby", "Parnell", "Newmarket", "North Shore", "Mt Eden", "Manukau", "Remuera", "Epsom", "Browns Bay", "Albany"
-    ],
-    "惠灵顿": [
-      "CBD", "Te Aro", "Kelburn", "Johnsonville", "Miramar", "Newtown"
-    ],
-    "基督城": [
-      "CBD", "Riccarton", "Addington", "Fendalton", "Papanui", "Sydenham", "Linwood", "Ilam"
-    ],
-    "汉密尔顿": [
-      "CBD", "Hamilton East", "Chartwell", "Hillcrest", "Frankton"
-    ]
-  },
-  "澳大利亚": {
-    "悉尼": [
-      "CBD", "Bondi", "Manly", "Chatswood", "Parramatta", "Strathfield", "Newtown", "Mascot", "Epping"
-    ],
-    "墨尔本": [
-      "CBD", "South Yarra", "Richmond", "Box Hill", "Glen Waverley", "Docklands", "Fitzroy", "St Kilda"
-    ],
-    "布里斯班": [
-      "CBD", "Fortitude Valley", "South Bank", "Sunnybank", "Toowong"
-    ],
-    "珀斯": [
-      "CBD", "Fremantle", "Subiaco", "Cottesloe", "Northbridge"
-    ]
-  },
-  "美国": {
-    "洛杉矶": [
-      "Downtown", "Hollywood", "Santa Monica", "Pasadena", "Beverly Hills", "Chinatown", "Long Beach"
-    ],
-    "纽约": [
-      "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island", "Chinatown", "Flushing", "Harlem"
-    ],
-    "旧金山": [
-      "Downtown", "Mission District", "Chinatown", "Nob Hill", "Sunset", "SoMa"
-    ],
-    "芝加哥": [
-      "The Loop", "River North", "Hyde Park", "Chinatown", "Lake View"
-    ]
-  },
-  "加拿大": {
-    "多伦多": [
-      "Downtown", "North York", "Scarborough", "Etobicoke", "York", "Markham", "Richmond Hill"
-    ],
-    "温哥华": [
-      "Downtown", "Richmond", "Burnaby", "Surrey", "Kitsilano", "West End"
-    ],
-    "蒙特利尔": [
-      "Downtown", "Old Montreal", "Plateau", "Rosemont", "Ville-Marie", "Chinatown"
-    ],
-    "卡尔加里": [
-      "Downtown", "Beltline", "Kensington", "Hillhurst", "Inglewood"
-    ]
-  }
-}
-
-const tradeCategories = [
-  "电气服务", "水管维修", "建筑施工", "油漆装饰", "木工制作",
-  "园艺绿化", "设备安装", "建材供应", "清洁服务", "搬家服务"
-]
-
-// 专业映射
-const specialtyMap: Record<string, string> = {
-  "电气服务": "电气服务",
-  "水管维修": "水管维修",
-  "建筑施工": "建筑施工",
-  "油漆装饰": "油漆装饰",
-  "木工制作": "木工制作",
-  "园艺绿化": "园艺绿化",
-  "设备安装": "设备安装",
-  "建材供应": "建材供应",
-  "清洁服务": "清洁服务",
-  "搬家服务": "搬家服务"
-}
-
-// 为显示添加的扩展技师类型，包含所有UI需要的字段
-interface ExtendedTradie {
-  id: string
-  name: string | null
-  phone: string | null
-  email: string
-  company: string | null
-  specialty: string | null
-  latitude: number | null
-  longitude: number | null
-  address: string | null
-  service_radius: number | null
-  status: 'active' | 'pending' | 'approved' | 'closed' | 'suspended'
-  balance: number
-  rating: number | null
-  review_count: number
-  created_at: string
-  updated_at: string
-  avatar?: string
-  type?: 'company' | 'individual'
-  category?: string | null
-  reviews?: number
-  location?: string
-  description?: string
+// 按分类组织的专业数据
+interface CategoryWithProfessions extends Category {
+  professions: Profession[]
+  tradieCount?: number
 }
 
 export default function BrowseTradiesPage() {
-  const router = useRouter()
-  const [selectedCountry, setSelectedCountry] = useState<string>("")
-  const [selectedCity, setSelectedCity] = useState<string>("")
-  const [selectedDistrict, setSelectedDistrict] = useState<string>("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("")
-  const [selectedType, setSelectedType] = useState<string>("")
-  const [tradies, setTradies] = useState<ExtendedTradie[]>([])
+  const [categories, setCategories] = useState<CategoryWithProfessions[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 加载技师数据
   useEffect(() => {
-    loadTradies()
+    loadCategoriesAndProfessions()
   }, [])
 
-  const loadTradies = async () => {
+  const loadCategoriesAndProfessions = async () => {
     try {
       setLoading(true)
-      const data = await tradiesApi.getApproved() // 只获取已认证的技师
+      
+      // 并发加载分类和专业数据
+      const [categoriesData, professionsData] = await Promise.all([
+        categoriesApi.getAll(),
+        professionsApi.getAll()
+      ])
 
-      // 为每个技师添加默认的显示字段
-      const extendedTradies: ExtendedTradie[] = data.map((tradie, index) => ({
-        ...tradie,
-        avatar: `https://ext.same-assets.com/1633456512/professional-${(index % 5) + 1}.jpeg`,
-        type: (tradie.company || '').includes('公司') || (tradie.company || '').includes('有限') || (tradie.company || '').includes('工作室') ? 'company' : 'individual',
-        category: tradie.specialty,
-        reviews: tradie.review_count || Math.floor(Math.random() * 50) + 10, // 使用数据库评价数或随机评价数 10-60
-        location: "新西兰-奥克兰", // 默认位置，后续可从数据库获取
-        description: `专业${tradie.specialty || '服务'}，经验丰富，质量保证`,
-        updated_at: (tradie as any).updated_at || tradie.created_at // 添加 updated_at 字段，暂时使用 any 类型
+      // 按分类组织专业数据
+      const categoriesWithProfessions: CategoryWithProfessions[] = categoriesData.map(category => ({
+        ...category,
+        professions: professionsData.filter(profession => profession.category_id === category.id),
+        tradieCount: 0 // 可以后续添加技师数量统计
       }))
 
-      setTradies(extendedTradies)
+      setCategories(categoriesWithProfessions)
     } catch (error) {
-      console.error('加载技师数据失败:', error)
+      console.error('加载数据失败:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const countries = Object.keys(locationData)
-  const cities = selectedCountry ? Object.keys(locationData[selectedCountry as keyof typeof locationData] || {}) : []
-  const districts = selectedCountry && selectedCity ? locationData[selectedCountry as keyof typeof locationData]?.[selectedCity as keyof typeof locationData[keyof typeof locationData]] || [] : []
-
-  const handleCategoryClick = (category: string) => {
-    router.push(`/browse-tradies/${encodeURIComponent(category)}`)
+  const handleProfessionClick = (profession: Profession) => {
+    // 跳转到专业页面显示该专业的技师
+    window.location.href = `/browse-tradies/${encodeURIComponent(profession.name_zh)}`
   }
 
-  // 筛选技师
-  const filteredTradies = tradies.filter(tradie => {
-    let matches = true
-
-    // 按专业筛选
-    if (selectedCategory && selectedCategory !== "" && tradie.specialty !== selectedCategory) {
-      matches = false
-    }
-
-    // 按类型筛选（简化处理：如果公司名包含"公司"或"有限"则认为是公司）
-    if (selectedType && selectedType !== "") {
-      const isCompany = (tradie.company || '').includes('公司') || (tradie.company || '').includes('有限') || (tradie.company || '').includes('工作室')
-      const tradieType = isCompany ? 'company' : 'individual'
-      if (tradieType !== selectedType) {
-        matches = false
-      }
-    }
-
-    // 位置筛选逻辑可以在这里添加
-    // 目前数据库中没有结构化的位置信息，可以后续优化
-
-    return matches
-  })
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">正在加载专业技师目录...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
-
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-green-600 to-green-700 text-white py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">行业目录</h1>
-            <p className="text-xl text-green-100">详细了解我们涵盖的行业</p>
-          </div>
-
-          {/* Search Filters */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {/* 服务区域 - 国家 */}
-              <Select value={selectedCountry} onValueChange={(value) => {
-                setSelectedCountry(value)
-                setSelectedCity("")
-                setSelectedDistrict("")
-              }}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="选择国家" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countries.map(country => (
-                    <SelectItem key={country} value={country}>{country}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* 服务区域 - 城市 */}
-              <Select value={selectedCity} onValueChange={(value) => {
-                setSelectedCity(value)
-                setSelectedDistrict("")
-              }} disabled={!selectedCountry}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="选择城市" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map(city => (
-                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* 服务区域 - 区域 */}
-              <Select value={selectedDistrict} onValueChange={setSelectedDistrict} disabled={!selectedCity}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="选择区域" />
-                </SelectTrigger>
-                <SelectContent>
-                  {districts.map(district => (
-                    <SelectItem key={district} value={district}>{district}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* 技术类别 */}
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="技术类别" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tradeCategories.map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* 公司/个人 */}
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="公司" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="company">公司</SelectItem>
-                  <SelectItem value="individual">个人</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">专业技师目录</h1>
+            <p className="text-xl text-green-100 mb-8">
+              按专业分类查找合适的技师，点击查看该领域的专业人员
+            </p>
+            
+            <div className="flex items-center justify-center gap-4 text-sm text-green-100">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span>1,500+ 认证技师</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wrench className="w-4 h-4" />
+                <span>覆盖 {categories.reduce((sum, cat) => sum + cat.professions.length, 0)} 个专业</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Categories Grid */}
-      <section className="py-16 bg-gray-50">
+      {/* Categories and Professions */}
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">热门行业</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {tradeCategories.map((category, index) => (
-              <Card
-                key={index}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleCategoryClick(category)}
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">{index === 0 ? "⚡" : index === 1 ? "🔧" : index === 2 ? "🏗️" : index === 3 ? "🎨" : "🔨"}</span>
-                  </div>
-                  <h3 className="font-semibold text-gray-900">{category}</h3>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">专业分类</h2>
+            <p className="text-gray-600">选择您需要的专业服务类别，查看相关技师</p>
           </div>
+
+          {categories.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">暂无专业分类数据</p>
+            </div>
+          ) : (
+            <div className="space-y-12">
+              {categories.map((category) => (
+                <div key={category.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  {/* Category Header */}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">{category.name_zh}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{category.name_en}</p>
+                      </div>
+                      <Badge variant="secondary" className="text-sm">
+                        {category.professions.length} 个专业
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Professions Grid */}
+                  <div className="p-6">
+                    {category.professions.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        该分类下暂无专业
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {category.professions.map((profession) => (
+                          <Card 
+                            key={profession.id} 
+                            className="hover:shadow-md transition-all duration-200 cursor-pointer border-gray-200 hover:border-green-300"
+                            onClick={() => handleProfessionClick(profession)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900 text-sm">{profession.name_zh}</h4>
+                                  <p className="text-xs text-gray-500 mt-1">{profession.name_en}</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-    
+      {/* CTA Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="bg-green-600 rounded-lg p-8 text-white text-center">
+            <h2 className="text-2xl font-bold mb-4">找不到合适的专业？</h2>
+            <p className="text-green-100 mb-6">
+              我们正在不断扩展专业技师网络，如果您找不到需要的服务，可以直接发布需求。
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100" asChild>
+                <Link href="/post-job">发布需求</Link>
+              </Button>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600" asChild>
+                <Link href="/contact">联系我们</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

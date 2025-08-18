@@ -48,9 +48,10 @@ export default function Navigation({ currentPage }: NavigationProps) {
     { href: "/post-job", label: "发布需求" },
     { href: "/browse-tradies", label: "行业目录" },
     { href: "/browse-jobs", label: "最新任务" },
-    { href: "/cost-estimator", label: "费用估算" },
-    { href: "/how-it-works", label: "如何运作" },
-    { href: "/blog", label: "案例分享" }
+    
+
+    { href: "/tradie-signup", label: "如何运作" },
+   
   ]
 
   const supplierItems = [
