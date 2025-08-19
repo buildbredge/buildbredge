@@ -13,6 +13,7 @@ interface EmailVerificationDialogProps {
   email: string
   userType: 'homeowner' | 'tradie'
   isNewUser?: boolean
+  isSubordinateTradie?: boolean
 }
 
 export function EmailVerificationDialog({
@@ -20,7 +21,8 @@ export function EmailVerificationDialog({
   onClose,
   email,
   userType,
-  isNewUser = true
+  isNewUser = true,
+  isSubordinateTradie = false
 }: EmailVerificationDialogProps) {
   const [isResending, setIsResending] = useState(false)
   const [resendMessage, setResendMessage] = useState("")
@@ -67,13 +69,17 @@ export function EmailVerificationDialog({
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <CardTitle className="text-xl font-bold text-green-700">
-            {isNewUser ? '注册成功！' : '角色添加成功！'}
+            {isSubordinateTradie ? '添加技师成功！' : isNewUser ? '注册成功！' : '角色添加成功！'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center space-y-3">
             <p className="text-gray-700">
-              恭喜您成功{isNewUser ? '注册' : '添加'}了<span className="font-semibold text-green-600">{roleText}</span>账户！
+              {isSubordinateTradie ? (
+                <>恭喜您成功添加了新的<span className="font-semibold text-green-600">{roleText}</span>团队成员！</>
+              ) : (
+                <>恭喜您成功{isNewUser ? '注册' : '添加'}了<span className="font-semibold text-green-600">{roleText}</span>账户！</>
+              )}
             </p>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -103,12 +109,14 @@ export function EmailVerificationDialog({
           </div>
 
           <div className="space-y-3">
-            <Button
-              onClick={handleGoToLogin}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              前往登录页面 <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            {!isSubordinateTradie && (
+              <Button
+                onClick={handleGoToLogin}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                前往登录页面 <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
             
             <Button
               onClick={handleResendEmail}
@@ -119,8 +127,17 @@ export function EmailVerificationDialog({
             >
               {isResending ? "发送中..." : "重新发送验证邮件"}
             </Button>
+
+            {isSubordinateTradie && (
+              <Button
+                onClick={onClose}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                完成
+              </Button>
+            )}
             
-            <div className="text-center">
+            <div className="flex justify-center space-x-4">
               <Link 
                 href="/"
                 className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
@@ -128,6 +145,12 @@ export function EmailVerificationDialog({
               >
                 返回首页
               </Link>
+              <button
+                onClick={onClose}
+                className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+              >
+                关闭
+              </button>
             </div>
           </div>
 

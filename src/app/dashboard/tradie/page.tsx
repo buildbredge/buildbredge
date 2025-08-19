@@ -23,6 +23,8 @@ import { AnonymousProjectClaimNotification } from "@/components/AnonymousProject
 import { MatchedProjectsList } from "@/components/MatchedProjectsList"
 import { TradieQuotesList } from "@/components/TradieQuotesList"
 import { TradieProjectsList } from "@/components/TradieProjectsList"
+import SubordinateTradiesList from "@/components/SubordinateTradiesList"
+import ParentTradieDisplay from "@/components/ParentTradieDisplay"
 import type { ProjectData, UserProfileData } from "../../../../lib/services/apiClient"
 
 interface UserRole {
@@ -67,6 +69,7 @@ interface ExtendedUserProfileData extends UserProfileData {
   activeRole?: 'owner' | 'tradie'
   address?: string
   phone_verified?: boolean
+  parent_tradie_id?: string | null
   ownerData?: {
     status: string
     balance: number
@@ -580,6 +583,18 @@ export default function TradieDashboardPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Parent Tradie Display */}
+            <ParentTradieDisplay childTradieId={user.id} />
+
+            {/* Team Management - Only show for main tradies (not subordinate tradies) */}
+            {!userProfile.parent_tradie_id && (
+              <SubordinateTradiesList 
+                parentTradieId={user.id} 
+                parentCompany={userProfile.tradieData?.company}
+                onRefresh={() => checkUser()}
+              />
+            )}
 
             {/* Performance */}
             <Card>

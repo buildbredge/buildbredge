@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../../lib/supabase'
+import { withAdminAuth, AdminUser } from '@/lib/adminAuth'
 
-// Admin users list API with pagination and filtering - updated for users/user_roles schema
-export async function GET(request: NextRequest) {
+// Admin users list API with pagination and filtering - updated for users/user_roles schema - Protected
+async function handleUsersListRequest(request: NextRequest, adminUser: AdminUser) {
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -105,3 +106,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Export protected GET handler
+export const GET = withAdminAuth(handleUsersListRequest)

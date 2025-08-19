@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../../lib/supabase'
+import { withAdminAuth, AdminUser } from '@/lib/adminAuth'
 
-// Admin projects list API with pagination and filtering
-export async function GET(request: NextRequest) {
+// Admin projects list API with pagination and filtering - Protected
+async function handleProjectsListRequest(request: NextRequest, adminUser: AdminUser) {
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -134,3 +135,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Export protected GET handler  
+export const GET = withAdminAuth(handleProjectsListRequest)

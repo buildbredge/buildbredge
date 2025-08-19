@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientBody from "./ClientBody";
-import { AuthProvider } from "@/contexts/AuthContext";
 import Script from "next/script";
+import ConditionalAuthProvider from "./ConditionalAuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,9 +34,9 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="antialiased">
-        <AuthProvider>
+        <ConditionalAuthProvider>
           <ClientBody>{children}</ClientBody>
-        </AuthProvider>
+        </ConditionalAuthProvider>
       </body>
     </html>
   );

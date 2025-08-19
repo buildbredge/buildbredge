@@ -62,6 +62,7 @@ import {
   Shield
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 // AdminLayout component
 function AdminLayout({ children, title }: { children: React.ReactNode; title: string }) {
@@ -80,9 +81,18 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     setAdminUser(JSON.parse(user))
   }, [router])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // 清除localStorage
     localStorage.removeItem("adminToken")
     localStorage.removeItem("adminUser")
+    
+    // 清除cookies
+    document.cookie = "adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    document.cookie = "adminUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    
+    // Supabase登出
+    await supabase.auth.signOut()
+    
     router.push("/htgl/login")
   }
 
@@ -258,11 +268,18 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       
+      // 获取admin token用于API请求
+      const adminToken = localStorage.getItem('adminToken')
+      const headers = {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+      
       // 并行获取所有数据
       const [statsResponse, usersResponse, projectsResponse] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch('/api/admin/users-list?limit=10'), // 只获取前10个用户用于显示
-        fetch('/api/admin/projects-list?limit=10') // 只获取前10个项目用于显示
+        fetch('/api/admin/stats', { headers }),
+        fetch('/api/admin/users-list?limit=10', { headers }), // 只获取前10个用户用于显示
+        fetch('/api/admin/projects-list?limit=10', { headers }) // 只获取前10个项目用于显示
       ])
 
       // 处理统计数据
@@ -400,6 +417,49 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Status change error:', error)
       alert('更新用户状态时发生错误，请稍后重试')
+    } finally {
+      setStatusChanging(null)
+    }
+  }
+
+  const handleDeleteUser = async (userId: string, userName: string, userEmail: string) => {
+    const confirmMessage = `⚠️ 危险操作！\n\n确定要完全删除用户 "${userName}" (${userEmail}) 吗？\n\n此操作将：\n- 删除用户的所有数据（用户信息、角色、技师资料等）\n- 清除项目关联（保留项目但移除用户关联）\n- 删除认证账户\n- 此操作不可撤销！\n\n请输入用户名 "${userName}" 确认删除：`
+    
+    const confirmation = prompt(confirmMessage)
+    
+    if (confirmation !== userName) {
+      if (confirmation !== null) {
+        alert('用户名确认不匹配，删除操作已取消')
+      }
+      return
+    }
+
+    try {
+      setStatusChanging(userId)
+      
+      const response = await fetch(`/api/admin/users/${userId}/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Remove user from local state
+        setUsers(users.filter(u => u.id !== userId))
+        alert(`用户删除成功：${result.message}`)
+        
+        // 刷新数据以确保UI同步
+        fetchDashboardData()
+      } else {
+        alert(`删除失败: ${result.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('Delete user error:', error)
+      alert('删除用户时发生错误，请稍后重试')
     } finally {
       setStatusChanging(null)
     }
@@ -665,6 +725,16 @@ export default function AdminDashboard() {
                                     暂停账户
                                   </DropdownMenuItem>
                                 )}
+                                <DropdownMenuSeparator />
+                                {/* 开发环境删除用户功能 */}
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteUser(user.id, user.name, user.email)}
+                                  className="text-red-600 bg-red-50"
+                                  disabled={statusChanging === user.id}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  {statusChanging === user.id ? '删除中...' : '删除用户'}
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>

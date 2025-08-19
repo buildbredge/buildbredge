@@ -22,6 +22,7 @@ interface UserProfileResponse {
   createdAt: string
   roles: UserRole[]
   activeRole: 'owner' | 'tradie'
+  parent_tradie_id?: string | null
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string
@@ -177,6 +178,7 @@ export async function GET(request: NextRequest) {
       createdAt: userProfile.created_at,
       roles: userRoles,
       activeRole: activeRole,
+      parent_tradie_id: userProfile.parent_tradie_id || null,
       ownerData: ownerData || undefined,
       tradieData: tradieData || undefined
     }

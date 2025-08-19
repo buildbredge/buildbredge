@@ -53,7 +53,22 @@ export default function AdminLoginPage() {
         return
       }
 
-      // 管理员登录成功，跳转到管理面板
+      // 管理员登录成功，设置cookies并跳转到管理面板
+      const adminUser = {
+        id: adminData.id,
+        email: adminData.email,
+        name: adminData.name,
+        role: 'admin'
+      }
+      
+      // 设置cookies（注意：这里只是客户端设置，应该配合服务器端API）
+      document.cookie = `adminToken=${authData.session?.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
+      document.cookie = `adminUser=${JSON.stringify(adminUser)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
+      
+      // 同时保存到localStorage作为备份
+      localStorage.setItem('adminToken', authData.session?.access_token || '')
+      localStorage.setItem('adminUser', JSON.stringify(adminUser))
+      
       router.push("/htgl")
     } catch (error) {
       console.error('登录错误:', error)

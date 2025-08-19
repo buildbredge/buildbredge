@@ -21,6 +21,7 @@ interface RegisterData {
   location: string
   company?: string
   categoryId?: string
+  parentTradieId?: string
 }
 
 interface AuthResponse {
@@ -136,7 +137,8 @@ class AuthService {
             location: userData.location,
             userType: userData.userType,
             company: userData.company,
-            categoryId: userData.categoryId
+            categoryId: userData.categoryId,
+            parentTradieId: userData.parentTradieId
           })
         })
 

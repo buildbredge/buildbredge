@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// 在函数内部动态创建客户端以确保环境变量可用
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +16,27 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, phone, email, location, userType, company, categoryId } = body
+    const { userId, name, phone, email, location, userType, company, categoryId, parentTradieId } = body
+
+    // 获取管理客户端
+    const supabaseAdmin = getSupabaseAdmin()
+    
+    // 调试：检查环境变量
+    console.log('Environment check:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'OK' : 'MISSING',
+      serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'OK' : 'MISSING'
+    })
+    
+    // 测试基本连接
+    try {
+      const { data: testData, error: testError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .limit(1)
+      console.log('Connection test:', { testData: !!testData, testError: testError?.message })
+    } catch (connError) {
+      console.error('Connection error:', connError)
+    }
 
     // 验证必需字段
     if (!userId || !name || !phone || !email || !userType) {
@@ -31,7 +54,60 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 1. 检查用户是否已存在于统一用户表中
+    // 如果提供了parentTradieId，验证父技师
+    if (parentTradieId) {
+      // 只有tradie用户可以有父技师
+      if (userType !== 'tradie') {
+        return NextResponse.json({
+          success: false,
+          error: "只有技师用户可以设置父技师"
+        }, { status: 400 })
+      }
+
+      // 验证父技师存在且是tradie角色（临时使用普通client进行测试）
+      console.log('Looking for parent tradie:', parentTradieId)
+      const { data: parentTradie, error: parentError } = await supabase
+        .from('users')
+        .select('id, status')
+        .eq('id', parentTradieId)
+        .single()
+      
+      console.log('Parent tradie query result:', { parentTradie, parentError })
+      
+      if (parentError || !parentTradie) {
+        console.error('Parent tradie not found:', parentError)
+        return NextResponse.json({
+          success: false,
+          error: `指定的父技师不存在: ${parentError?.message || 'No data'}`
+        }, { status: 400 })
+      }
+      
+      // 检查父技师是否有tradie角色（临时使用普通client进行测试）
+      const { data: parentRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role_type')
+        .eq('user_id', parentTradieId)
+        .eq('role_type', 'tradie')
+        .single()
+
+      if (roleError || !parentRole) {
+        console.error('Parent tradie role not found:', roleError)
+        return NextResponse.json({
+          success: false,
+          error: "指定的用户不是技师"
+        }, { status: 400 })
+      }
+
+      // 验证父技师状态
+      if (parentTradie.status !== 'approved' && parentTradie.status !== 'active') {
+        return NextResponse.json({
+          success: false,
+          error: "父技师账户未激活"
+        }, { status: 400 })
+      }
+    }
+
+    // 1. 检查用户是否已存在于统一用户表中（临时使用普通client）
     const { data: existingUser, error: userSelectError } = await supabase
       .from('users')
       .select('*')
@@ -66,7 +142,12 @@ export async function POST(request: NextRequest) {
         userData.company = company
       }
 
-      const { error: userError } = await supabase
+      // 如果提供了parentTradieId，设置父技师关系
+      if (parentTradieId) {
+        userData.parent_tradie_id = parentTradieId
+      }
+
+      const { error: userError } = await supabaseAdmin
         .from('users')
         .insert(userData)
 
@@ -83,7 +164,7 @@ export async function POST(request: NextRequest) {
       
       // 如果是现有用户添加tradie角色且提供了company，更新company信息
       if (userType === 'tradie' && company && !existingUser.company) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from('users')
           .update({ company })
           .eq('id', userId)
@@ -95,7 +176,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 检查用户是否已有此角色
-    const { data: existingRole, error: roleSelectError } = await supabase
+    const { data: existingRole, error: roleSelectError } = await supabaseAdmin
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
@@ -118,7 +199,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 创建用户角色记录
-    const { error: roleError } = await supabase
+    const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert({
         user_id: userId,
@@ -136,7 +217,7 @@ export async function POST(request: NextRequest) {
 
     // 5. 如果是技师且提供了categoryId，在tradie_professions表中创建记录
     if (userType === 'tradie' && categoryId) {
-      const { error: professionError } = await supabase
+      const { error: professionError } = await supabaseAdmin
         .from('tradie_professions')
         .insert({
           tradie_id: userId,

@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../../lib/supabase'
+import { withAdminAuth, AdminUser } from '@/lib/adminAuth'
 
-// Admin dashboard statistics API
-export async function GET() {
+// Admin dashboard statistics API - Protected
+async function handleStatsRequest(request: NextRequest, adminUser: AdminUser) {
   try {
-    console.log('Fetching admin dashboard statistics...')
+    console.log(`Admin ${adminUser.email} fetching dashboard statistics...`)
 
     // Get user statistics from users table
     const { data: users, error: usersError } = await supabase
@@ -106,3 +107,6 @@ export async function GET() {
     )
   }
 }
+
+// Export protected GET handler
+export const GET = withAdminAuth(handleStatsRequest)

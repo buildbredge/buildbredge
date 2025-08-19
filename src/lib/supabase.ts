@@ -99,6 +99,7 @@ export interface Database {
           hourly_rate: number | null
           experience_years: number | null
           bio: string | null
+          parent_tradie_id: string | null
         }
         Insert: {
           id: string
@@ -121,6 +122,7 @@ export interface Database {
           hourly_rate?: number | null
           experience_years?: number | null
           bio?: string | null
+          parent_tradie_id?: string | null
         }
         Update: {
           id?: string
@@ -143,6 +145,7 @@ export interface Database {
           hourly_rate?: number | null
           experience_years?: number | null
           bio?: string | null
+          parent_tradie_id?: string | null
         }
       }
       user_roles: {
@@ -382,6 +385,39 @@ export interface TradieSearchParams {
   status?: Database['public']['Tables']['users']['Row']['status']
   sortBy?: 'rating' | 'distance' | 'review_count' | 'created_at'
   sortOrder?: 'asc' | 'desc'
+}
+
+// Tradie hierarchy related types
+export interface SubordinateTradie {
+  id: string
+  name: string
+  email: string
+  phone: string
+  company: string | null
+  specialty: string | null
+  status: string
+  created_at: string
+  rating: number
+  review_count: number
+}
+
+export interface ParentTradie {
+  id: string
+  name: string
+  email: string
+  company: string | null
+  specialty: string | null
+}
+
+export interface AddTradieData {
+  name: string
+  email: string
+  password: string
+  phone: string
+  location: string
+  company?: string
+  categoryId?: string
+  parentTradieId: string
 }
 
 export default Database
