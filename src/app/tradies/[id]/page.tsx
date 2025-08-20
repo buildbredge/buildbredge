@@ -1,5 +1,3 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -25,105 +23,182 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { supabase } from "@/lib/supabase"
 
-// 模拟静态数据
-const tradieData = {
-  id: "zhang-shifu",
-  name: "张师傅",
-  companyName: "精工水电工程",
-  avatar: "/api/placeholder/150/150",
-  rating: 4.8,
-  reviewCount: 156,
-  jobsCompleted: 234,
-  yearsExperience: 12,
-  location: "新西兰奥克兰",
-  category: "水电工程",
-  verified: true,
-  memberSince: "2020年3月",
-  responseTime: "2小时内",
-  bio: "拥有12年水电安装和维修经验，专业服务奥克兰地区华人社区。持有新西兰电工执照和水管工认证，为数百个家庭提供过优质服务。擅长住宅水电改造、故障排除、新房水电安装等项目。",
-  skills: ["住宅水电安装", "水管维修", "电路改造", "故障排除", "热水器安装", "浴室翻新"],
-  serviceAreas: ["奥克兰市中心", "北岸", "西区", "东区"],
-  insurance: true,
-  backgroundCheck: true,
-  projects: [
-    {
-      id: 1,
-      title: "全屋电路改造",
-      description: "为一栋1970年代老房子进行全面电路升级，包括配电箱更换、新增插座和照明改造。",
-      images: ["/api/placeholder/400/300", "/api/placeholder/400/300", "/api/placeholder/400/300"],
-      completedDate: "2024年12月",
-      location: "奥克兰北岸",
-      budget: "$8,000 - $12,000"
-    },
-    {
-      id: 2,
-      title: "厨房水电安装",
-      description: "新建厨房的水电管线安装，包括洗碗机、冰箱、微波炉等电器的专用线路。",
-      images: ["/api/placeholder/400/300", "/api/placeholder/400/300"],
-      completedDate: "2024年11月",
-      location: "奥克兰西区",
-      budget: "$3,500 - $5,000"
-    },
-    {
-      id: 3,
-      title: "浴室防水和水管",
-      description: "浴室翻新项目中的防水处理和水管重新布置，确保长期使用无渗漏。",
-      images: ["/api/placeholder/400/300", "/api/placeholder/400/300", "/api/placeholder/400/300", "/api/placeholder/400/300"],
-      completedDate: "2024年10月",
-      location: "奥克兰东区",
-      budget: "$4,200 - $6,000"
+// 技师数据接口
+interface TradieData {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  company?: string
+  address?: string
+  rating: number
+  review_count: number
+  status: string
+  created_at: string
+  bio?: string
+  experience_years?: number
+  hourly_rate?: number
+  phone_verified?: boolean
+}
+
+interface ReviewData {
+  id: string
+  clientName: string
+  project: string
+  date: string
+  rating: number
+  comment: string
+  ratings: {
+    workmanship: number
+    communication: number
+    punctuality: number
+    cleanliness: number
+  }
+}
+
+// 从数据库获取技师数据
+async function getTradieData(tradieId: string): Promise<TradieData | null> {
+  try {
+    console.log('Fetching tradie data for ID:', tradieId)
+    
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        phone,
+        company,
+        address,
+        rating,
+        review_count,
+        status,
+        created_at,
+        bio,
+        experience_years,
+        hourly_rate
+      `)
+      .eq('id', tradieId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching tradie data:', error)
+      return null
     }
-  ],
-  reviews: [
-    {
-      id: 1,
-      clientName: "李女士",
-      rating: 5,
-      date: "2024年12月15日",
-      project: "厨房电路改造",
-      comment: "张师傅非常专业，工作认真细致。提前到达，工具齐全，完工后清理得很干净。价格合理，强烈推荐！",
-      ratings: {
-        workmanship: 5,
-        communication: 5,
-        punctuality: 5,
-        cleanliness: 5
-      }
-    },
-    {
-      id: 2,
-      clientName: "王先生",
-      rating: 5,
-      date: "2024年11月28日",
-      project: "热水器安装",
-      comment: "技术过硬，中文沟通无障碍，解释得很详细。安装后还教我如何维护，服务态度很好。",
-      ratings: {
-        workmanship: 5,
-        communication: 5,
-        punctuality: 4,
-        cleanliness: 5
-      }
-    },
-    {
-      id: 3,
-      clientName: "陈女士",
-      rating: 4,
-      date: "2024年11月10日",
-      project: "浴室水管维修",
-      comment: "修理及时，问题解决彻底。价格透明，没有额外收费。下次还会找张师傅。",
-      ratings: {
-        workmanship: 4,
-        communication: 5,
-        punctuality: 4,
-        cleanliness: 4
-      }
+
+    console.log('Found user data:', userData)
+    return userData
+  } catch (error) {
+    console.error('Error in getTradieData:', error)
+    return null
+  }
+}
+
+// 获取技师的专业类别
+async function getTradieCategories(tradieId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tradie_professions')
+      .select(`
+        categories!inner(
+          name_zh,
+          name_en
+        )
+      `)
+      .eq('tradie_id', tradieId)
+
+    if (error) {
+      console.error('Error fetching tradie categories:', error)
+      return []
     }
-  ]
+
+    return data?.map((item: any) => item.categories.name_zh) || []
+  } catch (error) {
+    console.error('Error in getTradieCategories:', error)
+    return []
+  }
+}
+
+// 获取技师的项目历史
+async function getTradiePortfolio(tradieId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('tradie_portfolios')
+      .select('*')
+      .eq('tradie_id', tradieId)
+      .order('completed_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching tradie portfolio:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getTradiePortfolio:', error)
+    return []
+  }
 }
 
 export default async function TradieProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const tradie = tradieData
+  
+  // 获取技师数据
+  const tradieData = await getTradieData(id)
+  const categories = await getTradieCategories(id)
+  const portfolioProjects = await getTradiePortfolio(id)
+  
+  if (!tradieData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">技师不存在</h1>
+            <p className="text-gray-600 mb-8">您访问的技师资料不存在或已被删除</p>
+            <Button asChild>
+              <Link href="/browse-tradies">返回技师目录</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const tradie = {
+    id: tradieData.id,
+    name: tradieData.name || "未设置姓名",
+    companyName: tradieData.company || "个人技师",
+    avatar: "/api/placeholder/150/150",
+    rating: tradieData.rating || 5.0,
+    reviewCount: tradieData.review_count || 0,
+    jobsCompleted: Math.floor((tradieData.review_count || 0) * 1.5), // 估算完成项目数
+    yearsExperience: tradieData.experience_years || 0,
+    location: tradieData.address || "未设置地址",
+    category: categories.join(", ") || "未设置专业",
+    verified: tradieData.status === 'approved',
+    memberSince: new Date(tradieData.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' }),
+    responseTime: "24小时内",
+    bio: tradieData.bio || "这位技师还没有添加个人简介。",
+    skills: categories.length > 0 ? categories : ["专业服务"],
+    serviceAreas: [tradieData.address || "服务地区"].filter(Boolean),
+    insurance: true,
+    backgroundCheck: true,
+    hourlyRate: tradieData.hourly_rate,
+    phone: tradieData.phone,
+    email: tradieData.email,
+    projects: portfolioProjects.map(project => ({
+      id: project.id,
+      title: project.title,
+      description: project.description || "",
+      completedDate: project.completed_date ? new Date(project.completed_date).toLocaleDateString('zh-CN') : "",
+      location: project.location || "",
+      budget: project.budget || "",
+      images: project.images || []
+    })),
+    reviews: [] as ReviewData[] // 暂时为空，可以后续从数据库获取
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -263,53 +338,63 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 <CardDescription>查看我们完成的项目案例</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-8">
-                  {tradie.projects.map((project) => (
-                    <div key={project.id} className="border-b pb-8 last:border-b-0 last:pb-0">
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="md:w-1/3">
-                          <div className="grid grid-cols-2 gap-2">
-                            {project.images.slice(0, 4).map((image, index) => (
-                              <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
-                                <Image
-                                  src={image}
-                                  alt={`${project.title} - 图片 ${index + 1}`}
-                                  fill
-                                  className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                                />
-                                {index === 3 && project.images.length > 4 && (
-                                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-semibold">
-                                    +{project.images.length - 4}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                {tradie.projects.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无项目案例</h3>
+                    <p className="text-gray-600">
+                      该技师还没有上传项目案例，您可以直接联系了解更多信息
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {tradie.projects.map((project) => (
+                      <div key={project.id} className="border-b pb-8 last:border-b-0 last:pb-0">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="md:w-1/3">
+                            <div className="grid grid-cols-2 gap-2">
+                              {project.images.slice(0, 4).map((image: string, index: number) => (
+                                <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
+                                  <Image
+                                    src={image}
+                                    alt={`${project.title} - 图片 ${index + 1}`}
+                                    fill
+                                    className="object-cover hover:scale-105 transition-transform cursor-pointer"
+                                  />
+                                  {index === 3 && project.images.length > 4 && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-semibold">
+                                      +{project.images.length - 4}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="md:w-2/3">
-                          <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                          <p className="text-gray-600 mb-4">{project.description}</p>
                           
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>{project.completedDate}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{project.location}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              <span>{project.budget}</span>
+                          <div className="md:w-2/3">
+                            <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
+                            <p className="text-gray-600 mb-4">{project.description}</p>
+                            
+                            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>{project.completedDate}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{project.location}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="w-4 h-4" />
+                                <span>{project.budget}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -342,112 +427,124 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {tradie.reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-gray-100 text-gray-600">
-                            {review.clientName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <h4 className="font-semibold">{review.clientName}</h4>
-                              <p className="text-sm text-gray-500">{review.project} · {review.date}</p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? "text-yellow-500 fill-yellow-500"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <p className="text-gray-700 mb-4">{review.comment}</p>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                            <div className="text-center">
-                              <div className="text-gray-500 mb-1">工艺质量</div>
-                              <div className="flex items-center justify-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3 h-3 ${
-                                      i < review.ratings.workmanship
-                                        ? "text-yellow-500 fill-yellow-500"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
+                {tradie.reviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无用户评价</h3>
+                    <p className="text-gray-600">
+                      该技师还没有收到评价，成为第一个评价的客户吧！
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-6">
+                      {tradie.reviews.map((review) => (
+                        <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                          <div className="flex items-start gap-4">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-gray-100 text-gray-600">
+                                {review.clientName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <h4 className="font-semibold">{review.clientName}</h4>
+                                  <p className="text-sm text-gray-500">{review.project} · {review.date}</p>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < review.rating
+                                          ? "text-yellow-500 fill-yellow-500"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-gray-500 mb-1">沟通交流</div>
-                              <div className="flex items-center justify-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3 h-3 ${
-                                      i < review.ratings.communication
-                                        ? "text-yellow-500 fill-yellow-500"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-gray-500 mb-1">守时程度</div>
-                              <div className="flex items-center justify-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3 h-3 ${
-                                      i < review.ratings.punctuality
-                                        ? "text-yellow-500 fill-yellow-500"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-gray-500 mb-1">整洁度</div>
-                              <div className="flex items-center justify-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3 h-3 ${
-                                      i < review.ratings.cleanliness
-                                        ? "text-yellow-500 fill-yellow-500"
-                                        : "text-gray-300"
-                                    }`}
-                                  />
-                                ))}
+                              
+                              <p className="text-gray-700 mb-4">{review.comment}</p>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                <div className="text-center">
+                                  <div className="text-gray-500 mb-1">工艺质量</div>
+                                  <div className="flex items-center justify-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${
+                                          i < review.ratings.workmanship
+                                            ? "text-yellow-500 fill-yellow-500"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-gray-500 mb-1">沟通交流</div>
+                                  <div className="flex items-center justify-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${
+                                          i < review.ratings.communication
+                                            ? "text-yellow-500 fill-yellow-500"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-gray-500 mb-1">守时程度</div>
+                                  <div className="flex items-center justify-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${
+                                          i < review.ratings.punctuality
+                                            ? "text-yellow-500 fill-yellow-500"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-gray-500 mb-1">整洁度</div>
+                                  <div className="flex items-center justify-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-3 h-3 ${
+                                          i < review.ratings.cleanliness
+                                            ? "text-yellow-500 fill-yellow-500"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                
-                <div className="mt-6 text-center">
-                  <Button variant="outline">
-                    查看所有评价
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
+                    
+                    <div className="mt-6 text-center">
+                      <Button variant="outline">
+                        查看所有评价
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -543,6 +640,12 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                       <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
                     </span>
                   </div>
+                  {tradie.hourlyRate && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">时薪</span>
+                      <span className="font-semibold">${tradie.hourlyRate}/小时</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

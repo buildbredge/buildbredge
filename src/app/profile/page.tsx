@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
 import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { PortfolioManagement } from "@/components/ui/portfolio-management"
 
 
 export default function ProfilePage() {
@@ -553,6 +554,13 @@ export default function ProfilePage() {
                   </form>
                 </CardContent>
               </Card>
+
+              {/* Portfolio Management for Tradie users */}
+              {isTradie && user?.id && (
+                <div className="mt-8">
+                  <PortfolioManagement tradieId={user.id} />
+                </div>
+              )}
             </div>
           </div>
         </div>

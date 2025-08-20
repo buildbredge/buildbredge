@@ -26,38 +26,69 @@ interface TradieWithProfession {
 
 export async function generateStaticParams() {
   try {
-    // 从数据库获取所有专业名称来生成静态路径
-    const professions = await professionsApi.getAll()
-    return professions.map((profession) => ({
-      category: encodeURIComponent(profession.name_zh),
+    // 从数据库获取所有类别ID来生成静态路径
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('id')
+    
+    if (error) {
+      console.error('Error generating static params:', error)
+      // fallback 路径
+      return [
+        { category: "1" },
+        { category: "2" }
+      ]
+    }
+
+    return (categories || []).map((category) => ({
+      category: category.id.toString(),
     }))
   } catch (error) {
     console.error('Error generating static params:', error)
     // fallback 路径
     return [
-      { category: encodeURIComponent("电气服务") },
-      { category: encodeURIComponent("水管维修") }
+      { category: "1" },
+      { category: "2" }
     ]
   }
 }
 
 interface PageProps {
   params: Promise<{
-    category: string
+    category: string // This will be the category_id
   }>
 }
 
-async function loadTradiesForProfession(professionName: string) {
+async function loadTradiesForCategory(categoryId: string) {
   try {
-    // 首先查找专业信息
-    const professionsData = await professionsApi.getAll()
-    const professionData = professionsData.find(p => p.name_zh === professionName)
+    console.log('Loading tradies for category ID:', categoryId)
+    
+    // 首先查找类别信息
+    const { data: categoriesData, error: categoryError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', categoryId)
 
-    // 通过 tradie_professions 表查找该专业的技师
+    if (categoryError) {
+      console.error('Error loading category:', categoryError)
+      return { category: null, tradies: [] }
+    }
+
+    // 获取类别数据
+    const categoryData = categoriesData?.[0]
+    if (!categoryData) {
+      console.log('Category not found:', categoryId)
+      return { category: null, tradies: [] }
+    }
+    console.log('Category found:', categoryData)
+
+    // 通过 tradie_professions 表查找该类别的技师
+    // 假设 tradie_professions 表中存储的是 category_id
     const { data: tradieData, error } = await supabase
       .from('tradie_professions')
       .select(`
         tradie_id,
+        category_id,
         users!inner(
           id,
           name,
@@ -72,39 +103,45 @@ async function loadTradiesForProfession(professionName: string) {
           bio,
           experience_years,
           hourly_rate
-        ),
-        professions!inner(
-          name_zh,
-          name_en
         )
       `)
-      .eq('professions.name_zh', professionName)
-      .eq('users.status', 'approved') // 只显示已认证的技师
+      .eq('category_id', categoryId)
+      .eq('users.status', 'approved')
+
+    console.log('Tradie query result:', { data: tradieData, error })
 
     if (error) {
       console.error('Error loading tradies:', error)
-      return { profession: professionData, tradies: [] }
+      return { category: categoryData, tradies: [] }
     }
 
-    // 转换数据格式
-    const formattedTradies: TradieWithProfession[] = (tradieData || []).map((item: any) => ({
-      ...item.users,
-      tradie_profession_id: item.id
-    }))
+    // 转换数据格式并去重（一个技师可能有多个记录）
+    const uniqueTradies = new Map()
+    tradieData?.forEach((item: any) => {
+      if (!uniqueTradies.has(item.users.id)) {
+        uniqueTradies.set(item.users.id, {
+          ...item.users,
+          tradie_profession_id: item.tradie_id
+        })
+      }
+    })
 
-    return { profession: professionData, tradies: formattedTradies }
+    const formattedTradies: TradieWithProfession[] = Array.from(uniqueTradies.values())
+    console.log('Formatted tradies:', formattedTradies)
+
+    return { category: categoryData, tradies: formattedTradies }
   } catch (error) {
-    console.error('Error loading tradies for profession:', error)
-    return { profession: null, tradies: [] }
+    console.error('Error loading tradies for category:', error)
+    return { category: null, tradies: [] }
   }
 }
 
-export default async function ProfessionPage({ params }: PageProps) {
+export default async function CategoryPage({ params }: PageProps) {
   const { category } = await params
-  const professionName = decodeURIComponent(category)
+  const categoryId = category // Now this is the category ID
   
   // 服务端数据加载
-  const { profession, tradies } = await loadTradiesForProfession(professionName)
+  const { category: categoryData, tradies } = await loadTradiesForCategory(categoryId)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,9 +158,11 @@ export default async function ProfessionPage({ params }: PageProps) {
           </div>
           
           <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{professionName} 专业技师</h1>
-            {profession && (
-              <p className="text-gray-600 mb-4">{profession.name_en}</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {categoryData?.name_zh || '未知类别'} 专业技师
+            </h1>
+            {categoryData && (
+              <p className="text-gray-600 mb-4">{categoryData.name_en}</p>
             )}
             
             <div className="flex items-center gap-6 text-sm text-gray-600">
@@ -133,7 +172,7 @@ export default async function ProfessionPage({ params }: PageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
-                <span>专业 {professionName} 服务</span>
+                <span>专业 {categoryData?.name_zh || '未知类别'} 服务</span>
               </div>
             </div>
           </div>
@@ -143,7 +182,7 @@ export default async function ProfessionPage({ params }: PageProps) {
         <div className="mb-8 bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-green-900 mb-2">需要 {professionName} 服务？</h3>
+              <h3 className="font-semibold text-green-900 mb-2">需要 {categoryData?.name_zh || '专业'} 服务？</h3>
               <p className="text-green-700 text-sm">发布您的需求，获得多个专业技师报价，选择最合适的服务方案</p>
             </div>
             <Button className="bg-green-600 hover:bg-green-700 flex-shrink-0" asChild>
@@ -158,7 +197,7 @@ export default async function ProfessionPage({ params }: PageProps) {
             <div className="text-gray-400 mb-4">
               <Users className="w-16 h-16 mx-auto" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无 {professionName} 技师</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无 {categoryData?.name_zh || '该类别'} 技师</h3>
             <p className="text-gray-600 mb-6">
               我们正在积极招募该专业的技师，您可以先发布需求，我们会尽快为您匹配合适的专业人员。
             </p>
@@ -255,7 +294,7 @@ export default async function ProfessionPage({ params }: PageProps) {
         )}
 
         {/* 相关专业推荐 */}
-        {tradies.length > 0 && profession && (
+        {tradies.length > 0 && categoryData && (
           <div className="mt-12 bg-white rounded-lg p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">相关服务</h2>
             <div className="flex flex-wrap gap-2">

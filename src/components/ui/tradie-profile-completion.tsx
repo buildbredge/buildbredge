@@ -12,7 +12,10 @@ import {
   CheckCircle, 
   AlertCircle, 
   Loader2,
-  User
+  User,
+  Mail,
+  FileText,
+  Target
 } from "lucide-react"
 import { authService } from "@/lib/services/authService"
 
@@ -65,12 +68,21 @@ export function TradieProfileCompletion({
   // 本地状态跟踪更新
   const [localPhoneVerified, setLocalPhoneVerified] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState("")
+  const [hasVisitedBrowsePage, setHasVisitedBrowsePage] = useState(false)
 
   const isTradie = userProfile.roles?.some(role => role.role_type === 'tradie')
   
   // 主要依赖数据库数据，本地状态只在更新过程中临时使用
   const phoneVerified = !!(userProfile.phone_verified) || localPhoneVerified
   
+  // 检查用户是否已经访问过浏览页面
+  useEffect(() => {
+    const visited = localStorage.getItem(`tradie_visited_browse_${userProfile.id}`)
+    if (visited) {
+      setHasVisitedBrowsePage(true)
+    }
+  }, [userProfile.id])
+
   // 如果数据库中已有数据，清除本地状态标记（避免重复计算）
   useEffect(() => {
     if (userProfile.phone_verified && localPhoneVerified) {
@@ -79,6 +91,18 @@ export function TradieProfileCompletion({
   }, [userProfile.phone_verified])
   
   const completionSteps: CompletionStep[] = [
+    {
+      id: "email",
+      title: "验证邮箱地址",
+      description: "完成邮箱验证以确保账户安全",
+      completed: emailVerified,
+      critical: true,
+      icon: <Mail className="w-4 h-4" />,
+      action: emailVerified ? undefined : () => {
+        // TODO: 实现重新发送验证邮件
+        console.log('Resend verification email')
+      }
+    },
     {
       id: "phone",
       title: "验证手机号码",
@@ -91,6 +115,44 @@ export function TradieProfileCompletion({
         setVerificationCode("")
         setOtpError("")
         setShowPhoneDialog(true)
+      }
+    },
+    {
+      id: "profile",
+      title: "完善个人资料",
+      description: "填写姓名、地址等基本信息",
+      completed: !!(userProfile.name && userProfile.address),
+      critical: false,
+      icon: <FileText className="w-4 h-4" />,
+      action: () => {
+        window.location.href = '/profile'
+      }
+    },
+    {
+      id: "company",
+      title: "设置公司信息",
+      description: "填写公司名称和专业技能",
+      completed: !!(userProfile.tradieData?.company && userProfile.tradieData?.specialty),
+      critical: false,
+      icon: <User className="w-4 h-4" />,
+      action: () => {
+        window.location.href = '/profile'
+      }
+    },
+    {
+      id: "browse",
+      title: "浏览可接项目",
+      description: "查看适合您技能的项目机会",
+      completed: hasVisitedBrowsePage,
+      critical: false,
+      icon: <Target className="w-4 h-4" />,
+      action: () => {
+        // 标记用户已访问浏览页面
+        if (userProfile.id) {
+          localStorage.setItem(`tradie_visited_browse_${userProfile.id}`, 'true')
+          setHasVisitedBrowsePage(true)
+        }
+        window.location.href = '/browse-jobs'
       }
     }
   ]
@@ -237,9 +299,9 @@ export function TradieProfileCompletion({
           <div className="flex items-center space-x-3">
             <CheckCircle className="w-6 h-6 text-green-600" />
             <div>
-              <h3 className="font-medium text-green-800">资料完善完成！</h3>
+              <h3 className="font-medium text-green-800">资料完善和账户设置完成！</h3>
               <p className="text-sm text-green-700">
-                您的技师资料已经完善，现在可以接收更多项目机会了
+                您的技师资料和账户设置已经完善，现在可以接收更多项目机会了
               </p>
             </div>
             <Badge className="bg-green-100 text-green-700">
@@ -257,14 +319,14 @@ export function TradieProfileCompletion({
         <div className="flex items-center justify-between">
           <CardTitle className="text-orange-800 flex items-center">
             <User className="w-5 h-5 mr-2" />
-            完善您的技师资料
+            完善技师资料和账户设置
           </CardTitle>
           <Badge className="bg-orange-100 text-orange-700">
             {completionPercentage}% 完成
           </Badge>
         </div>
         <p className="text-sm text-orange-700">
-          完善资料可以让您获得更多项目机会，提升客户信任度
+          完善资料和账户设置可以让您获得更多项目机会，提升客户信任度
         </p>
         {showSuccessMessage && (
           <div className="mt-2 p-2 bg-green-100 border border-green-200 rounded-md">

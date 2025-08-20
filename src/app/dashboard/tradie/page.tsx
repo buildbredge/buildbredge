@@ -16,7 +16,6 @@ import Link from "next/link"
 import { apiClient } from "../../../../lib/services/apiClient"
 import { authService } from "../../../../lib/services/authService"
 import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
-import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding"
 import { RoleSwitcher } from "@/components/ui/role-switcher"
 import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion"
 import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
@@ -354,14 +353,6 @@ export default function TradieDashboardPage() {
               userProfile={userProfile}
               emailVerified={user.emailConfirmed}
               onProfileUpdate={() => checkUser()}
-            />
-            
-            {/* Onboarding */}
-            <ProgressiveOnboarding
-              userRoles={userProfile.roles || []}
-              projectCount={0} // Tradies don't have projects, they have services
-              profileComplete={!!(userProfile.name && userProfile.phone && userProfile.tradieData?.company)}
-              emailVerified={user.emailConfirmed}
             />
             
             {/* Primary CTA - Browse Jobs */}

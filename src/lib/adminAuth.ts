@@ -64,10 +64,10 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AdminUser |
 }
 
 // 用于API路由的权限验证中间件
-export function withAdminAuth<T extends any[]>(
-  handler: (request: NextRequest, adminUser: AdminUser, ...args: T) => Promise<Response>
+export function withAdminAuth(
+  handler: (request: NextRequest, adminUser: AdminUser, context?: any) => Promise<Response>
 ) {
-  return async (request: NextRequest, ...args: T): Promise<Response> => {
+  return async (request: NextRequest, context?: any): Promise<Response> => {
     const adminUser = await verifyAdminAuth(request)
     
     if (!adminUser) {
@@ -77,6 +77,6 @@ export function withAdminAuth<T extends any[]>(
       )
     }
 
-    return handler(request, adminUser, ...args)
+    return handler(request, adminUser, context)
   }
 }

@@ -48,8 +48,8 @@ export default function BrowseTradiesPage() {
   }
 
   const handleProfessionClick = (profession: Profession) => {
-    // 跳转到专业页面显示该专业的技师
-    window.location.href = `/browse-tradies/${encodeURIComponent(profession.name_zh)}`
+    // 跳转到类别页面显示该类别下所有技师
+    window.location.href = `/browse-tradies/${profession.category_id}`
   }
 
   if (loading) {
