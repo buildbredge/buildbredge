@@ -20,13 +20,32 @@ const FILE_CONFIG = {
     maxSize: 100 * 1024 * 1024, // 100MB
     allowedTypes: ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/wmv', 'video/x-ms-wmv'],
     allowedExtensions: ['.mp4', '.mov', '.avi', '.wmv']
+  },
+  document: {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    allowedTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/rar',
+      'application/x-rar-compressed'
+    ],
+    allowedExtensions: ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.zip', '.rar']
   }
 }
 
 /**
  * 验证文件是否符合要求
  */
-export function validateFile(file: File, type: 'image' | 'video'): FileValidationResult {
+export function validateFile(file: File, type: 'image' | 'video' | 'document'): FileValidationResult {
   const config = FILE_CONFIG[type]
   
   // 检查文件大小
@@ -239,6 +258,90 @@ export async function uploadProjectVideo(
 }
 
 /**
+ * 上传单个文档到 Supabase Storage
+ */
+export async function uploadDocument(
+  file: File,
+  projectId: string,
+  onProgress?: UploadProgressCallback
+): Promise<string> {
+  // 验证文件
+  const validation = validateFile(file, 'document')
+  if (!validation.valid) {
+    throw new Error(validation.error)
+  }
+  
+  // 生成文件路径
+  const fileName = generateFileName(file.name)
+  const filePath = `projects/${projectId}/documents/${fileName}`
+  
+  try {
+    // 模拟上传进度
+    if (onProgress) {
+      onProgress(0)
+      const progressInterval = setInterval(() => {
+        onProgress(Math.min(90, Math.random() * 80 + 10))
+      }, 300)
+      
+      setTimeout(() => clearInterval(progressInterval), 1500)
+    }
+    
+    // 上传文件
+    const { data, error } = await supabase.storage
+      .from('buildbridge')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+    
+    if (error) {
+      throw new Error(`文档上传失败: ${error.message}`)
+    }
+    
+    if (onProgress) {
+      onProgress(100)
+    }
+    
+    // 获取公开URL
+    const { data: urlData } = supabase.storage
+      .from('buildbridge')
+      .getPublicUrl(filePath)
+    
+    return urlData.publicUrl
+    
+  } catch (error) {
+    if (onProgress) {
+      onProgress(0)
+    }
+    throw error
+  }
+}
+
+/**
+ * 批量上传项目文档
+ */
+export async function uploadProjectDocuments(
+  files: File[],
+  projectId: string,
+  onProgress?: (fileIndex: number, progress: number) => void
+): Promise<string[]> {
+  const uploadPromises = files.map(async (file, index) => {
+    return uploadDocument(file, projectId, (progress) => {
+      if (onProgress) {
+        onProgress(index, progress)
+      }
+    })
+  })
+  
+  try {
+    const urls = await Promise.all(uploadPromises)
+    return urls
+  } catch (error) {
+    throw new Error(`批量文档上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+  }
+}
+
+/**
  * 删除存储中的文件
  */
 export async function deleteFile(filePath: string): Promise<void> {
@@ -266,8 +369,13 @@ export async function deleteProjectFiles(projectId: string): Promise<void> {
       .from('buildbridge')
       .remove([`projects/${projectId}/videos`])
     
-    if (imageError || videoError) {
-      console.warn('部分文件删除失败:', { imageError, videoError })
+    // 删除文档文件夹
+    const { error: documentError } = await supabase.storage
+      .from('buildbridge')
+      .remove([`projects/${projectId}/documents`])
+    
+    if (imageError || videoError || documentError) {
+      console.warn('部分文件删除失败:', { imageError, videoError, documentError })
     }
   } catch (error) {
     console.error('删除项目文件时出错:', error)

@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Lock, User, Building, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -26,47 +25,39 @@ export default function AdminLoginPage() {
     setError("")
 
     try {
-      // 使用 Supabase 进行登录
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       })
 
-      if (authError || !authData.user) {
-        setError("邮箱或密码错误")
-        setIsLoading(false)
-        return
-      }
+      const result = await response.json()
 
-      // 检查用户是否是管理员
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', authData.user.email)
-        .single()
-
-      if (adminError || !adminData) {
-        setError("您没有管理员权限")
-        // 登出非管理员用户
-        await supabase.auth.signOut()
+      if (!response.ok) {
+        setError(result.error || '登录失败')
         setIsLoading(false)
         return
       }
 
       // 管理员登录成功，设置cookies并跳转到管理面板
       const adminUser = {
-        id: adminData.id,
-        email: adminData.email,
-        name: adminData.name,
+        id: result.data.admin.id,
+        email: result.data.admin.email,
+        name: result.data.admin.name,
         role: 'admin'
       }
       
       // 设置cookies（注意：这里只是客户端设置，应该配合服务器端API）
-      document.cookie = `adminToken=${authData.session?.access_token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
+      document.cookie = `adminToken=${result.data.user.id}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
       document.cookie = `adminUser=${JSON.stringify(adminUser)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
       
       // 同时保存到localStorage作为备份
-      localStorage.setItem('adminToken', authData.session?.access_token || '')
+      localStorage.setItem('adminToken', result.data.user.id || '')
       localStorage.setItem('adminUser', JSON.stringify(adminUser))
       
       router.push("/htgl")
@@ -97,92 +88,95 @@ export default function AdminLoginPage() {
 
           <Card className="border-gray-700 bg-gray-800/50 backdrop-blur-sm">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-green-600" />
-              </div>
               <CardTitle className="text-white">管理员登录</CardTitle>
               <CardDescription className="text-gray-300">
-                请使用管理员账户登录后台系统
+                请输入您的管理员凭据以访问后台系统
               </CardDescription>
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Error Alert */}
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <Alert className="border-red-500 bg-red-500/10">
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                    <AlertDescription className="text-red-200">
-                      {error}
-                    </AlertDescription>
+                  <Alert variant="destructive" className="border-red-700 bg-red-900/20">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
 
-                {/* Email */}
-                <div>
-                  <Label htmlFor="email" className="text-gray-200">邮箱地址</Label>
-                  <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@buildbridge.nz"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-green-500"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-200">
+                    <User className="w-4 h-4 inline mr-2" />
+                    管理员邮箱
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@buildbridge.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
+                    disabled={isLoading}
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500"
+                  />
                 </div>
 
-                {/* Password */}
-                <div>
-                  <Label htmlFor="password" className="text-gray-200">密码</Label>
-                  <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="请输入密码"
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-green-500"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-200">
+                    <Lock className="w-4 h-4 inline mr-2" />
+                    密码
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="请输入密码"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    required
+                    disabled={isLoading}
+                    className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-green-500 focus:ring-green-500"
+                  />
                 </div>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700"
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   disabled={isLoading}
                 >
-                  {isLoading ? "登录中..." : "登录后台"}
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      登录中...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4 mr-2" />
+                      管理员登录
+                    </>
+                  )}
                 </Button>
               </form>
 
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className="text-blue-200 text-sm font-medium mb-2">演示账户信息：</p>
-                <div className="text-blue-100 text-xs space-y-1">
-                  <p>邮箱：admin@buildbridge.nz</p>
-                  <p>密码：buildbridge2025</p>
-                </div>
-              </div>
-
-              {/* Footer */}
               <div className="mt-6 text-center">
-                <Link href="/" className="text-green-400 hover:text-green-300 text-sm">
-                  ← 返回主站
+                <p className="text-gray-400 text-sm">
+                  如需管理员权限，请联系系统管理员
+                </p>
+                <Link 
+                  href="/" 
+                  className="text-green-400 hover:text-green-300 text-sm underline"
+                >
+                  返回主页
                 </Link>
               </div>
             </CardContent>
           </Card>
+
+          {/* 安全提示 */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-400 text-xs">
+              <Shield className="w-3 h-3 inline mr-1" />
+              安全连接 • 数据加密传输
+            </p>
+          </div>
         </div>
       </div>
     </div>

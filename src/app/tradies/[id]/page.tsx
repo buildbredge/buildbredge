@@ -23,7 +23,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { supabase } from "@/lib/supabase"
+
+// 强制动态渲染，避免静态生成时的fetch问题
+export const dynamic = 'force-dynamic'
 
 // 技师数据接口
 interface TradieData {
@@ -41,6 +43,8 @@ interface TradieData {
   experience_years?: number
   hourly_rate?: number
   phone_verified?: boolean
+  categories: string[]
+  portfolio: any[]
 }
 
 interface ReviewData {
@@ -58,87 +62,24 @@ interface ReviewData {
   }
 }
 
-// 从数据库获取技师数据
+// 从API获取技师数据
 async function getTradieData(tradieId: string): Promise<TradieData | null> {
   try {
     console.log('Fetching tradie data for ID:', tradieId)
     
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select(`
-        id,
-        name,
-        email,
-        phone,
-        company,
-        address,
-        rating,
-        review_count,
-        status,
-        created_at,
-        bio,
-        experience_years,
-        hourly_rate
-      `)
-      .eq('id', tradieId)
-      .single()
-
-    if (error) {
-      console.error('Error fetching tradie data:', error)
+    const response = await fetch(`http://localhost:3000/api/tradies/${tradieId}`)
+    
+    if (!response.ok) {
+      console.error('Error fetching tradie data:', response.statusText)
       return null
     }
-
-    console.log('Found user data:', userData)
-    return userData
+    
+    const result = await response.json()
+    console.log('Found user data:', result.data)
+    return result.data
   } catch (error) {
     console.error('Error in getTradieData:', error)
     return null
-  }
-}
-
-// 获取技师的专业类别
-async function getTradieCategories(tradieId: string): Promise<string[]> {
-  try {
-    const { data, error } = await supabase
-      .from('tradie_professions')
-      .select(`
-        categories!inner(
-          name_zh,
-          name_en
-        )
-      `)
-      .eq('tradie_id', tradieId)
-
-    if (error) {
-      console.error('Error fetching tradie categories:', error)
-      return []
-    }
-
-    return data?.map((item: any) => item.categories.name_zh) || []
-  } catch (error) {
-    console.error('Error in getTradieCategories:', error)
-    return []
-  }
-}
-
-// 获取技师的项目历史
-async function getTradiePortfolio(tradieId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('tradie_portfolios')
-      .select('*')
-      .eq('tradie_id', tradieId)
-      .order('completed_date', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching tradie portfolio:', error)
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    console.error('Error in getTradiePortfolio:', error)
-    return []
   }
 }
 
@@ -147,8 +88,6 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
   
   // 获取技师数据
   const tradieData = await getTradieData(id)
-  const categories = await getTradieCategories(id)
-  const portfolioProjects = await getTradiePortfolio(id)
   
   if (!tradieData) {
     return (
@@ -176,19 +115,19 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
     jobsCompleted: Math.floor((tradieData.review_count || 0) * 1.5), // 估算完成项目数
     yearsExperience: tradieData.experience_years || 0,
     location: tradieData.address || "未设置地址",
-    category: categories.join(", ") || "未设置专业",
+    category: tradieData.categories.join(", ") || "未设置专业",
     verified: tradieData.status === 'approved',
     memberSince: new Date(tradieData.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' }),
     responseTime: "24小时内",
     bio: tradieData.bio || "这位技师还没有添加个人简介。",
-    skills: categories.length > 0 ? categories : ["专业服务"],
+    skills: tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"],
     serviceAreas: [tradieData.address || "服务地区"].filter(Boolean),
     insurance: true,
     backgroundCheck: true,
     hourlyRate: tradieData.hourly_rate,
     phone: tradieData.phone,
     email: tradieData.email,
-    projects: portfolioProjects.map(project => ({
+    projects: tradieData.portfolio.map(project => ({
       id: project.id,
       title: project.title,
       description: project.description || "",
@@ -197,7 +136,8 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
       budget: project.budget || "",
       images: project.images || []
     })),
-    reviews: [] as ReviewData[] // 暂时为空，可以后续从数据库获取
+    reviews: [] as ReviewData[], // 暂时为空，可以后续从数据库获取
+    specialties: tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"]
   }
 
   return (

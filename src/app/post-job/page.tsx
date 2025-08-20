@@ -6,11 +6,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { X, FileImage, Upload, AlertCircle, Check } from "lucide-react"
+import { X, FileImage, Upload, AlertCircle, Check, FileText, Download } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
-import { uploadProjectImages, validateFile } from "../../../lib/storage"
+import { uploadProjectImages, uploadProjectDocuments, validateFile } from "../../../lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"
@@ -23,6 +23,7 @@ interface JobForm {
   email: string
   phone: string
   images: File[]
+  files: File[]
   // Google Places相关字段
   googlePlace?: PlaceResult
   // 分类和职业相关字段
@@ -37,6 +38,7 @@ interface JobForm {
 
 interface UploadProgress {
   images: { [index: number]: number }
+  files: { [index: number]: number }
 }
 
 
@@ -52,6 +54,7 @@ export default function PostJobPage() {
     email: "",
     phone: "",
     images: [],
+    files: [],
     googlePlace: undefined,
     categoryId: undefined,
     professionId: undefined,
@@ -62,9 +65,10 @@ export default function PostJobPage() {
   })
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {} })
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ images: {}, files: {} })
   const [uploadError, setUploadError] = useState<string>("")
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -115,6 +119,7 @@ export default function PostJobPage() {
       // 如果有文件，先上传文件再创建项目
       let uploadedImageUrls: string[] = []
       let uploadedVideoUrl: string | null = null
+      let uploadedFileUrls: string[] = []
       
       // 为了获取项目ID用于文件上传，我们先生成一个临时ID
       const tempProjectId = crypto.randomUUID()
@@ -141,6 +146,28 @@ export default function PostJobPage() {
         }
       }
 
+      // 上传文件
+      if (jobForm.files.length > 0) {
+        console.log('📄 开始上传文档...')
+        try {
+          uploadedFileUrls = await uploadProjectDocuments(
+            jobForm.files,
+            tempProjectId,
+            (fileIndex, progress) => {
+              setUploadProgress(prev => ({
+                ...prev,
+                files: { ...prev.files, [fileIndex]: progress }
+              }))
+            }
+          )
+          console.log('✅ 文档上传成功:', uploadedFileUrls)
+        } catch (error) {
+          console.error('❌ 文档上传失败:', error)
+          setUploadError(`文档上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+          // 继续执行，不阻断流程
+        }
+      }
+
 
       // 创建项目记录，包含已上传的文件URL
       const projectData: any = {
@@ -152,6 +179,7 @@ export default function PostJobPage() {
         email: jobForm.email,
         phone: jobForm.phone || null,
         images: uploadedImageUrls, // 直接包含上传的图片URL
+        files: uploadedFileUrls, // 直接包含上传的文件URL
         status: 'published' as const,
         user_id: userId || null, // 如果是匿名用户则为null
         category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
@@ -234,7 +262,7 @@ export default function PostJobPage() {
       setUploadError(errorMessage)
     } finally {
       setIsUploading(false)
-      setUploadProgress({ images: {} })
+      setUploadProgress({ images: {}, files: {} })
     }
   }
 
@@ -308,6 +336,61 @@ export default function PostJobPage() {
     URL.revokeObjectURL(imagePreviews[index])
     setImagePreviews(newPreviews)
     setJobForm(prev => ({ ...prev, images: newImages }))
+  }
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || isUploading) return
+    
+    setUploadError("") // 清除之前的错误
+
+    const newFiles = Array.from(files).slice(0, 3 - jobForm.files.length)
+    
+    // 验证文件
+    const validFiles: File[] = []
+    const errors: string[] = []
+
+    for (const file of newFiles) {
+      const validation = validateFile(file, 'document')
+      if (validation.valid) {
+        validFiles.push(file)
+      } else {
+        errors.push(`${file.name}: ${validation.error}`)
+      }
+    }
+
+    if (errors.length > 0) {
+      setUploadError(`以下文件无法上传:\n${errors.join('\n')}`)
+    }
+
+    if (validFiles.length === 0) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      return
+    }
+
+    // 添加到文件列表
+    setJobForm(prev => ({ ...prev, files: [...prev.files, ...validFiles] }))
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const removeFile = (index: number) => {
+    const newFiles = jobForm.files.filter((_, i) => i !== index)
+    setJobForm(prev => ({ ...prev, files: newFiles }))
+  }
+
+  const downloadFile = (file: File) => {
+    const url = URL.createObjectURL(file)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
 
@@ -609,6 +692,76 @@ export default function PostJobPage() {
                         />
                     </div>
 
+                    {/* 文件上传 */}
+                    <div>
+                        <Label className="text-lg font-medium">上传相关文件（最多3个，每个最大10MB）</Label>
+                        <p className="text-sm text-gray-500 mb-3">
+                          支持 PDF、Word、Excel、PowerPoint、文本、压缩包等格式
+                        </p>
+
+                        {jobForm.files.length > 0 && (
+                          <div className="space-y-2 mt-3 mb-4">
+                            {jobForm.files.map((file, index) => (
+                              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <FileText className="w-5 h-5 text-blue-500" />
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {(file.size / (1024 * 1024)).toFixed(1)} MB
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => downloadFile(file)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => removeFile(index)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {jobForm.files.length < 3 && (
+                          <Card className="border-dashed border-2 border-gray-300 hover:border-green-400 transition-colors mt-3">
+                            <CardContent className="p-6">
+                              <div
+                                className="text-center cursor-pointer"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-700 font-medium mb-2">点击上传文件</p>
+                                <p className="text-sm text-gray-500">
+                                  支持各种格式，单个文件最大 10MB
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+                          onChange={(e) => handleFileUpload(e.target.files)}
+                          className="hidden"
+                        />
+                    </div>
+
                     {/* 错误信息显示 */}
                     {uploadError && (
                       <div className="flex items-start space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -641,6 +794,27 @@ export default function PostJobPage() {
                                   <div
                                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${uploadProgress.images[index] || 0}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 文件上传进度 */}
+                        {jobForm.files.length > 0 && (
+                          <div className="space-y-2 mt-4">
+                            <p className="text-sm text-blue-700">文件上传进度:</p>
+                            {jobForm.files.map((file, index) => (
+                              <div key={index} className="space-y-1">
+                                <div className="flex justify-between text-xs text-blue-600">
+                                  <span>{file.name}</span>
+                                  <span>{uploadProgress.files[index] || 0}%</span>
+                                </div>
+                                <div className="w-full bg-blue-200 rounded-full h-2">
+                                  <div
+                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadProgress.files[index] || 0}%` }}
                                   ></div>
                                 </div>
                               </div>

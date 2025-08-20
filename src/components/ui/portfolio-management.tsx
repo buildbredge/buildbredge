@@ -63,18 +63,15 @@ export function PortfolioManagement({ tradieId }: PortfolioManagementProps) {
   const loadPortfolios = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('tradie_portfolios')
-        .select('*')
-        .eq('tradie_id', tradieId)
-        .order('completed_date', { ascending: false })
-
-      if (error) {
-        console.error('Error loading portfolios:', error)
+      const response = await fetch(`/api/portfolios/${tradieId}`)
+      
+      if (!response.ok) {
+        console.error('Error loading portfolios:', response.statusText)
         return
       }
 
-      setPortfolios(data || [])
+      const result = await response.json()
+      setPortfolios(result.data || [])
     } catch (error) {
       console.error('Error loading portfolios:', error)
     } finally {
