@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone: userData.phone || user.phone,
       phone_verified: userData.phone_verified,
       address: userData.address || user.address,
+      language: userData.language,
       company: userData.company,
       serviceRadius: userData.serviceRadius,
       hourlyRate: userData.hourlyRate,

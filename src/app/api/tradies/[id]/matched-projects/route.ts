@@ -32,10 +32,10 @@ export async function GET(
     // Get the category IDs
     const categoryIds = [...new Set(tradieProfessions.map(tp => tp.category_id).filter(Boolean))]
 
-    // Get the tradie's location for distance calculation
+    // Get the tradie's location and language for matching
     const { data: tradieData } = await supabase
       .from("users")
-      .select("latitude, longitude, service_radius")
+      .select("latitude, longitude, service_radius, language")
       .eq("id", tradieId)
       .single()
 
@@ -56,6 +56,7 @@ export async function GET(
         phone,
         time_option,
         priority_need,
+        language,
         created_at,
         updated_at,
         category_id,
@@ -68,10 +69,25 @@ export async function GET(
       .eq("status", "published")  // Only published projects (exclude draft, completed, cancelled)
       .order("created_at", { ascending: false })
 
-    // Only matching by category_id
+    // Matching by category_id and language
     if (categoryIds.length > 0) {
-      let { data: categoryMatches, count: categoryCount } = await query
-        .in("category_id", categoryIds)
+      // Build language matching condition
+      let languageQuery = query.in("category_id", categoryIds)
+      
+      if (tradieData?.language) {
+        const tradieLanguage = tradieData.language
+        if (tradieLanguage === '中/EN') {
+          // 中/EN can match any language (no additional filter needed)
+        } else if (tradieLanguage === '中文') {
+          // 中文 can match 中文 or 中/EN
+          languageQuery = languageQuery.in('language', ['中文', '中/EN'])
+        } else if (tradieLanguage === 'English') {
+          // English can match English or 中/EN
+          languageQuery = languageQuery.in('language', ['English', '中/EN'])
+        }
+      }
+
+      let { data: categoryMatches, count: categoryCount } = await languageQuery
         .range(offset, offset + limit - 1)
 
       const processedProjects = processProjectResults(categoryMatches || [], tradieData)
@@ -81,7 +97,7 @@ export async function GET(
         page,
         limit,
         totalPages: Math.ceil((categoryCount || 0) / limit),
-        matchType: "category"
+        matchType: "category_and_language"
       })
     }
 
@@ -132,6 +148,7 @@ function processProjectResults(projects: any[], tradieData: any) {
       phone: project.phone,
       time_option: project.time_option,
       priority_need: project.priority_need,
+      language: project.language,
       created_at: project.created_at,
       updated_at: project.updated_at,
       category: project.categories ? {

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmailVerificationDialog } from "@/components/ui/email-verification-dialog"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 import { useAuth } from "@/contexts/AuthContext"
-import { User, Plus, Loader2 } from "lucide-react"
+import { User, Plus, Loader2, Globe } from "lucide-react"
 
 interface AddTradieModalProps {
   isOpen: boolean
@@ -34,7 +34,8 @@ export default function AddTradieModal({
     phone: "",
     location: "",
     company: parentCompany || "",
-    categoryId: ""
+    categoryId: "",
+    language: "中/EN"
   })
   
   const [googlePlace, setGooglePlace] = useState<PlaceResult | undefined>(undefined)
@@ -120,6 +121,7 @@ export default function AddTradieModal({
         phone: formData.phone,
         userType: "tradie",
         location: formData.location,
+        language: formData.language,
         company: formData.company,
         categoryId: formData.categoryId,
         parentTradieId: parentTradieId
@@ -137,7 +139,8 @@ export default function AddTradieModal({
           phone: "",
           location: "",
           company: parentCompany || "",
-          categoryId: ""
+          categoryId: "",
+          language: "中/EN"
         })
         setGooglePlace(undefined)
         setError("")
@@ -281,6 +284,23 @@ export default function AddTradieModal({
                       </SelectItem>
                     ))
                   )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="language">
+                <Globe className="w-4 h-4 inline mr-2" />
+                语言偏好
+              </Label>
+              <Select value={formData.language} onValueChange={(value) => handleInputChange("language", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择语言偏好" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="中文">中文</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="中/EN">中/EN</SelectItem>
                 </SelectContent>
               </Select>
             </div>

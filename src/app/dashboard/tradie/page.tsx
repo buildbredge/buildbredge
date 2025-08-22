@@ -280,6 +280,11 @@ export default function TradieDashboardPage() {
                   )}
                 </p>
               )}
+              {userProfile.language && (
+                <p className="text-sm text-blue-600 font-medium">
+                  🌐 {userProfile.language}
+                </p>
+              )}
               <div className="flex items-center space-x-2 mt-2">
                 <RoleBadges 
                   roles={userProfile.roles || []} 

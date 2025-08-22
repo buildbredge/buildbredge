@@ -19,6 +19,7 @@ interface RegisterData {
   phone: string
   userType: 'homeowner' | 'tradie'
   location: string
+  language?: string
   company?: string
   categoryId?: string
   parentTradieId?: string
@@ -136,6 +137,7 @@ class AuthService {
             email: userData.email,
             location: userData.location,
             userType: userData.userType,
+            language: userData.language || '中/EN',
             company: userData.company,
             categoryId: userData.categoryId,
             parentTradieId: userData.parentTradieId

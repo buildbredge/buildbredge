@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2, Globe } from "lucide-react"
 import { PortfolioManagement } from "@/components/ui/portfolio-management"
 
 
@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("")
   const [phoneVerified, setPhoneVerified] = useState(false)
   const [address, setAddress] = useState("")
+  const [language, setLanguage] = useState("中/EN")
   
   // Tradie专用信息
   const [companyName, setCompanyName] = useState("")
@@ -59,6 +60,7 @@ export default function ProfilePage() {
       setPhone(user.phone || "")
       setPhoneVerified(user.phone_verified || false)
       setAddress(user.address || "")
+      setLanguage(user.language || "中/EN")
       
       // Load tradie data if available
       if (user.tradieData) {
@@ -279,6 +281,7 @@ export default function ProfilePage() {
         name: fullName,
         phone,
         address: address,
+        language,
         company: user?.activeRole === "tradie" ? companyName : undefined,
       })
 
@@ -348,6 +351,11 @@ export default function ProfilePage() {
                   </Avatar>
                   <h3 className="font-semibold text-lg">{user.name || "未设置姓名"}</h3>
                   <p className="text-gray-600 text-sm mb-2">{user.email}</p>
+                  {user.language && (
+                    <p className="text-sm text-blue-600 font-medium mb-2">
+                      🌐 {user.language}
+                    </p>
+                  )}
                   <Badge variant={isTradie ? "default" : "secondary"}>
                     {isTradie ? "技师账户" : "房主账户"}
                   </Badge>
@@ -450,6 +458,23 @@ export default function ProfilePage() {
                         placeholder="请输入您的地址" 
                         required 
                       />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="language">
+                        <Globe className="w-4 h-4 inline mr-2" />
+                        语言偏好
+                      </Label>
+                      <Select value={language} onValueChange={setLanguage}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择语言偏好" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="中文">中文</SelectItem>
+                          <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="中/EN">中/EN</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* Tradie专用信息 */}

@@ -20,7 +20,8 @@ import {
   ArrowRight,
   Briefcase,
   Star,
-  Users
+  Users,
+  Globe
 } from "lucide-react"
 
 interface Project {
@@ -33,6 +34,7 @@ interface Project {
   status: 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed'
   created_at: string
   updated_at: string
+  language?: string
   category?: {
     id: string
     name_en: string
@@ -64,6 +66,7 @@ export default function BrowseJobsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("latest")
 
   useEffect(() => {
@@ -72,6 +75,11 @@ export default function BrowseJobsPage() {
       fetchCategories()
     ])
   }, [])
+
+  // 重新获取项目当筛选条件改变时
+  useEffect(() => {
+    fetchProjects()
+  }, [selectedCategory, selectedLanguage, searchTerm])
 
   const fetchProjects = async () => {
     try {
@@ -83,6 +91,17 @@ export default function BrowseJobsPage() {
         sort: 'created_at:desc',
         status: 'published,negotiating'
       })
+
+      // 添加筛选参数
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory)
+      }
+      if (selectedLanguage !== 'all') {
+        params.append('language', selectedLanguage)
+      }
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
 
       const response = await fetch(`/api/projects/public?${params}`)
       
@@ -205,7 +224,10 @@ export default function BrowseJobsPage() {
       const matchesStatus = selectedStatus === "all" || 
         project.status === selectedStatus
       
-      return matchesSearch && matchesCategory && matchesStatus
+      const matchesLanguage = selectedLanguage === "all" || 
+        project.language === selectedLanguage
+      
+      return matchesSearch && matchesCategory && matchesStatus && matchesLanguage
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -292,6 +314,73 @@ export default function BrowseJobsPage() {
               </div>
             </div>
 
+            {/* Language Filters */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">语言偏好</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setSelectedLanguage("all")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedLanguage === "all"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>所有语言</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedLanguage("中文")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedLanguage === "中文"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>中文</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.language === '中文').length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedLanguage("English")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedLanguage === "English"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>English</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.language === 'English').length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedLanguage("中/EN")}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedLanguage === "中/EN"
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>中/EN</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.language === '中/EN').length}
+                    </Badge>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Category Filters */}
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">服务类别</h3>
@@ -372,7 +461,7 @@ export default function BrowseJobsPage() {
             </div>
 
             {/* Clear Filters */}
-            {(searchTerm || selectedCategory !== "all" || selectedStatus !== "all") && (
+            {(searchTerm || selectedCategory !== "all" || selectedStatus !== "all" || selectedLanguage !== "all") && (
               <div className="pt-4 border-t border-gray-200">
                 <Button 
                   variant="outline" 
@@ -381,6 +470,7 @@ export default function BrowseJobsPage() {
                     setSearchTerm("")
                     setSelectedCategory("all")
                     setSelectedStatus("all")
+                    setSelectedLanguage("all")
                     setSortBy("latest")
                   }}
                 >
@@ -458,6 +548,7 @@ export default function BrowseJobsPage() {
                       setSearchTerm("")
                       setSelectedCategory("all")
                       setSelectedStatus("all")
+                      setSelectedLanguage("all")
                     }}>
                       查看所有项目
                     </Button>
@@ -508,7 +599,7 @@ export default function BrowseJobsPage() {
                           {project.detailed_description}
                         </p>
 
-                        {/* Category & Profession */}
+                        {/* Category, Profession & Language */}
                         <div className="flex items-center flex-wrap gap-3 mb-4">
                           {project.category && (
                             <Badge variant="secondary" className="bg-blue-50 text-blue-700">
@@ -523,6 +614,12 @@ export default function BrowseJobsPage() {
                           {project.other_description && (
                             <Badge variant="secondary" className="bg-orange-50 text-orange-700">
                               其他: {project.other_description}
+                            </Badge>
+                          )}
+                          {project.language && (
+                            <Badge variant="secondary" className="bg-purple-50 text-purple-700">
+                              <Globe className="w-3 h-3 mr-1" />
+                              {project.language}
                             </Badge>
                           )}
                         </div>

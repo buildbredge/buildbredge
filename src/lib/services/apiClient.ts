@@ -39,6 +39,7 @@ interface UserProfileData {
   phone: string
   phone_verified?: boolean
   address: string
+  language?: string
   status: 'pending' | 'approved' | 'closed' | 'active'
   verified: boolean
   emailVerified: boolean
@@ -241,6 +242,7 @@ class ApiClient {
     phone: string
     phone_verified?: boolean
     address: string
+    language?: string
     role?: 'owner' | 'tradie'
     company?: string
     serviceRadius?: number

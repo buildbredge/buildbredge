@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     const status = searchParams.get('status') // 可以是 'published,negotiating' 这样的格式
     const category = searchParams.get('category')
+    const language = searchParams.get('language')
     const sort = searchParams.get('sort') || 'created_at:desc'
     const search = searchParams.get('search')
 
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
         other_description,
         time_option,
         priority_need,
+        language,
         images,
         categories(
           id,
@@ -60,6 +62,11 @@ export async function GET(request: NextRequest) {
     // 分类筛选
     if (category && category !== 'all') {
       query = query.eq('category_id', category)
+    }
+
+    // 语言筛选
+    if (language && language !== 'all') {
+      query = query.eq('language', language)
     }
 
     // 搜索筛选
@@ -126,6 +133,7 @@ export async function GET(request: NextRequest) {
         other_description: project.other_description,
         time_option: project.time_option,
         priority_need: project.priority_need,
+        language: project.language,
         quote_count: quoteCounts[project.id] || 0,
         images: project.images || []
       }

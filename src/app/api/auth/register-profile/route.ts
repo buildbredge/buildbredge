@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, phone, email, location, userType, company, categoryId, parentTradieId } = body
+    const { userId, name, phone, email, location, userType, language, company, categoryId, parentTradieId } = body
 
     // 获取管理客户端
     const supabaseAdmin = getSupabaseAdmin()
@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         address: location,
+        language: language || '中/EN',
         status: userType === 'homeowner' ? 'approved' : 'pending', // 房主直接开通，技师需要审核
         latitude: null,
         longitude: null

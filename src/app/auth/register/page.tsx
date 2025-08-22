@@ -22,6 +22,7 @@ export default function RegisterPage() {
   const [googlePlace, setGooglePlace] = useState<PlaceResult | undefined>(undefined)
   const [companyName, setCompanyName] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
+  const [language, setLanguage] = useState("中/EN")
   const [categories, setCategories] = useState<Array<{id: string, name_en: string, name_zh: string}>>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -98,6 +99,7 @@ export default function RegisterPage() {
         phone,
         userType: userType as "homeowner" | "tradie",
         location,
+        language,
         company: userType === "tradie" ? companyName : undefined,
         categoryId: userType === "tradie" ? selectedCategory : undefined
       })
@@ -186,6 +188,20 @@ export default function RegisterPage() {
                 placeholder="请输入电话号码" 
                 required 
               />
+            </div>
+
+            <div>
+              <Label htmlFor="language">语言偏好</Label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择语言偏好" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="中文">中文</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="中/EN">中/EN</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>

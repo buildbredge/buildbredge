@@ -278,6 +278,11 @@ export default function OwnerDashboardPage() {
                 业主工作台
               </h1>
               <p className="text-gray-600">欢迎回来，{displayName}</p>
+              {userProfile.language && (
+                <p className="text-sm text-blue-600 font-medium">
+                  🌐 {userProfile.language}
+                </p>
+              )}
               <div className="flex items-center space-x-2 mt-2">
                 <RoleBadges 
                   roles={userProfile.roles || []} 

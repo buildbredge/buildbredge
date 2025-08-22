@@ -16,6 +16,7 @@ interface UserProfileResponse {
   phone: string
   phone_verified: boolean
   address: string
+  language?: string
   status: 'pending' | 'approved' | 'closed' | 'active'
   verified: boolean
   emailVerified: boolean
@@ -172,6 +173,7 @@ export async function GET(request: NextRequest) {
       phone: userProfile.phone,
       phone_verified: userProfile.phone_verified || false,
       address: userProfile.address || '',
+      language: userProfile.language || '中/EN',
       status: userProfile.status,
       verified: userProfile.status === 'approved',
       emailVerified: user.email_confirmed_at ? true : false,
@@ -229,7 +231,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, phone_verified, address, role, company, serviceRadius, hourlyRate, experienceYears, bio } = body
+    const { name, phone, phone_verified, address, language, role, company, serviceRadius, hourlyRate, experienceYears, bio } = body
 
     // 验证必需字段
     if (!name || !phone) {
@@ -282,6 +284,11 @@ export async function PUT(request: NextRequest) {
       name,
       phone,
       address
+    }
+    
+    // 如果提供了language，则更新该字段
+    if (language) {
+      updateData.language = language
     }
     
     // 如果提供了phone_verified，则更新该字段

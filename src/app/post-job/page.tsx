@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { X, FileImage, Upload, AlertCircle, Check, FileText, Download } from "lucide-react"
+import { X, FileImage, Upload, AlertCircle, Check, FileText, Download, Globe } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
@@ -34,6 +34,7 @@ interface JobForm {
   // 新增字段
   timeOption: string
   priorityNeed: string
+  language: string
 }
 
 interface UploadProgress {
@@ -61,7 +62,8 @@ export default function PostJobPage() {
     isOther: false,
     otherDescription: "",
     timeOption: "urgent",
-    priorityNeed: "quality"
+    priorityNeed: "quality",
+    language: user?.language || "中/EN"
   })
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
@@ -186,7 +188,8 @@ export default function PostJobPage() {
         profession_id: jobForm.isOther ? null : (jobForm.professionId || null),
         other_description: jobForm.isOther ? jobForm.otherDescription : null,
         time_option: jobForm.timeOption || 'urgent',
-        priority_need: jobForm.priorityNeed || 'quality'
+        priority_need: jobForm.priorityNeed || 'quality',
+        language: jobForm.language || '中/EN'
       }
 
       console.log('📋 创建项目记录（包含文件URL）...', projectData)
@@ -630,6 +633,24 @@ export default function PostJobPage() {
                           <SelectContent>
                             <SelectItem value="cost">成本</SelectItem>
                             <SelectItem value="quality">质量</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 语言偏好 */}
+                      <div>
+                        <Label className="text-lg font-medium">
+                          <Globe className="w-4 h-4 inline mr-2" />
+                          语言偏好
+                        </Label>
+                        <Select value={jobForm.language} onValueChange={(value) => updateJobForm('language', value)}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="选择语言偏好" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="中文">中文</SelectItem>
+                            <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="中/EN">中/EN</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
