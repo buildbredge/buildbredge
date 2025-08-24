@@ -18,6 +18,9 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react"
+import { AttachmentViewer } from "@/components/AttachmentViewer"
+import { FileAttachment } from "@/components/FileUploadComponent"
+import { ProjectStatus } from "@/types/project-status"
 interface Quote {
   id: string
   project_id: string
@@ -25,6 +28,7 @@ interface Quote {
   price: number
   description: string
   status: 'pending' | 'accepted' | 'rejected'
+  attachments?: FileAttachment[]
   created_at: string
   updated_at: string
 }
@@ -146,7 +150,11 @@ export function QuotesList({
     })
   }
 
-  const canAcceptQuotes = isOwner && (projectStatus === 'published' || projectStatus === 'negotiating')
+  const canAcceptQuotes = isOwner && (
+    projectStatus === ProjectStatus.DRAFT ||
+    projectStatus === ProjectStatus.QUOTED || 
+    projectStatus === ProjectStatus.NEGOTIATING
+  )
 
   if (loading) {
     return (
@@ -190,7 +198,9 @@ export function QuotesList({
             <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-2">暂无报价</p>
             <p className="text-sm text-gray-400">
-              {projectStatus === 'published' || projectStatus === 'negotiating' 
+              {(projectStatus === ProjectStatus.DRAFT || 
+                projectStatus === ProjectStatus.QUOTED || 
+                projectStatus === ProjectStatus.NEGOTIATING)
                 ? '技师们可以对此项目提交报价' 
                 : '此项目当前不接受新报价'}
             </p>
@@ -249,6 +259,17 @@ export function QuotesList({
                       ))}
                     </div>
                   </div>
+
+                  {/* 显示附件 */}
+                  {quote.attachments && quote.attachments.length > 0 && (
+                    <div className="mb-4">
+                      <AttachmentViewer 
+                        attachments={quote.attachments}
+                        title="报价附件"
+                        allowDownload={isOwner} // 只有项目拥有者可以下载附件
+                      />
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-gray-500">

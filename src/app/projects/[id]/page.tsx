@@ -35,6 +35,8 @@ import { QuoteSubmissionModal } from "@/components/QuoteSubmissionModal"
 import { QuotesList } from "@/components/QuotesList"
 import { TradieQuoteManagement } from "@/components/TradieQuoteManagement"
 import { ProjectStatusActions } from "@/components/ProjectStatusActions"
+import { ProjectStatus, isActiveStatus } from "@/types/project-status"
+import ProjectStatusBadge from "@/components/ProjectStatusBadge"
 
 export default function ProjectDetailPage() {
   const params = useParams()
@@ -122,27 +124,16 @@ export default function ProjectDetailPage() {
   const isProjectOwner = user?.id && project?.user_id === user.id
   const isTradie = user?.activeRole === "tradie"
   const canSubmitQuote = isTradie && !isProjectOwner && 
-    (project?.status === 'published' || project?.status === 'negotiating')
+    isActiveStatus(project?.status as ProjectStatus)
 
-  const getStatusBadge = (status: Project['status']) => {
-    const statusConfig = {
-      published: { label: "已发布", variant: "default" as const, icon: CheckCircle },
-      draft: { label: "草稿", variant: "secondary" as const, icon: AlertCircle },
-      negotiating: { label: "协商中", variant: "default" as const, icon: Clock },
-      in_progress: { label: "进行中", variant: "default" as const, icon: Clock },
-      completed: { label: "已完成", variant: "default" as const, icon: CheckCircle },
-      reviewed: { label: "已评价", variant: "default" as const, icon: Star },
-      cancelled: { label: "已取消", variant: "destructive" as const, icon: XCircle }
-    }
-    
-    const config = statusConfig[status]
-    const Icon = config.icon
-    
+  // Use the new ProjectStatusBadge component instead of custom function
+  const getStatusBadge = (status: string) => {
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="w-3 h-3" />
-        {config.label}
-      </Badge>
+      <ProjectStatusBadge 
+        status={status as ProjectStatus} 
+        showDescription={true} 
+        size="md" 
+      />
     )
   }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { ProjectStatus, isActiveStatus } from "@/types/project-status"
 
 export const dynamic = "force-dynamic"
 
@@ -63,8 +64,18 @@ export async function GET(
       // 项目所有者可以访问任何状态的项目
       const isOwner = currentUser && project.user_id === currentUser.id
       
-      // 非所有者只能访问已发布的项目
-      if (!isOwner && project.status !== 'published') {
+      // 非所有者只能访问可见的项目（草稿、已报价、协商中等）
+      const publicVisibleStatuses = [
+        ProjectStatus.DRAFT,
+        ProjectStatus.QUOTED, 
+        ProjectStatus.NEGOTIATING,
+        ProjectStatus.AGREED,
+        ProjectStatus.ESCROWED,
+        ProjectStatus.IN_PROGRESS,
+        ProjectStatus.COMPLETED
+      ]
+      
+      if (!isOwner && !publicVisibleStatuses.includes(project.status as ProjectStatus)) {
         return NextResponse.json({
           error: "项目不存在或已被删除"
         }, { status: 404 })

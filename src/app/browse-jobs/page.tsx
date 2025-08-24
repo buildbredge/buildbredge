@@ -23,6 +23,8 @@ import {
   Users,
   Globe
 } from "lucide-react"
+import { ProjectStatus } from "@/types/project-status"
+import ProjectStatusBadge from "@/components/ProjectStatusBadge"
 
 interface Project {
   id: string
@@ -31,7 +33,7 @@ interface Project {
   location: string
   email: string
   phone: string | null
-  status: 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed'
+  status: ProjectStatus
   created_at: string
   updated_at: string
   language?: string
@@ -89,7 +91,7 @@ export default function BrowseJobsPage() {
       const params = new URLSearchParams({
         limit: '50',
         sort: 'created_at:desc',
-        status: 'published,negotiating'
+        status: 'draft,quoted,negotiating'
       })
 
       // 添加筛选参数
@@ -130,49 +132,20 @@ export default function BrowseJobsPage() {
     }
   }
 
-  const getStatusBadge = (status: Project['status'], quoteCount: number = 0) => {
-    const statusConfig = {
-      published: { 
-        label: "已发布", 
-        variant: "default" as const, 
-        icon: CheckCircle,
-        color: "bg-green-100 text-green-800"
-      },
-      negotiating: { 
-        label: `协商中 (${quoteCount}个报价)`, 
-        variant: "secondary" as const, 
-        icon: Clock,
-        color: "bg-orange-100 text-orange-800"
-      },
-      in_progress: { 
-        label: "进行中", 
-        variant: "outline" as const, 
-        icon: Clock,
-        color: "bg-blue-100 text-blue-800"
-      },
-      completed: { 
-        label: "已完成", 
-        variant: "outline" as const, 
-        icon: CheckCircle,
-        color: "bg-purple-100 text-purple-800"
-      },
-      reviewed: { 
-        label: "已评价", 
-        variant: "outline" as const, 
-        icon: Star,
-        color: "bg-indigo-100 text-indigo-800"
-      }
+  const getStatusDisplay = (status: ProjectStatus, quoteCount: number = 0) => {
+    // Show quote count for negotiating status
+    if (status === ProjectStatus.NEGOTIATING && quoteCount > 0) {
+      return (
+        <div className="flex items-center space-x-2">
+          <ProjectStatusBadge status={status} showDescription={true} size="sm" />
+          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+            {quoteCount} 个报价
+          </Badge>
+        </div>
+      )
     }
     
-    const config = statusConfig[status]
-    const Icon = config.icon
-    
-    return (
-      <Badge className={`${config.color} flex items-center gap-1`}>
-        <Icon className="w-3 h-3" />
-        {status === 'negotiating' ? `协商中 (${quoteCount}个报价)` : config.label}
-      </Badge>
-    )
+    return <ProjectStatusBadge status={status} showDescription={true} size="sm" />
   }
 
   const getTimeOptionLabel = (timeOption: string) => {
@@ -282,24 +255,39 @@ export default function BrowseJobsPage() {
                   </div>
                 </button>
                 <button
-                  onClick={() => setSelectedStatus("published")}
+                  onClick={() => setSelectedStatus(ProjectStatus.DRAFT)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedStatus === "published"
-                      ? "bg-green-100 text-green-700"
+                    selectedStatus === ProjectStatus.DRAFT
+                      ? "bg-gray-100 text-gray-700"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>已发布</span>
+                    <span>草稿（待报价）</span>
                     <Badge variant="secondary" className="text-xs">
-                      {projects.filter(p => p.status === 'published').length}
+                      {projects.filter(p => p.status === ProjectStatus.DRAFT).length}
                     </Badge>
                   </div>
                 </button>
                 <button
-                  onClick={() => setSelectedStatus("negotiating")}
+                  onClick={() => setSelectedStatus(ProjectStatus.QUOTED)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedStatus === "negotiating"
+                    selectedStatus === ProjectStatus.QUOTED
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>已报价</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {projects.filter(p => p.status === ProjectStatus.QUOTED).length}
+                    </Badge>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setSelectedStatus(ProjectStatus.NEGOTIATING)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStatus === ProjectStatus.NEGOTIATING
                       ? "bg-orange-100 text-orange-700"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
@@ -307,7 +295,7 @@ export default function BrowseJobsPage() {
                   <div className="flex items-center justify-between">
                     <span>协商中</span>
                     <Badge variant="secondary" className="text-xs">
-                      {projects.filter(p => p.status === 'negotiating').length}
+                      {projects.filter(p => p.status === ProjectStatus.NEGOTIATING).length}
                     </Badge>
                   </div>
                 </button>
@@ -572,7 +560,7 @@ export default function BrowseJobsPage() {
                               {project.description}
                             </h3>
                             <div className="flex items-center flex-wrap gap-2 sm:gap-3 mb-3">
-                              {getStatusBadge(project.status, project.quote_count || 0)}
+                              {getStatusDisplay(project.status, project.quote_count || 0)}
                               <div className="flex items-center text-gray-500 text-sm">
                                 <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
                                 <span className="truncate">{formatDate(project.created_at)}</span>

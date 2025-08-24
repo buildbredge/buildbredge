@@ -16,6 +16,7 @@ import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ProjectStatus } from "@/types/project-status"
 
 interface JobForm {
   subject: string
@@ -182,7 +183,7 @@ export default function PostJobPage() {
         phone: jobForm.phone || null,
         images: uploadedImageUrls, // 直接包含上传的图片URL
         files: uploadedFileUrls, // 直接包含上传的文件URL
-        status: 'published' as const,
+        status: ProjectStatus.DRAFT,
         user_id: userId || null, // 如果是匿名用户则为null
         category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
         profession_id: jobForm.isOther ? null : (jobForm.professionId || null),

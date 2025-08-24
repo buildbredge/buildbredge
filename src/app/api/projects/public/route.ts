@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { ProjectStatus } from "@/types/project-status"
 
 export const dynamic = "force-dynamic"
 
-// 公开获取项目列表 - 只返回已发布和协商中的项目
+// 公开获取项目列表 - 返回可接单的项目（草稿、已报价、协商中）
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
           name_zh
         )
       `)
-      .in('status', ['published', 'negotiating']) // 只显示这两种状态的项目
+      .in('status', [ProjectStatus.DRAFT, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING]) // 显示可接单的项目
 
     // 状态筛选
     if (status && status !== 'all') {
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
     const { count: totalCount } = await supabase
       .from('projects')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['published', 'negotiating'])
+      .in('status', [ProjectStatus.DRAFT, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING])
 
     return NextResponse.json({
       success: true,

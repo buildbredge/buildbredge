@@ -16,6 +16,7 @@ import {
   X
 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { FileUploadComponent, FileAttachment } from "@/components/FileUploadComponent"
 
 interface QuoteSubmissionModalProps {
   isOpen: boolean
@@ -40,10 +41,12 @@ export function QuoteSubmissionModal({
   // 表单状态
   const [price, setPrice] = useState("")
   const [description, setDescription] = useState("")
+  const [attachments, setAttachments] = useState<FileAttachment[]>([])
 
   const resetForm = () => {
     setPrice("")
     setDescription("")
+    setAttachments([])
     setError("")
     setSuccess(false)
   }
@@ -102,7 +105,8 @@ export function QuoteSubmissionModal({
         body: JSON.stringify({
           tradie_id: user.id,
           price: parseFloat(price),
-          description: description.trim()
+          description: description.trim(),
+          attachments: attachments
         })
       })
 
@@ -220,6 +224,16 @@ export function QuoteSubmissionModal({
                     详细的说明有助于获得客户信任（至少10个字符）
                   </p>
                 </div>
+
+                {/* 文件上传组件 */}
+                <FileUploadComponent
+                  files={attachments}
+                  onFilesChange={setAttachments}
+                  disabled={isSubmitting}
+                  maxFiles={5}
+                  maxSize={10}
+                  acceptedTypes={['image/*', 'application/pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx']}
+                />
 
                 <div className="flex space-x-2 pt-4">
                   <Button

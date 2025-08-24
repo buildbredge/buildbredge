@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { smtpEmailService } from "@/lib/smtp-email"
+import { ProjectStatus, isActiveStatus } from "@/types/project-status"
 
 export const dynamic = "force-dynamic"
 
@@ -23,6 +24,7 @@ export async function GET(
         price,
         description,
         status,
+        attachments,
         created_at,
         updated_at,
         tradie:users!tradie_id(
@@ -69,7 +71,7 @@ export async function POST(
   const params = await context.params
   try {
     const projectId = params.id
-    const { tradie_id, price, description } = await request.json()
+    const { tradie_id, price, description, attachments = [] } = await request.json()
 
     // 验证必需字段
     if (!tradie_id || !price || !description) {
@@ -107,8 +109,14 @@ export async function POST(
       )
     }
 
-    // 检查项目状态是否允许报价
-    if (project.status !== 'published' && project.status !== 'negotiating') {
+    // 检查项目状态是否允许报价 - 使用新的状态系统
+    const allowedQuoteStatuses = [
+      ProjectStatus.DRAFT,
+      ProjectStatus.QUOTED,
+      ProjectStatus.NEGOTIATING
+    ]
+    
+    if (!allowedQuoteStatuses.includes(project.status as ProjectStatus)) {
       return NextResponse.json(
         { error: "Project is not accepting quotes" },
         { status: 400 }
@@ -152,6 +160,7 @@ export async function POST(
         tradie_id: tradie_id,
         price: parseFloat(price),
         description: description.trim(),
+        attachments: attachments,
         status: 'pending'
       })
       .select()
@@ -165,18 +174,21 @@ export async function POST(
       )
     }
 
-    // 如果项目状态是"已发布"，自动更改为"协商中"
-    if (project.status === 'published') {
+    // 如果项目状态是"草稿"，自动更改为"已报价"
+    if (project.status === ProjectStatus.DRAFT) {
       const { error: updateError } = await supabase
         .from('projects')
-        .update({ status: 'negotiating' })
+        .update({ 
+          status: ProjectStatus.QUOTED,
+          status_updated_at: new Date().toISOString()
+        })
         .eq('id', projectId)
 
       if (updateError) {
         console.error("Error updating project status:", updateError)
         // 不让状态更新错误影响报价提交成功
       } else {
-        console.log("✅ Project status updated to 'negotiating'")
+        console.log(`✅ Project status updated to '${ProjectStatus.QUOTED}'`)
       }
     }
 
