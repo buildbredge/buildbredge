@@ -244,6 +244,289 @@ export interface Database {
           updated_at?: string
         }
       }
+      payments: {
+        Row: {
+          id: string
+          project_id: string
+          quote_id: string
+          payer_id: string
+          tradie_id: string
+          stripe_payment_intent_id: string | null
+          stripe_charge_id: string | null
+          stripe_customer_id: string | null
+          amount: number
+          platform_fee: number
+          affiliate_fee: number
+          tax_amount: number
+          net_amount: number
+          status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
+          payment_method: string | null
+          currency: string
+          payment_metadata: Record<string, any>
+          failure_reason: string | null
+          created_at: string
+          confirmed_at: string | null
+          failed_at: string | null
+          refunded_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          quote_id: string
+          payer_id: string
+          tradie_id: string
+          stripe_payment_intent_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_customer_id?: string | null
+          amount: number
+          platform_fee?: number
+          affiliate_fee?: number
+          tax_amount?: number
+          net_amount?: number
+          status?: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
+          payment_method?: string | null
+          currency?: string
+          payment_metadata?: Record<string, any>
+          failure_reason?: string | null
+          created_at?: string
+          confirmed_at?: string | null
+          failed_at?: string | null
+          refunded_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          quote_id?: string
+          payer_id?: string
+          tradie_id?: string
+          stripe_payment_intent_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_customer_id?: string | null
+          amount?: number
+          platform_fee?: number
+          affiliate_fee?: number
+          tax_amount?: number
+          net_amount?: number
+          status?: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
+          payment_method?: string | null
+          currency?: string
+          payment_metadata?: Record<string, any>
+          failure_reason?: string | null
+          created_at?: string
+          confirmed_at?: string | null
+          failed_at?: string | null
+          refunded_at?: string | null
+        }
+      }
+      escrow_accounts: {
+        Row: {
+          id: string
+          payment_id: string
+          tradie_id: string
+          parent_tradie_id: string | null
+          gross_amount: number
+          platform_fee: number
+          affiliate_fee: number
+          tax_withheld: number
+          net_amount: number
+          protection_start_date: string
+          protection_end_date: string
+          protection_days: number
+          status: 'held' | 'released' | 'disputed' | 'withdrawn'
+          release_trigger: 'manual' | 'automatic' | 'dispute_resolution' | null
+          release_notes: string | null
+          released_by: string | null
+          created_at: string
+          released_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          payment_id: string
+          tradie_id: string
+          parent_tradie_id?: string | null
+          gross_amount: number
+          platform_fee?: number
+          affiliate_fee?: number
+          tax_withheld?: number
+          net_amount: number
+          protection_start_date?: string
+          protection_end_date: string
+          protection_days?: number
+          status?: 'held' | 'released' | 'disputed' | 'withdrawn'
+          release_trigger?: 'manual' | 'automatic' | 'dispute_resolution' | null
+          release_notes?: string | null
+          released_by?: string | null
+          created_at?: string
+          released_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          payment_id?: string
+          tradie_id?: string
+          parent_tradie_id?: string | null
+          gross_amount?: number
+          platform_fee?: number
+          affiliate_fee?: number
+          tax_withheld?: number
+          net_amount?: number
+          protection_start_date?: string
+          protection_end_date?: string
+          protection_days?: number
+          status?: 'held' | 'released' | 'disputed' | 'withdrawn'
+          release_trigger?: 'manual' | 'automatic' | 'dispute_resolution' | null
+          release_notes?: string | null
+          released_by?: string | null
+          created_at?: string
+          released_at?: string | null
+          updated_at?: string
+        }
+      }
+      withdrawals: {
+        Row: {
+          id: string
+          tradie_id: string
+          escrow_account_id: string
+          requested_amount: number
+          tax_deducted: number
+          processing_fee: number
+          final_amount: number
+          bank_details: Record<string, any>
+          withdrawal_method: string
+          status: 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'cancelled'
+          reference_number: string | null
+          external_transaction_id: string | null
+          failure_reason: string | null
+          approved_by: string | null
+          processed_by: string | null
+          requested_at: string
+          approved_at: string | null
+          processed_at: string | null
+          completed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tradie_id: string
+          escrow_account_id: string
+          requested_amount: number
+          tax_deducted?: number
+          processing_fee?: number
+          final_amount: number
+          bank_details: Record<string, any>
+          withdrawal_method?: string
+          status?: 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'cancelled'
+          reference_number?: string | null
+          external_transaction_id?: string | null
+          failure_reason?: string | null
+          approved_by?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          approved_at?: string | null
+          processed_at?: string | null
+          completed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tradie_id?: string
+          escrow_account_id?: string
+          requested_amount?: number
+          tax_deducted?: number
+          processing_fee?: number
+          final_amount?: number
+          bank_details?: Record<string, any>
+          withdrawal_method?: string
+          status?: 'pending' | 'approved' | 'processing' | 'completed' | 'failed' | 'cancelled'
+          reference_number?: string | null
+          external_transaction_id?: string | null
+          failure_reason?: string | null
+          approved_by?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          approved_at?: string | null
+          processed_at?: string | null
+          completed_at?: string | null
+          updated_at?: string
+        }
+      }
+      affiliate_earnings: {
+        Row: {
+          id: string
+          parent_tradie_id: string
+          child_tradie_id: string
+          payment_id: string
+          escrow_account_id: string
+          base_amount: number
+          fee_rate: number
+          fee_amount: number
+          status: 'pending' | 'available' | 'withdrawn' | 'disputed'
+          availability_date: string | null
+          earned_at: string
+          available_at: string | null
+          withdrawn_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          parent_tradie_id: string
+          child_tradie_id: string
+          payment_id: string
+          escrow_account_id: string
+          base_amount: number
+          fee_rate?: number
+          fee_amount: number
+          status?: 'pending' | 'available' | 'withdrawn' | 'disputed'
+          availability_date?: string | null
+          earned_at?: string
+          available_at?: string | null
+          withdrawn_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          parent_tradie_id?: string
+          child_tradie_id?: string
+          payment_id?: string
+          escrow_account_id?: string
+          base_amount?: number
+          fee_rate?: number
+          fee_amount?: number
+          status?: 'pending' | 'available' | 'withdrawn' | 'disputed'
+          availability_date?: string | null
+          earned_at?: string
+          available_at?: string | null
+          withdrawn_at?: string | null
+          updated_at?: string
+        }
+      }
+      system_config: {
+        Row: {
+          key: string
+          value: Record<string, any>
+          description: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: Record<string, any>
+          description?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: Record<string, any>
+          description?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       tradie_stats: {
@@ -269,6 +552,28 @@ export interface Database {
           recent_review_count: number
         }
       }
+      tradie_earnings_summary: {
+        Row: {
+          tradie_id: string
+          tradie_name: string
+          pending_escrow: number
+          available_balance: number
+          withdrawn_total: number
+          total_payments: number
+          active_escrows: number
+        }
+      }
+      affiliate_earnings_summary: {
+        Row: {
+          parent_tradie_id: string
+          parent_tradie_name: string
+          subordinate_count: number
+          pending_fees: number
+          available_fees: number
+          withdrawn_fees: number
+          total_fees_earned: number
+        }
+      }
     }
     Functions: {
       calculate_distance: {
@@ -279,6 +584,43 @@ export interface Database {
           lon2: number
         }
         Returns: number
+      }
+      calculate_payment_fees: {
+        Args: {
+          p_amount: number
+          p_tradie_id: string
+          p_currency?: string
+        }
+        Returns: {
+          platform_fee: number
+          affiliate_fee: number
+          tax_amount: number
+          net_amount: number
+          parent_tradie_id: string | null
+        }[]
+      }
+      create_escrow_account: {
+        Args: {
+          p_payment_id: string
+        }
+        Returns: string
+      }
+      release_escrow_funds: {
+        Args: {
+          p_escrow_id: string
+          p_release_trigger?: string
+          p_released_by?: string
+          p_notes?: string
+        }
+        Returns: boolean
+      }
+      process_automatic_escrow_releases: {
+        Args: {}
+        Returns: {
+          escrow_id: string
+          tradie_id: string
+          amount: number
+        }[]
       }
     }
   }
