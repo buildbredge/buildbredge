@@ -8,7 +8,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
-    const userType = searchParams.get('userType') // 'owner' | 'tradie' | 'all'
     const status = searchParams.get('status') // 'pending' | 'approved' | 'closed' | 'all'
     const search = searchParams.get('search') // 搜索关键词
     const sortBy = searchParams.get('sortBy') || 'created_at' // 排序字段
@@ -16,16 +15,15 @@ export async function GET(request: Request) {
 
     const offset = (page - 1) * limit
 
-    // 构建查询条件 - 只获取普通用户（非技师）
-    // 通过LEFT JOIN获取用户和角色信息，然后筛选出没有'tradie'角色的用户
+    // 构建查询条件 - 只获取技师用户
+    // 通过JOIN获取有'tradie'角色的用户
     let userQuery = supabase
       .from('users')
       .select(`
         *,
-        user_roles!left(role_type, is_primary)
+        user_roles!inner(role_type, is_primary)
       `)
-    
-    // 由于我们要筛选普通用户，这里不使用userType过滤器
+      .eq('user_roles.role_type', 'tradie')
 
     // 应用状态筛选
     if (status && status !== 'all') {
@@ -34,7 +32,7 @@ export async function GET(request: Request) {
 
     // 应用搜索
     if (search) {
-      userQuery = userQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`)
+      userQuery = userQuery.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,company.ilike.%${search}%`)
     }
 
     // 获取用户数据
@@ -42,15 +40,7 @@ export async function GET(request: Request) {
 
     if (usersError) throw usersError
 
-    // 过滤出普通用户（没有'tradie'角色的用户）
-    const allUsers = (users || []).filter((user: any) => {
-      // 如果用户没有角色，则为普通用户
-      if (!user.user_roles || user.user_roles.length === 0) {
-        return true
-      }
-      // 如果用户有角色但不包含'tradie'，则为普通用户
-      return !user.user_roles.some((role: any) => role.role_type === 'tradie')
-    })
+    const allUsers = users || []
 
     // 获取所有用户的项目统计
     const allUserIds = allUsers.map(user => user.id)
@@ -91,7 +81,7 @@ export async function GET(request: Request) {
     // 合并用户数据和活动统计
     const combinedUsers = allUsers.map(user => ({
       ...user,
-      userType: 'owner', // 普通用户都是业主
+      userType: 'tradie', // 都是技师用户
       projects: (projectStats as any)[user.id] || {
         total: 0,
         published: 0,
@@ -113,6 +103,14 @@ export async function GET(request: Request) {
         case 'email':
           aValue = a.email
           bValue = b.email
+          break
+        case 'company':
+          aValue = a.company || ''
+          bValue = b.company || ''
+          break
+        case 'rating':
+          aValue = a.rating || 0
+          bValue = b.rating || 0
           break
         case 'projects_total':
           aValue = a.projects.total
@@ -153,7 +151,6 @@ export async function GET(request: Request) {
           hasPrevPage: page > 1
         },
         filters: {
-          userType,
           status,
           search,
           sortBy,
@@ -164,10 +161,10 @@ export async function GET(request: Request) {
     })
 
   } catch (error) {
-    console.error("获取用户活动数据失败:", error)
+    console.error("获取技师活动数据失败:", error)
     return NextResponse.json({
       success: false,
-      error: "获取用户活动数据失败",
+      error: "获取技师活动数据失败",
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 })
   }

@@ -59,7 +59,9 @@ import {
   MessageSquare,
   Star,
   TrendingUp,
-  Shield
+  Shield,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -293,11 +295,26 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [statusChanging, setStatusChanging] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
 
   // Load dashboard data
   useEffect(() => {
     fetchDashboardData()
   }, [])
+
+  // Load users with pagination when page changes
+  useEffect(() => {
+    fetchUsersData()
+  }, [currentPage, searchTerm, userFilter])
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [searchTerm, userFilter])
 
   // 处理token过期
   const handleTokenExpired = () => {
@@ -316,7 +333,52 @@ export default function AdminDashboard() {
     window.location.href = '/htgl/login'
   }
 
-  // 从真实数据库获取数据
+  // 获取用户数据（支持分页）
+  const fetchUsersData = async () => {
+    try {
+      const adminToken = localStorage.getItem('adminToken')
+      const headers = {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        search: searchTerm
+      })
+
+      // 根据筛选类型决定调用哪个API
+      let apiEndpoint = '/api/admin/all-users' // 默认显示所有用户
+      
+      if (userFilter === 'homeowner') {
+        apiEndpoint = '/api/admin/user-activity' // 普通用户API
+      } else if (userFilter === 'tradie') {
+        apiEndpoint = '/api/admin/tradie-activity' // 技师API
+      } else if (userFilter === 'all') {
+        apiEndpoint = '/api/admin/all-users' // 所有用户API
+      }
+
+      const response = await fetch(`${apiEndpoint}?${params}`, { headers })
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setUsers(result.data.users)
+          setTotalPages(result.data.pagination.totalPages || 1)
+          setTotalUsers(result.data.pagination.total || 0)
+        }
+      } else if (response.status === 401) {
+        handleTokenExpired()
+      } else {
+        console.error('Failed to fetch users:', await response.text())
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    }
+  }
+
+  // 从真实数据库获取数据（不包括用户数据，用户数据由fetchUsersData单独处理）
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
@@ -328,10 +390,9 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json'
       }
       
-      // 并行获取所有数据
-      const [statsResponse, usersResponse, projectsResponse] = await Promise.all([
+      // 并行获取统计和项目数据
+      const [statsResponse, projectsResponse] = await Promise.all([
         fetch('/api/admin/stats', { headers }),
-        fetch('/api/admin/users-list?limit=10', { headers }), // 只获取前10个用户用于显示
         fetch('/api/admin/projects-list?limit=10', { headers }) // 只获取前10个项目用于显示
       ])
 
@@ -358,19 +419,6 @@ export default function AdminDashboard() {
         console.error('Failed to fetch stats:', await statsResponse.text())
       }
 
-      // 处理用户数据
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json()
-        if (usersData.success) {
-          setUsers(usersData.users)
-        }
-      } else if (usersResponse.status === 401) {
-        handleTokenExpired()
-        return
-      } else {
-        console.error('Failed to fetch users:', await usersResponse.text())
-      }
-
       // 处理项目数据
       if (projectsResponse.ok) {
         const projectsData = await projectsResponse.json()
@@ -384,6 +432,9 @@ export default function AdminDashboard() {
         console.error('Failed to fetch projects:', await projectsResponse.text())
       }
 
+      // 初始获取用户数据
+      await fetchUsersData()
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
@@ -391,12 +442,8 @@ export default function AdminDashboard() {
     }
   }
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = userFilter === "all" || user.userType === userFilter
-    return matchesSearch && matchesFilter
-  })
+  // 由于API已经处理了搜索和筛选，直接使用users数据
+  const filteredUsers = users
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -474,10 +521,8 @@ export default function AdminDashboard() {
       const result = await response.json()
       
       if (result.success) {
-        // Update local state
-        setUsers(users.map(u => 
-          u.id === userId ? { ...u, status: newStatus } : u
-        ))
+        // 重新获取用户数据以确保同步
+        await fetchUsersData()
         alert(`用户状态已成功更新为 "${statusText}"`)
       } else {
         alert(`更新失败: ${result.error || '未知错误'}`)
@@ -521,12 +566,10 @@ export default function AdminDashboard() {
       const result = await response.json()
       
       if (result.success) {
-        // Remove user from local state
-        setUsers(users.filter(u => u.id !== userId))
         alert(`用户删除成功：${result.message}`)
         
-        // 刷新数据以确保UI同步
-        fetchDashboardData()
+        // 重新获取用户数据以确保UI同步
+        await fetchUsersData()
       } else {
         alert(`删除失败: ${result.error || '未知错误'}`)
       }
@@ -817,9 +860,107 @@ export default function AdminDashboard() {
                   </Table>
                 </div>
 
-                {filteredUsers.length === 0 && (
+                {filteredUsers.length === 0 && !loading && (
                   <div className="text-center py-8 text-gray-500">
                     没有找到符合条件的用户
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {!loading && filteredUsers.length > 0 && totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      显示第 {(currentPage - 1) * 20 + 1} - {Math.min(currentPage * 20, totalUsers)} 条，共 {totalUsers} 条记录
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage <= 1}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        上一页
+                      </Button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {/* 分页页码 */}
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="w-10 h-10"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                        
+                        {totalPages > 5 && currentPage < totalPages - 2 && (
+                          <>
+                            <span className="text-gray-400">...</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(totalPages)}
+                              className="w-10 h-10"
+                            >
+                              {totalPages}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage >= totalPages}
+                      >
+                        下一页
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+
+                      {/* 跳转到指定页面 */}
+                      <div className="flex items-center space-x-2 ml-4">
+                        <span className="text-sm text-gray-600">跳转到</span>
+                        <Input
+                          type="number"
+                          min="1"
+                          max={totalPages}
+                          value={currentPage}
+                          onChange={(e) => {
+                            const page = parseInt(e.target.value)
+                            if (page >= 1 && page <= totalPages) {
+                              setCurrentPage(page)
+                            }
+                          }}
+                          className="w-16 h-8 text-center"
+                        />
+                        <span className="text-sm text-gray-600">页</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">加载中...</p>
                   </div>
                 )}
               </CardContent>

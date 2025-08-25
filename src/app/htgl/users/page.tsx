@@ -30,7 +30,9 @@ import {
   RefreshCw,
   Star,
   Eye,
-  XCircle
+  XCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -67,7 +69,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
   }
 
   const navItems = [
-    { href: "/htgl/dashboard", icon: Users, label: "仪表板" },
+    { href: "/htgl", icon: Users, label: "仪表板" },
     { href: "/htgl/users", icon: Users, label: "用户管理", active: true },
     { href: "/htgl/tradies", icon: Users, label: "技师管理" },
     { href: "/htgl/suppliers", icon: Users, label: "供应商管理" },
@@ -204,6 +206,8 @@ export default function UsersManagePage() {
   const [users, setUsers] = useState<UserWithProjects[]>([])
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalUsers, setTotalUsers] = useState(0)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -250,6 +254,8 @@ export default function UsersManagePage() {
       
       if (result.success) {
         setUsers(result.data.users)
+        setTotalPages(result.data.pagination.totalPages || 1)
+        setTotalUsers(result.data.pagination.total || 0)
       }
     } catch (error) {
       console.error('加载用户数据失败:', error)
@@ -263,6 +269,13 @@ export default function UsersManagePage() {
     loadStats()
     loadUsers()
   }, [currentPage, userTypeFilter, statusFilter, searchTerm, sortBy, sortOrder])
+
+  // 当搜索或筛选条件改变时，重置到第一页
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [userTypeFilter, statusFilter, searchTerm, sortBy, sortOrder])
 
   const filteredUsers = users
 
@@ -523,7 +536,6 @@ export default function UsersManagePage() {
                     const maxTotal = Math.max(...stats.trends!.registration.map((m: any) => m.total))
                     const ownerHeight = maxTotal > 0 ? (month.owners / maxTotal) * 100 : 0
                     const tradieHeight = maxTotal > 0 ? (month.tradies / maxTotal) * 100 : 0
-                    const totalHeight = maxTotal > 0 ? (month.total / maxTotal) * 100 : 0
                     
                     return (
                       <div key={index} className="flex flex-col items-center space-y-2">
@@ -912,6 +924,97 @@ export default function UsersManagePage() {
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">没有找到匹配的用户</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && filteredUsers.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  显示第 {(currentPage - 1) * 20 + 1} - {Math.min(currentPage * 20, totalUsers)} 条，共 {totalUsers} 条记录
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage <= 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    上一页
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {/* 分页页码 */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-10 h-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <>
+                        <span className="text-gray-400">...</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(totalPages)}
+                          className="w-10 h-10"
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage >= totalPages}
+                  >
+                    下一页
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                  
+                  {/* 跳转到指定页面 */}
+                  <div className="flex items-center space-x-2 ml-4">
+                    <span className="text-sm text-gray-600">跳转到</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const page = parseInt(e.target.value)
+                        if (page >= 1 && page <= totalPages) {
+                          setCurrentPage(page)
+                        }
+                      }}
+                      className="w-16 h-8 text-center"
+                    />
+                    <span className="text-sm text-gray-600">页</span>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

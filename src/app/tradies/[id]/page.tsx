@@ -19,7 +19,8 @@ import {
   ExternalLink,
   Clock,
   DollarSign,
-  Users
+  Users,
+  Globe
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -43,6 +44,8 @@ interface TradieData {
   experience_years?: number
   hourly_rate?: number
   phone_verified?: boolean
+  service_area?: string
+  website?: string
   categories: string[]
   portfolio: any[]
 }
@@ -121,12 +124,13 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
     responseTime: "24小时内",
     bio: tradieData.bio || "这位技师还没有添加个人简介。",
     skills: tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"],
-    serviceAreas: [tradieData.address || "服务地区"].filter(Boolean),
+    serviceAreas: tradieData.service_area ? [tradieData.service_area] : [],
     insurance: true,
     backgroundCheck: true,
     hourlyRate: tradieData.hourly_rate,
     phone: tradieData.phone,
     email: tradieData.email,
+    website: tradieData.website,
     projects: tradieData.portfolio.map(project => ({
       id: project.id,
       title: project.title,
@@ -256,15 +260,40 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   <div>
                     <h4 className="font-semibold mb-3">服务区域</h4>
                     <div className="space-y-1">
-                      {tradie.serviceAreas.map((area, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <MapPin className="w-3 h-3 text-gray-500" />
-                          <span className="text-sm text-gray-600">{area}</span>
+                      {tradie.serviceAreas.length > 0 ? (
+                        tradie.serviceAreas.map((area, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3 text-gray-500" />
+                            <span className="text-sm text-gray-600">{area}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3 h-3 text-gray-400" />
+                          <span className="text-sm text-gray-400">未设置服务区域</span>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {tradie.website && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-3">网站链接</h4>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-500" />
+                      <Link 
+                        href={tradie.website.startsWith('http') ? tradie.website : `https://${tradie.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 hover:underline break-all"
+                      >
+                        {tradie.website}
+                        <ExternalLink className="w-3 h-3 ml-1 inline" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

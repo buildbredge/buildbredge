@@ -25,7 +25,9 @@ export async function GET(
         created_at,
         bio,
         experience_years,
-        hourly_rate
+        hourly_rate,
+        service_area,
+        website
       `)
       .eq('id', tradieId)
       .single()
