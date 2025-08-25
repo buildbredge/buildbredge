@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const [phoneVerified, setPhoneVerified] = useState(false)
   const [address, setAddress] = useState("")
   const [language, setLanguage] = useState("中/EN")
+  const [website, setWebsite] = useState("")
+  const [serviceArea, setServiceArea] = useState("")
   
   // Tradie专用信息
   const [companyName, setCompanyName] = useState("")
@@ -61,16 +63,24 @@ export default function ProfilePage() {
       setPhoneVerified(user.phone_verified || false)
       setAddress(user.address || "")
       setLanguage(user.language || "中/EN")
+      setWebsite(user.website || "")
+      setServiceArea(user.service_area || "")
       
       // Load tradie data if available
       if (user.tradieData) {
         setCompanyName(user.tradieData.company || "")
         setSpecialty(user.tradieData.specialty || "未设置专业领域")
+        setBio(user.tradieData.bio || "")
+        setHourlyRate(user.tradieData.hourlyRate?.toString() || "")
+        setExperienceYears(user.tradieData.experienceYears?.toString() || "")
         
         // If specialty is available, extract it as a category
         if (user.tradieData.specialty && user.tradieData.specialty !== "未设置专业领域") {
           setTradieCategories([user.tradieData.specialty])
         }
+      } else if (user.bio) {
+        // For non-tradie users, load bio from main user data
+        setBio(user.bio || "")
       }
       
       console.log("User data:", user)
@@ -282,7 +292,12 @@ export default function ProfilePage() {
         phone,
         address: address,
         language,
+        website,
+        service_area: serviceArea,
         company: user?.activeRole === "tradie" ? companyName : undefined,
+        bio,
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+        experienceYears: experienceYears ? parseInt(experienceYears) : undefined,
       })
 
       if (result.success) {
@@ -458,6 +473,35 @@ export default function ProfilePage() {
                         placeholder="请输入您的地址" 
                         required 
                       />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="website">
+                          <Globe className="w-4 h-4 inline mr-2" />
+                          网站
+                        </Label>
+                        <Input 
+                          id="website" 
+                          type="url"
+                          value={website} 
+                          onChange={e => setWebsite(e.target.value)} 
+                          placeholder="https://example.com" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="serviceArea">
+                          <MapPin className="w-4 h-4 inline mr-2" />
+                          服务区域
+                        </Label>
+                        <Input 
+                          id="serviceArea" 
+                          value={serviceArea} 
+                          onChange={e => setServiceArea(e.target.value)} 
+                          placeholder="请输入您的服务区域" 
+                        />
+                      </div>
                     </div>
 
                     <div>

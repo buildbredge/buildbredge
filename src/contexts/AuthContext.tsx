@@ -111,7 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       serviceRadius: userData.serviceRadius,
       hourlyRate: userData.hourlyRate,
       experienceYears: userData.experienceYears,
-      bio: userData.bio
+      bio: userData.bio,
+      website: userData.website,
+      service_area: userData.service_area
     })
 
     if (result.success) {

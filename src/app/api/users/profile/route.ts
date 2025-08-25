@@ -17,6 +17,9 @@ interface UserProfileResponse {
   phone_verified: boolean
   address: string
   language?: string
+  website?: string
+  service_area?: string
+  bio?: string
   status: 'pending' | 'approved' | 'closed' | 'active'
   verified: boolean
   emailVerified: boolean
@@ -174,6 +177,9 @@ export async function GET(request: NextRequest) {
       phone_verified: userProfile.phone_verified || false,
       address: userProfile.address || '',
       language: userProfile.language || '中/EN',
+      website: userProfile.website || undefined,
+      service_area: userProfile.service_area || undefined,
+      bio: userProfile.bio || undefined,
       status: userProfile.status,
       verified: userProfile.status === 'approved',
       emailVerified: user.email_confirmed_at ? true : false,
@@ -231,7 +237,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, phone_verified, address, language, role, company, serviceRadius, hourlyRate, experienceYears, bio } = body
+    const { name, phone, phone_verified, address, language, role, company, serviceRadius, hourlyRate, experienceYears, bio, website, service_area } = body
 
     // 验证必需字段
     if (!name || !phone) {
@@ -294,6 +300,16 @@ export async function PUT(request: NextRequest) {
     // 如果提供了phone_verified，则更新该字段
     if (typeof phone_verified === 'boolean') {
       updateData.phone_verified = phone_verified
+    }
+    
+    // 如果提供了website，则更新该字段
+    if (website !== undefined) {
+      updateData.website = website
+    }
+    
+    // 如果提供了service_area，则更新该字段
+    if (service_area !== undefined) {
+      updateData.service_area = service_area
     }
     
     const { error: userUpdateError } = await supabase

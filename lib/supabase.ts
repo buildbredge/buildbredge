@@ -181,6 +181,8 @@ export type Database = {
           experience_years: number | null
           bio: string | null
           parent_tradie_id: string | null
+          website: string | null
+          service_area: string | null
         }
         Insert: {
           id: string
@@ -205,6 +207,8 @@ export type Database = {
           experience_years?: number | null
           bio?: string | null
           parent_tradie_id?: string | null
+          website?: string | null
+          service_area?: string | null
         }
         Update: {
           id?: string
@@ -229,6 +233,8 @@ export type Database = {
           experience_years?: number | null
           bio?: string | null
           parent_tradie_id?: string | null
+          website?: string | null
+          service_area?: string | null
         }
       }
       user_roles: {

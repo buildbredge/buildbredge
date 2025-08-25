@@ -96,6 +96,41 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     router.push("/htgl/login")
   }
 
+  // 检查token有效性（可选：定期检查）
+  useEffect(() => {
+    const checkTokenValidity = async () => {
+      const token = localStorage.getItem("adminToken")
+      if (token) {
+        try {
+          const response = await fetch('/api/admin/verify-token', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          
+          if (response.status === 401) {
+            // Token无效，清除并跳转
+            localStorage.removeItem("adminToken")
+            localStorage.removeItem("adminUser")
+            document.cookie = "adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+            document.cookie = "adminUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+            router.push("/htgl/login")
+          }
+        } catch (error) {
+          console.error('Token验证失败:', error)
+        }
+      }
+    }
+
+    // 初始检查
+    checkTokenValidity()
+    
+    // 每5分钟检查一次token有效性
+    const interval = setInterval(checkTokenValidity, 5 * 60 * 1000)
+    
+    return () => clearInterval(interval)
+  }, [router])
+
   if (!adminUser) {
     return <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="text-center">
@@ -110,6 +145,7 @@ function AdminLayout({ children, title }: { children: React.ReactNode; title: st
     { href: "/htgl/users", icon: Users, label: "用户管理" },
     { href: "/htgl/tradies", icon: Users, label: "技师管理" },
     { href: "/htgl/suppliers", icon: Users, label: "供应商管理" },
+    { href: "/htgl/industries", icon: FileText, label: "行业管理" },
     { href: "/htgl/support", icon: Users, label: "客服管理" },
     { href: "/htgl/complaints", icon: Users, label: "投诉管理" },
     { href: "/htgl/reviews", icon: Users, label: "评价管理" },
@@ -263,6 +299,23 @@ export default function AdminDashboard() {
     fetchDashboardData()
   }, [])
 
+  // 处理token过期
+  const handleTokenExpired = () => {
+    // 清除localStorage
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("adminUser")
+    
+    // 清除cookies
+    document.cookie = "adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    document.cookie = "adminUser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    
+    // 显示提示信息
+    alert('登录已过期，请重新登录')
+    
+    // 跳转到登录页
+    window.location.href = '/htgl/login'
+  }
+
   // 从真实数据库获取数据
   const fetchDashboardData = async () => {
     try {
@@ -297,6 +350,10 @@ export default function AdminDashboard() {
             newProjectsThisMonth: statsData.stats.newProjectsThisMonth
           })
         }
+      } else if (statsResponse.status === 401) {
+        // Token过期，清除凭据并跳转到登录页
+        handleTokenExpired()
+        return
       } else {
         console.error('Failed to fetch stats:', await statsResponse.text())
       }
@@ -307,6 +364,9 @@ export default function AdminDashboard() {
         if (usersData.success) {
           setUsers(usersData.users)
         }
+      } else if (usersResponse.status === 401) {
+        handleTokenExpired()
+        return
       } else {
         console.error('Failed to fetch users:', await usersResponse.text())
       }
@@ -317,6 +377,9 @@ export default function AdminDashboard() {
         if (projectsData.success) {
           setProjects(projectsData.projects)
         }
+      } else if (projectsResponse.status === 401) {
+        handleTokenExpired()
+        return
       } else {
         console.error('Failed to fetch projects:', await projectsResponse.text())
       }
@@ -403,6 +466,11 @@ export default function AdminDashboard() {
         body: JSON.stringify({ status: newStatus })
       })
 
+      if (response.status === 401) {
+        handleTokenExpired()
+        return
+      }
+
       const result = await response.json()
       
       if (result.success) {
@@ -444,6 +512,11 @@ export default function AdminDashboard() {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       })
+
+      if (response.status === 401) {
+        handleTokenExpired()
+        return
+      }
 
       const result = await response.json()
       

@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         user: authData.user,
-        admin: adminData
+        session: authData.session,
+        admin: adminData,
+        accessToken: authData.session?.access_token
       }
     })
   } catch (error) {

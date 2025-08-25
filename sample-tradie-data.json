@@ -1,0 +1,32 @@
+[
+  {
+    "website": "www.brotherwood.co.nz",
+    "address": "67 Waimauku Station Road 奥克兰 新西兰 0812",
+    "category_id": "9737f262-7a3c-428d-aa28-ae81e8c8388d",
+    "profession_id": "437b1240-033e-4d49-a2ec-b0f65e7583e1",
+    "name": "Matthew John PRIESTLEY",
+    "bio": "树桩研磨、小树移除服务、覆盖、土地清理、树艺师/树木移除服务",
+    "company": "BROTHERWOOD LIMITED",
+    "service_area": "奥克兰市区及郊区"
+  },
+  {
+    "website": "",
+    "address": "55 Shortland Street Auckland New Zealand 1010",
+    "category_id": "1eabc95f-fe6a-4278-ac38-e838ee0d2289",
+    "profession_id": "2aec8b34-dba8-4eed-a6ba-640484689a8a",
+    "name": "Mark Geoffrey ANDREWS",
+    "bio": "*水箱清洁 - 满水箱和空水箱清洁。 *水箱维修 - 混凝土水箱修复。 *过滤 - 确保饮用水安全。 *水泵 - 维修、保养和销售",
+    "company": "S-TEC HEALTHY WATER SOLUTIONS LIMITED",
+    "service_area": "奥克兰市区及郊区"
+  },
+  {
+    "website": "www.blackoutelectric.co.nz",
+    "address": "5 Muriwai Road Waimauku Waimauku New Zealand 0812",
+    "category_id": "cef36b28-de63-4520-a225-d46c78ce306c",
+    "profession_id": "ea84bb34-8b04-4865-8ce4-a3648aff15ff",
+    "name": "Toni Louise WEAVER",
+    "bio": "您值得信赖的 Waimauku 电工。我们拥有超过 17 年的经验，提供一流的住宅和商业电力服务，确保您的房产安全高效。",
+    "company": "BLACKOUT ELECTRIC LIMITED",
+    "service_area": "奥克兰市区及郊区"
+  }
+]

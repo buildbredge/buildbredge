@@ -53,11 +53,12 @@ export default function AdminLoginPage() {
       }
       
       // 设置cookies（注意：这里只是客户端设置，应该配合服务器端API）
-      document.cookie = `adminToken=${result.data.user.id}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
+      const accessToken = result.data.accessToken || result.data.session?.access_token
+      document.cookie = `adminToken=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
       document.cookie = `adminUser=${JSON.stringify(adminUser)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=strict`
       
       // 同时保存到localStorage作为备份
-      localStorage.setItem('adminToken', result.data.user.id || '')
+      localStorage.setItem('adminToken', accessToken || '')
       localStorage.setItem('adminUser', JSON.stringify(adminUser))
       
       router.push("/htgl")

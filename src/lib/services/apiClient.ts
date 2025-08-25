@@ -55,6 +55,8 @@ interface UserProfileData {
   hourlyRate?: number
   experienceYears?: number
   bio?: string
+  website?: string
+  service_area?: string
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string
@@ -249,6 +251,8 @@ class ApiClient {
     hourlyRate?: number
     experienceYears?: number
     bio?: string
+    website?: string
+    service_area?: string
   }): Promise<ApiResponse<{ message: string }>> {
     return this.request('/users/profile', {
       method: 'PUT',
