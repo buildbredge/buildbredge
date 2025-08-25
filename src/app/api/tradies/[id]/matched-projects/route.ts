@@ -40,8 +40,7 @@ export async function GET(
       .single()
 
     // Build the base query for matching projects
-    // Only show projects that are available for tradies to accept
-    // Exclude: in-progress, completed, reviewed projects
+    // Only show projects that are published and available for tradies to accept
     let query = supabase
       .from("projects")
       .select(`
@@ -66,7 +65,7 @@ export async function GET(
           name_zh
         )
       `)
-      .eq("status", "published")  // Only published projects (exclude draft, completed, cancelled)
+      .eq("status", "published")  // Only published projects
       .order("created_at", { ascending: false })
 
     // Matching by category_id and language
@@ -164,8 +163,12 @@ function processProjectResults(projects: any[], tradieData: any) {
     }
   })
   .filter((project: any) => {
-    // Only include projects within service radius if location data is available
-    return project.within_service_radius
+    // Only include projects within service radius if both tradie and project have location data
+    // If location data is missing for either, include the project by default
+    if (project.distance !== null && tradieData?.service_radius) {
+      return project.within_service_radius
+    }
+    return true  // Include project if location data is not available
   })
   .sort((a: any, b: any) => {
     // Sort by distance first (if available), then by creation date (newest first)

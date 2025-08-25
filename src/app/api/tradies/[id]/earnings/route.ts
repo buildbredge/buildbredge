@@ -4,10 +4,11 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tradieId: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
-    const { tradieId } = params
+    const tradieId = params.id
 
     if (!tradieId) {
       return NextResponse.json(
@@ -64,7 +65,6 @@ export async function GET(
           confirmed_at,
           projects (
             id,
-            title,
             description
           )
         )
@@ -123,7 +123,7 @@ export async function GET(
             amount,
             projects (
               id,
-              title
+              description
             )
           )
         `)
@@ -157,9 +157,11 @@ export async function GET(
         const now = new Date()
         const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         
+        const payment = Array.isArray(escrow.payment) ? escrow.payment[0] : escrow.payment
+        const projects = Array.isArray(payment?.projects) ? payment.projects[0] : payment?.projects
         return {
           escrowId: escrow.id,
-          projectTitle: escrow.payment?.projects?.title || 'Unknown Project',
+          projectTitle: projects?.description || 'Unknown Project',
           amount: parseFloat(escrow.net_amount.toString()),
           daysRemaining: Math.max(0, daysRemaining),
           autoReleaseDate: escrow.protection_end_date

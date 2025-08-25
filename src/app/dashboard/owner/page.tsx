@@ -38,7 +38,6 @@ interface DashboardData {
     inProgress: number
     completed: number
     reviewed: number
-    draft: number
   }
   recentProjects: Array<{
     id: string
@@ -173,7 +172,6 @@ export default function OwnerDashboardPage() {
             inProgress: projectsResponse.data?.projects.filter(p => p.status === 'in_progress').length || 0,
             completed: projectsResponse.data?.projects.filter(p => p.status === 'completed').length || 0,
             reviewed: projectsResponse.data?.projects.filter(p => p.status === 'reviewed').length || 0,
-            draft: projectsResponse.data?.projects.filter(p => p.status === 'draft').length || 0
           },
           recentProjects: projectsResponse.data?.projects.slice(0, 5).map(p => ({
             id: p.id,
@@ -193,7 +191,7 @@ export default function OwnerDashboardPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       const fallbackData: DashboardData = {
-        projectStats: { total: 0, published: 0, negotiating: 0, inProgress: 0, completed: 0, reviewed: 0, draft: 0 },
+        projectStats: { total: 0, published: 0, negotiating: 0, inProgress: 0, completed: 0, reviewed: 0 },
         recentProjects: [],
         availableCategories: []
       }

@@ -255,17 +255,17 @@ export default function BrowseJobsPage() {
                   </div>
                 </button>
                 <button
-                  onClick={() => setSelectedStatus(ProjectStatus.DRAFT)}
+                  onClick={() => setSelectedStatus(ProjectStatus.PUBLISHED)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedStatus === ProjectStatus.DRAFT
+                    selectedStatus === ProjectStatus.PUBLISHED
                       ? "bg-gray-100 text-gray-700"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>草稿（待报价）</span>
+                    <span>已发布（待报价）</span>
                     <Badge variant="secondary" className="text-xs">
-                      {projects.filter(p => p.status === ProjectStatus.DRAFT).length}
+                      {projects.filter(p => p.status === ProjectStatus.PUBLISHED).length}
                     </Badge>
                   </div>
                 </button>

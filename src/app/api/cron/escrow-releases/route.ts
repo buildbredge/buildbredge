@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PaymentService } from '@/lib/payment-service'
+import { supabase } from '@/lib/supabase'
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, GitHub Actions, or external cron service)
 // Call this daily to process automatic escrow releases after protection period expires
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     const releasedEscrows = await PaymentService.processAutomaticEscrowReleases()
     
     const releaseCount = releasedEscrows.length
-    const totalAmount = releasedEscrows.reduce((sum, escrow) => sum + parseFloat(escrow.amount.toString()), 0)
+    const totalAmount = releasedEscrows.reduce((sum: number, escrow: any) => sum + parseFloat(escrow.amount.toString()), 0)
     
     console.log(`Processed ${releaseCount} automatic escrow releases, total amount: $${totalAmount}`)
 
@@ -54,14 +55,16 @@ export async function POST(request: NextRequest) {
 
             if (escrowDetails?.payment) {
               const tradieData = await getEmailRecipientData(escrowRelease.tradie_id)
-              const ownerData = await getEmailRecipientData(escrowDetails.payment.payer_id)
+              const payment = Array.isArray(escrowDetails.payment) ? escrowDetails.payment[0] : escrowDetails.payment
+              const ownerData = await getEmailRecipientData(payment.payer_id)
               
               if (tradieData && ownerData) {
+                const projects = Array.isArray(payment.projects) ? payment.projects : [payment.projects]
                 await EmailNotificationService.sendEscrowReleaseNotification({
                   escrow: escrowDetails as any,
-                  payment: escrowDetails.payment as any,
+                  payment: payment as any,
                   project: {
-                    title: escrowDetails.payment.projects?.description || 'Project'
+                    title: projects[0]?.description || 'Project'
                   },
                   tradie: tradieData,
                   owner: ownerData,

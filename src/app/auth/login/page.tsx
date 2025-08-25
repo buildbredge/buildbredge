@@ -16,7 +16,7 @@ function LoginForm() {
   const [error, setError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  const { login, user, sendEmailVerification } = useAuth()
+  const { login, user, sendEmailVerification, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -32,6 +32,27 @@ function LoginForm() {
       setEmail(emailParam)
     }
   }, [searchParams])
+
+  // 如果用户已经登录，自动重定向到dashboard
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  // 如果正在加载认证状态或用户已登录，显示加载状态
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-sm">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">{user ? "正在跳转..." : "加载中..."}</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
 
   const handleSubmit = async (e: React.FormEvent) => {

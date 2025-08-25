@@ -63,7 +63,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       .update({
         status: 'completed',
         confirmed_at: new Date().toISOString(),
-        stripe_charge_id: paymentIntent.charges.data[0]?.id,
+        stripe_charge_id: (paymentIntent as any).charges?.data[0]?.id,
         stripe_customer_id: paymentIntent.customer as string
       })
       .eq('stripe_payment_intent_id', paymentIntent.id)
@@ -84,7 +84,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
         
         // Get payment details for email
         const paymentDetails = await PaymentService.getPaymentDetails(
-          payment.id || paymentIntent.metadata?.paymentId
+          paymentIntent.metadata?.paymentId
         )
         
         if (paymentDetails) {
@@ -95,8 +95,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
             await EmailNotificationService.sendPaymentConfirmation({
               payment: paymentDetails,
               project: {
-                title: paymentDetails.projects?.title || paymentDetails.projects?.description || 'Project',
-                description: paymentDetails.projects?.description || ''
+                title: (paymentDetails as any).projects?.title || (paymentDetails as any).projects?.description || 'Project',
+                description: (paymentDetails as any).projects?.description || ''
               },
               tradie: tradieData,
               owner: ownerData,

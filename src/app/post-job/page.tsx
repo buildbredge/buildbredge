@@ -183,7 +183,7 @@ export default function PostJobPage() {
         phone: jobForm.phone || null,
         images: uploadedImageUrls, // 直接包含上传的图片URL
         files: uploadedFileUrls, // 直接包含上传的文件URL
-        status: ProjectStatus.DRAFT,
+        status: ProjectStatus.PUBLISHED,
         user_id: userId || null, // 如果是匿名用户则为null
         category_id: jobForm.isOther ? null : (jobForm.categoryId || null),
         profession_id: jobForm.isOther ? null : (jobForm.professionId || null),

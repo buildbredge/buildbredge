@@ -38,7 +38,6 @@ interface DashboardData {
     published: number
     inProgress: number
     completed: number
-    draft: number
   }
   recentProjects: Array<{
     id: string
@@ -168,7 +167,6 @@ export default function TradieDashboardPage() {
             published: 0,
             inProgress: 0,
             completed: 0,
-            draft: 0
           },
           recentProjects: [],
           serviceStats: {
@@ -185,7 +183,7 @@ export default function TradieDashboardPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       const fallbackData: DashboardData = {
-        projectStats: { total: 0, published: 0, inProgress: 0, completed: 0, draft: 0 },
+        projectStats: { total: 0, published: 0, inProgress: 0, completed: 0 },
         recentProjects: [],
         serviceStats: { availableJobs: 0, activeServices: 0, pendingQuotes: 0, monthlyRevenue: 0 },
         availableCategories: []

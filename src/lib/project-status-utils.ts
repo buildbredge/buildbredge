@@ -104,7 +104,7 @@ export function getProtectionPeriodDays(): number {
  */
 export function isProjectActive(status: ProjectStatus): boolean {
   return [
-    ProjectStatus.DRAFT,
+    ProjectStatus.PUBLISHED,
     ProjectStatus.QUOTED,
     ProjectStatus.NEGOTIATING,
     ProjectStatus.AGREED,
@@ -146,7 +146,7 @@ export function getNextStatusSuggestions(currentStatus: ProjectStatus): {
   description: string
 }[] {
   switch (currentStatus) {
-    case ProjectStatus.DRAFT:
+    case ProjectStatus.PUBLISHED:
       return [
         {
           status: ProjectStatus.QUOTED,

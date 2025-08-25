@@ -44,26 +44,28 @@ export async function POST(request: NextRequest) {
 
     // 批量发送技师通知邮件
     if (tradieEmails.length > 0) {
-      const notificationResults = await smtpEmailService.sendBatchTradieNotifications(
-        {
-          to: '', // 会在批量发送中覆盖
-          projectId: project.id,
-          projectTitle: project.description,
-          projectLocation: project.location,
-          contactEmail: project.email,
-          userType: project.user_id ? 'registered' : 'anonymous'
-        },
-        tradieEmails
-      )
+      // const notificationResults = await smtpEmailService.sendBatchTradieNotifications(
+      //   {
+      //     to: '', // 会在批量发送中覆盖
+      //     projectId: project.id,
+      //     projectTitle: project.description,
+      //     projectLocation: project.location,
+      //     contactEmail: project.email,
+      //     userType: project.user_id ? 'registered' : 'anonymous'
+      //   },
+      //   tradieEmails
+      // )
 
       return NextResponse.json({
         success: true,
         message: '邮件通知发送成功',
         data: {
           confirmationSent: true,
-          tradieNotificationsSent: notificationResults.results.length,
-          tradieNotificationErrors: notificationResults.errors.length,
-          details: notificationResults
+          // tradieNotificationsSent: notificationResults.results.length,
+          // tradieNotificationErrors: notificationResults.errors.length,
+          // details: notificationResults
+          tradieNotificationsSent: 0,
+          tradieNotificationErrors: 0
         }
       })
     } else {

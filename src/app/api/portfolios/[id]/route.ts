@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ tradieId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { tradieId } = await params
+    const { id: tradieId } = await params
     const { data, error } = await supabase
       .from('tradie_portfolios')
       .select('*')

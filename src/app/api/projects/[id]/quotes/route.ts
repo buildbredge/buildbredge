@@ -111,7 +111,7 @@ export async function POST(
 
     // 检查项目状态是否允许报价 - 使用新的状态系统
     const allowedQuoteStatuses = [
-      ProjectStatus.DRAFT,
+      ProjectStatus.PUBLISHED,
       ProjectStatus.QUOTED,
       ProjectStatus.NEGOTIATING
     ]
@@ -174,8 +174,8 @@ export async function POST(
       )
     }
 
-    // 如果项目状态是"草稿"，自动更改为"已报价"
-    if (project.status === ProjectStatus.DRAFT) {
+    // 如果项目状态是"已发布"，自动更改为"已报价"
+    if (project.status === ProjectStatus.PUBLISHED) {
       const { error: updateError } = await supabase
         .from('projects')
         .update({ 

@@ -286,11 +286,28 @@ BuildBridge - 连接业主与专业技师的平台
           </div>
         </div>
         
-        <div style="text-align: center; margin: 30px 0;">
+        <div style="text-align: center; margin: 40px 0; background-color: #f0f9f4; padding: 25px; border-radius: 12px;">
+          <h3 style="margin: 0 0 15px 0; color: #059669; font-size: 18px;">📋 查看报价详情</h3>
           <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
-             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; border: 2px solid #059669; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);">
-            查看完整报价详情
+             style="background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+                    color: white !important; 
+                    padding: 18px 40px; 
+                    text-decoration: none; 
+                    border-radius: 12px; 
+                    display: inline-block; 
+                    font-weight: bold; 
+                    font-size: 18px; 
+                    border: none;
+                    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    transition: all 0.3s ease;
+                    min-width: 200px;">
+            🔍 查看完整报价详情
           </a>
+          <p style="margin: 15px 0 0 0; color: #6b7280; font-size: 14px;">
+            点击上方按钮查看所有报价信息并选择最合适的技师
+          </p>
         </div>
         
         <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">

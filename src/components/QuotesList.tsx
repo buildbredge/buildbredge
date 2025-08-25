@@ -151,7 +151,7 @@ export function QuotesList({
   }
 
   const canAcceptQuotes = isOwner && (
-    projectStatus === ProjectStatus.DRAFT ||
+    projectStatus === ProjectStatus.PUBLISHED ||
     projectStatus === ProjectStatus.QUOTED || 
     projectStatus === ProjectStatus.NEGOTIATING
   )
@@ -198,7 +198,7 @@ export function QuotesList({
             <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-2">暂无报价</p>
             <p className="text-sm text-gray-400">
-              {(projectStatus === ProjectStatus.DRAFT || 
+              {(projectStatus === ProjectStatus.PUBLISHED || 
                 projectStatus === ProjectStatus.QUOTED || 
                 projectStatus === ProjectStatus.NEGOTIATING)
                 ? '技师们可以对此项目提交报价' 

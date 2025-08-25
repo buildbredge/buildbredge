@@ -3,7 +3,7 @@
 
 export enum ProjectStatus {
   // 初始状态
-  DRAFT = 'draft',                    // 发单已创建，未有报价
+  PUBLISHED = 'published',            // 发单已创建，未有报价
   
   // 报价阶段
   QUOTED = 'quoted',                  // 收到一个或多个报价
@@ -41,10 +41,10 @@ export enum ProjectStatus {
 
 // Status display labels in Chinese and English
 export const PROJECT_STATUS_LABELS = {
-  [ProjectStatus.DRAFT]: {
-    zh: '草稿',
-    en: 'Draft',
-    description: '项目已创建，等待报价'
+  [ProjectStatus.PUBLISHED]: {
+    zh: '已发布',
+    en: 'Published',
+    description: '项目已发布，等待报价'
   },
   [ProjectStatus.QUOTED]: {
     zh: '已报价',
@@ -105,7 +105,7 @@ export const PROJECT_STATUS_LABELS = {
 
 // Status colors for UI display
 export const PROJECT_STATUS_COLORS = {
-  [ProjectStatus.DRAFT]: 'gray',
+  [ProjectStatus.PUBLISHED]: 'blue',
   [ProjectStatus.QUOTED]: 'blue',
   [ProjectStatus.NEGOTIATING]: 'yellow',
   [ProjectStatus.AGREED]: 'purple',
@@ -121,7 +121,7 @@ export const PROJECT_STATUS_COLORS = {
 
 // Define valid status transitions
 export const STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
-  [ProjectStatus.DRAFT]: [
+  [ProjectStatus.PUBLISHED]: [
     ProjectStatus.QUOTED,
     ProjectStatus.CANCELLED
   ],
@@ -195,7 +195,7 @@ export function getStatusColor(status: ProjectStatus): string {
 // Status groups for filtering and categorization
 export const STATUS_GROUPS = {
   ACTIVE: [
-    ProjectStatus.DRAFT,
+    ProjectStatus.PUBLISHED,
     ProjectStatus.QUOTED,
     ProjectStatus.NEGOTIATING,
     ProjectStatus.AGREED,

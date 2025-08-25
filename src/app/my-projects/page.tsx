@@ -27,7 +27,7 @@ interface Project {
   budget: string
   urgency: string
   images: string[]
-  status: 'published' | 'draft' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
+  status: 'published' | 'negotiating' | 'in_progress' | 'completed' | 'reviewed' | 'cancelled'
   createdAt: string
   userId: string
   quotes: Quote[]
@@ -164,7 +164,6 @@ function MyProjectsContent() {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       published: { label: '已发布', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      draft: { label: '草稿', className: 'bg-gray-100 text-gray-800', icon: AlertCircle },
       negotiating: { label: '协商中', className: 'bg-orange-100 text-orange-800', icon: Clock },
       in_progress: { label: '进行中', className: 'bg-blue-100 text-blue-800', icon: Clock },
       completed: { label: '已完成', className: 'bg-purple-100 text-purple-800', icon: CheckCircle },
@@ -222,9 +221,6 @@ function MyProjectsContent() {
         break
       case 'completed':
         filtered = projects.filter(p => ['completed', 'reviewed'].includes(p.status))
-        break
-      case 'draft':
-        filtered = projects.filter(p => p.status === 'draft')
         break
       case 'cancelled':
         filtered = projects.filter(p => p.status === 'cancelled')
@@ -436,7 +432,6 @@ function MyProjectsContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">所有状态</SelectItem>
-                    <SelectItem value="draft">草稿</SelectItem>
                     <SelectItem value="published">已发布</SelectItem>
                     <SelectItem value="negotiating">协商中</SelectItem>
                     <SelectItem value="in_progress">进行中</SelectItem>
@@ -465,10 +460,9 @@ function MyProjectsContent() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="active">进行中</TabsTrigger>
             <TabsTrigger value="completed">已完成</TabsTrigger>
-            <TabsTrigger value="draft">草稿</TabsTrigger>
             <TabsTrigger value="cancelled">已取消</TabsTrigger>
             <TabsTrigger value="all">全部项目</TabsTrigger>
           </TabsList>
@@ -747,77 +741,6 @@ function MyProjectsContent() {
                             })()}
                           </div>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="draft">
-            {filterProjects('draft').length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">暂无草稿项目</h3>
-                  <p className="text-gray-600 mb-6">您保存的草稿项目将显示在这里</p>
-                  <Button asChild>
-                    <Link href="/post-job">创建新项目</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-6">
-                {filterProjects('draft').map((project) => (
-                  <Card key={project.id} className={`transition-shadow hover:shadow-lg ${
-                    highlightedProjectId === project.id ? 'ring-2 ring-green-500' : ''
-                  }`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <CardTitle className="text-xl">{project.title}</CardTitle>
-                            {getStatusBadge(project.status)}
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span className="flex items-center">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              {project.location}
-                            </span>
-                            <span className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              {new Date(project.createdAt).toLocaleDateString('zh-CN')}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                            继续编辑
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-gray-700 mb-3">{project.description}</p>
-                          <div className="flex items-center space-x-2 text-sm">
-                            <Badge variant="outline">{project.category}</Badge>
-                            <ChevronRight className="w-3 h-3 text-gray-400" />
-                            <Badge variant="outline">{project.subcategory}</Badge>
-                          </div>
-                        </div>
-
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                          <div className="flex items-center">
-                            <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
-                            <p className="text-sm text-yellow-800">
-                              此项目还未发布，完成编辑后即可开始接收技师报价。
-                            </p>
-                          </div>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>

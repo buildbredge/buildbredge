@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
+import type { Stripe as StripeJS } from "@stripe/stripe-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +17,8 @@ import {
   AlertCircle,
   ArrowLeft,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  Lock
 } from "lucide-react"
 import Link from "next/link"
 import { getStripe } from "@/lib/stripe"
@@ -215,6 +217,7 @@ export default function EnhancedPaymentPage() {
   const [clientSecret, setClientSecret] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
+  const [stripePromise] = useState<Promise<StripeJS | null>>(() => getStripe())
 
   // Get payment parameters from URL
   const projectId = searchParams.get('projectId')
@@ -253,7 +256,7 @@ export default function EnhancedPaymentPage() {
         body: JSON.stringify({
           projectId,
           quoteId,
-          payerId: user.id,
+          payerId: user?.id,
           tradieId: quote.tradie_id,
           amount: parseFloat(amount!)
         })
@@ -396,7 +399,7 @@ export default function EnhancedPaymentPage() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {currentStep === 2 && paymentData && fees && clientSecret && (
-              <Elements stripe={getStripe()} options={{
+              <Elements stripe={stripePromise} options={{
                 clientSecret,
                 appearance: {
                   theme: 'stripe'

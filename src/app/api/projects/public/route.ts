@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           name_zh
         )
       `)
-      .in('status', [ProjectStatus.DRAFT, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING]) // 显示可接单的项目
+      .in('status', [ProjectStatus.PUBLISHED, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING]) // 显示可接单的项目
 
     // 状态筛选
     if (status && status !== 'all') {
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     const { count: totalCount } = await supabase
       .from('projects')
       .select('*', { count: 'exact', head: true })
-      .in('status', [ProjectStatus.DRAFT, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING])
+      .in('status', [ProjectStatus.PUBLISHED, ProjectStatus.QUOTED, ProjectStatus.NEGOTIATING])
 
     return NextResponse.json({
       success: true,

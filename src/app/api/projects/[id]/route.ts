@@ -64,9 +64,9 @@ export async function GET(
       // 项目所有者可以访问任何状态的项目
       const isOwner = currentUser && project.user_id === currentUser.id
       
-      // 非所有者只能访问可见的项目（草稿、已报价、协商中等）
+      // 非所有者只能访问可见的项目（已发布、已报价、协商中等）
       const publicVisibleStatuses = [
-        ProjectStatus.DRAFT,
+        ProjectStatus.PUBLISHED,
         ProjectStatus.QUOTED, 
         ProjectStatus.NEGOTIATING,
         ProjectStatus.AGREED,

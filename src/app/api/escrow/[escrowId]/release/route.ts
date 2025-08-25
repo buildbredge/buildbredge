@@ -4,8 +4,9 @@ import { supabase } from '@/lib/supabase'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { escrowId: string } }
+  context: { params: Promise<{ escrowId: string }> }
 ) {
+  const params = await context.params
   try {
     const body = await request.json()
     const { releasedBy, notes } = body
@@ -64,7 +65,9 @@ export async function PUT(
     }
 
     // Verify the person releasing is the project owner
-    if (escrow.payment?.projects?.user_id !== releasedBy) {
+    const payment = Array.isArray(escrow.payment) ? escrow.payment[0] : escrow.payment
+    const projects = Array.isArray(payment?.projects) ? payment.projects[0] : payment?.projects
+    if (projects?.user_id !== releasedBy) {
       return NextResponse.json(
         { error: 'Only project owner can release escrow funds' },
         { status: 403 }
@@ -108,16 +111,16 @@ export async function PUT(
     try {
       const { EmailNotificationService, getEmailRecipientData } = await import('@/lib/email-service')
       
-      if (updatedEscrow && escrow.payment?.projects) {
+      if (updatedEscrow && payment?.projects) {
         const tradieData = await getEmailRecipientData(escrow.tradie_id)
         const ownerData = await getEmailRecipientData(releasedBy)
         
         if (tradieData && ownerData) {
           await EmailNotificationService.sendEscrowReleaseNotification({
-            escrow: updatedEscrow,
-            payment: escrow.payment as any,
+            escrow: updatedEscrow as any,
+            payment: payment as any,
             project: {
-              title: escrow.payment.projects.title || escrow.payment.projects.description || 'Project'
+              title: (projects as any)?.title || (projects as any)?.description || 'Project'
             },
             tradie: tradieData,
             owner: ownerData,
@@ -148,8 +151,9 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { escrowId: string } }
+  context: { params: Promise<{ escrowId: string }> }
 ) {
+  const params = await context.params
   try {
     const { escrowId } = params
 

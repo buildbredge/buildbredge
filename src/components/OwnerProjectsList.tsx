@@ -54,7 +54,6 @@ export function OwnerProjectsList({ userId }: OwnerProjectsListProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       published: { label: "已发布", variant: "default" as const },
-      draft: { label: "草稿", variant: "secondary" as const },
       negotiating: { label: "协商中", variant: "default" as const },
       in_progress: { label: "进行中", variant: "default" as const },
       completed: { label: "已完成", variant: "outline" as const },

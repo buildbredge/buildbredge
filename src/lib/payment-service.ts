@@ -23,11 +23,11 @@ export class PaymentService {
     }
 
     return {
-      platformFee: parseFloat(data.platform_fee),
-      affiliateFee: parseFloat(data.affiliate_fee),
-      taxAmount: parseFloat(data.tax_amount),
-      netAmount: parseFloat(data.net_amount),
-      parentTradieId: data.parent_tradie_id
+      platformFee: parseFloat((data as any).platform_fee),
+      affiliateFee: parseFloat((data as any).affiliate_fee),
+      taxAmount: parseFloat((data as any).tax_amount),
+      netAmount: parseFloat((data as any).net_amount),
+      parentTradieId: (data as any).parent_tradie_id
     }
   }
 
@@ -78,7 +78,7 @@ export class PaymentService {
         affiliateFee: fees.affiliateFee.toString(),
         taxAmount: fees.taxAmount.toString(),
         netAmount: fees.netAmount.toString(),
-        ...(fees.parentTradieId && { parentTradieId: fees.parentTradieId })
+        parentTradieId: fees.parentTradieId || null
       }
 
       const paymentIntent = await createPaymentIntent(amount, currency, metadata)
@@ -123,7 +123,7 @@ export class PaymentService {
         .update({
           status: 'completed',
           confirmed_at: new Date().toISOString(),
-          stripe_charge_id: paymentIntent.charges.data[0]?.id
+          stripe_charge_id: (paymentIntent as any).charges?.data[0]?.id
         })
         .eq('stripe_payment_intent_id', paymentIntentId)
         .select()
@@ -195,11 +195,12 @@ export class PaymentService {
         .eq('id', escrowId)
         .single()
 
-      if (escrow?.payments?.project_id) {
+      const payment = Array.isArray(escrow?.payments) ? escrow.payments[0] : escrow?.payments
+      if (payment?.project_id) {
         await supabase
           .from('projects')
           .update({ status: 'released' })
-          .eq('id', escrow.payments.project_id)
+          .eq('id', payment.project_id)
       }
 
       return data

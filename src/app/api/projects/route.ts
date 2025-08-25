@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         profession_id: professionId,
         images: images || [],
         budget,
-        status: 'draft',
+        status: 'published',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

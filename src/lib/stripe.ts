@@ -1,14 +1,14 @@
 import Stripe from 'stripe'
-import { loadStripe } from '@stripe/stripe-js'
+import { loadStripe, type Stripe as StripeJS } from '@stripe/stripe-js'
 
 // Server-side Stripe instance
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-07-30.basil',
 })
 
 // Client-side Stripe instance
-let stripePromise: Promise<Stripe | null>
-export const getStripe = () => {
+let stripePromise: Promise<StripeJS | null>
+export const getStripe = (): Promise<StripeJS | null> => {
   if (!stripePromise) {
     stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
   }
@@ -62,7 +62,8 @@ export interface PaymentIntentMetadata {
   affiliateFee: string
   taxAmount: string
   netAmount: string
-  parentTradieId?: string
+  parentTradieId: string | null
+  [key: string]: string | number | null
 }
 
 // Create payment intent with fee breakdown
@@ -134,12 +135,12 @@ export const refundPayment = async (
 ): Promise<Stripe.Refund> => {
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
   
-  if (!paymentIntent.charges.data[0]) {
+  if (!(paymentIntent as any).charges?.data[0]) {
     throw new Error('No charge found for this payment intent')
   }
   
   const refund = await stripe.refunds.create({
-    charge: paymentIntent.charges.data[0].id,
+    charge: (paymentIntent as any).charges.data[0].id,
     amount: amount ? formatAmountForStripe(amount, paymentIntent.currency) : undefined,
     reason,
   })

@@ -18,7 +18,6 @@ interface DashboardData {
     published: number
     inProgress: number
     completed: number
-    draft: number
   }
   // 最近项目
   recentProjects: Array<{
@@ -87,7 +86,6 @@ export async function GET(request: NextRequest) {
       published: projectCounts?.filter(p => p.status === 'published').length || 0,
       inProgress: projectCounts?.filter(p => p.status === 'in_progress').length || 0,
       completed: projectCounts?.filter(p => p.status === 'completed').length || 0,
-      draft: projectCounts?.filter(p => p.status === 'draft').length || 0
     }
 
     // 2. 获取最近项目（限制5个）

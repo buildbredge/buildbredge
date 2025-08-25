@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the payer is the project owner
-    if (quote.project?.user_id !== payerId) {
+    const project = Array.isArray(quote.project) ? quote.project[0] : quote.project
+    if (project?.user_id !== payerId) {
       return NextResponse.json(
         { error: 'Only project owner can make payment' },
         { status: 403 }
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify project is in the correct status for payment
-    if (!['agreed', 'negotiating'].includes(quote.project?.status || '')) {
+    if (!['agreed', 'negotiating'].includes(project?.status || '')) {
       return NextResponse.json(
         { error: 'Project is not ready for payment' },
         { status: 400 }
