@@ -14,15 +14,15 @@ import {
   ChevronLeft, ChevronRight, Users
 } from "lucide-react"
 import Link from "next/link"
-import { apiClient } from "../../../../lib/services/apiClient"
-import { authService } from "../../../../lib/services/authService"
+import { apiClient } from "@/lib/services/apiClient"
+import { authService } from "@/lib/services/authService"
 import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
 import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding"
 import { RoleSwitcher } from "@/components/ui/role-switcher"
 import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
 import { OwnerProjectsList } from "@/components/OwnerProjectsList"
 import { OwnerQuotesManagement } from "@/components/OwnerQuotesManagement"
-import type { ProjectData, UserProfileData } from "../../../../lib/services/apiClient"
+import type { ProjectData, UserProfileData } from "@/lib/services/apiClient"
 
 interface UserRole {
   role_type: 'owner' | 'tradie'
@@ -58,23 +58,7 @@ interface DashboardData {
 }
 
 interface ExtendedUserProfileData extends UserProfileData {
-  roles?: UserRole[]
-  activeRole?: 'owner' | 'tradie'
-  address?: string
-  ownerData?: {
-    status: string
-    balance: number
-    projectCount?: number
-  }
-  tradieData?: {
-    company: string
-    specialty: string
-    serviceRadius: number
-    rating: number
-    reviewCount: number
-    status: string
-    balance: number
-  }
+  // All properties are already defined in UserProfileData
 }
 
 interface AuthUser {

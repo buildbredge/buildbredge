@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { apiClient } from "../../../lib/services/apiClient"
+import { apiClient } from "@/lib/services/apiClient"
 import { authService } from "../../../lib/services/authService"
-import type { UserProfileData } from "../../../lib/services/apiClient"
+import type { UserProfileData } from "@/lib/services/apiClient"
 
 interface UserRole {
   role_type: 'owner' | 'tradie'

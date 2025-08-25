@@ -120,7 +120,7 @@ export const PROJECT_STATUS_COLORS = {
 }
 
 // Define valid status transitions
-export const STATUS_TRANSITIONS = {
+export const STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   [ProjectStatus.DRAFT]: [
     ProjectStatus.QUOTED,
     ProjectStatus.CANCELLED

@@ -13,8 +13,8 @@ import {
   Target, Calendar
 } from "lucide-react"
 import Link from "next/link"
-import { apiClient } from "../../../../lib/services/apiClient"
-import { authService } from "../../../../lib/services/authService"
+import { apiClient } from "@/lib/services/apiClient"
+import { authService } from "@/lib/services/authService"
 import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
 import { RoleSwitcher } from "@/components/ui/role-switcher"
 import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion"
@@ -24,7 +24,7 @@ import { TradieQuotesList } from "@/components/TradieQuotesList"
 import { TradieProjectsList } from "@/components/TradieProjectsList"
 import SubordinateTradiesList from "@/components/SubordinateTradiesList"
 import ParentTradieDisplay from "@/components/ParentTradieDisplay"
-import type { ProjectData, UserProfileData } from "../../../../lib/services/apiClient"
+import type { ProjectData, UserProfileData } from "@/lib/services/apiClient"
 
 interface UserRole {
   role_type: 'owner' | 'tradie'
@@ -64,25 +64,8 @@ interface DashboardData {
 }
 
 interface ExtendedUserProfileData extends UserProfileData {
-  roles?: UserRole[]
-  activeRole?: 'owner' | 'tradie'
-  address?: string
-  phone_verified?: boolean
+  // All properties are already defined in UserProfileData
   parent_tradie_id?: string | null
-  ownerData?: {
-    status: string
-    balance: number
-    projectCount?: number
-  }
-  tradieData?: {
-    company: string
-    specialty: string
-    serviceRadius: number
-    rating: number
-    reviewCount: number
-    status: string
-    balance: number
-  }
 }
 
 interface AuthUser {
