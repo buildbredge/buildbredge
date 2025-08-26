@@ -12,12 +12,52 @@ export async function GET(
   const params = await context.params
   try {
     const quoteId = params.id
+    const { searchParams } = new URL(request.url)
+    const includeProject = searchParams.get('include_project') === 'true'
 
     if (!quoteId) {
       return NextResponse.json(
         { error: 'Quote ID is required' },
         { status: 400 }
       )
+    }
+
+    // Check if this is a test quote ID for payment testing
+    if (quoteId.startsWith('test-quote-')) {
+      // Return mock data for testing
+      const mockQuote = {
+        id: quoteId,
+        project_id: `test-project-${Date.now()}`,
+        tradie_id: 'test-tradie-1',
+        price: 500.00,
+        description: 'Test quote for payment system',
+        status: 'accepted',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        project: includeProject ? {
+          id: `test-project-${Date.now()}`,
+          title: 'Test Payment Project',
+          description: 'This is a test project for payment system testing',
+          user_id: `test-payer-${Date.now()}`,
+          status: 'agreed'
+        } : null,
+        tradie: {
+          id: 'test-tradie-1',
+          name: 'Test Tradie',
+          email: 'test@tradie.com',
+          company: 'Test Tradie Company'
+        },
+        // Add computed fields for payment processing
+        project_title: 'Test Payment Project',
+        tradie_name: 'Test Tradie',
+        is_affiliate: false,
+        parent_tradie_name: null
+      }
+
+      return NextResponse.json({
+        success: true,
+        quote: mockQuote
+      })
     }
 
     // Get quote with related data

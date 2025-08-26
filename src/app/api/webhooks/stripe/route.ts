@@ -38,6 +38,14 @@ export async function POST(request: NextRequest) {
         await handleChargeDisputeCreated(event.data.object as Stripe.Dispute)
         break
 
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
+        break
+
+      case 'checkout.session.expired':
+        await handleCheckoutSessionExpired(event.data.object as Stripe.Checkout.Session)
+        break
+
       default:
         console.log(`Unhandled webhook event type: ${event.type}`)
     }
@@ -213,6 +221,115 @@ async function handleChargeDisputeCreated(dispute: Stripe.Dispute) {
 
   } catch (error: any) {
     console.error('Error handling charge dispute:', error)
+    throw error
+  }
+}
+
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+  try {
+    console.log('Processing completed checkout session:', session.id)
+
+    const paymentId = session.metadata?.payment_id
+    if (!paymentId) {
+      console.error('No payment_id in checkout session metadata')
+      return
+    }
+
+    // Update payment status in database
+    const { error: updateError } = await supabase
+      .from('payments')
+      .update({
+        status: 'completed',
+        confirmed_at: new Date().toISOString(),
+        stripe_checkout_session_id: session.id,
+        stripe_customer_id: session.customer as string
+      })
+      .eq('id', paymentId)
+
+    if (updateError) {
+      console.error('Failed to update payment status from checkout:', updateError)
+      return
+    }
+
+    // If payment_intent exists, process escrow creation
+    if (session.payment_intent) {
+      try {
+        const paymentIntentId = typeof session.payment_intent === 'string' 
+          ? session.payment_intent 
+          : session.payment_intent.id
+
+        const escrowAccount = await PaymentService.confirmPayment(paymentIntentId)
+        console.log('Escrow account created from checkout:', escrowAccount.id)
+
+        // Send email notifications (similar to payment intent flow)
+        try {
+          const { EmailNotificationService, getEmailRecipientData } = await import('@/lib/email-service')
+          
+          const paymentDetails = await PaymentService.getPaymentDetails(paymentId)
+          
+          if (paymentDetails) {
+            const tradieData = await getEmailRecipientData(paymentDetails.tradie_id)
+            const ownerData = await getEmailRecipientData(paymentDetails.payer_id)
+            
+            if (tradieData && ownerData) {
+              await EmailNotificationService.sendPaymentConfirmation({
+                payment: paymentDetails,
+                project: {
+                  title: (paymentDetails as any).projects?.title || 'Project',
+                  description: (paymentDetails as any).projects?.description || ''
+                },
+                tradie: tradieData,
+                owner: ownerData,
+                escrow: escrowAccount,
+                protectionEndDate: escrowAccount.protection_end_date,
+                amount: parseFloat(paymentDetails.amount.toString()),
+                netAmount: parseFloat(escrowAccount.net_amount.toString())
+              })
+            }
+          }
+        } catch (emailError) {
+          console.error('Failed to send checkout email notifications:', emailError)
+        }
+        
+      } catch (escrowError) {
+        console.error('Failed to create escrow from checkout:', escrowError)
+      }
+    }
+
+  } catch (error: any) {
+    console.error('Error handling checkout session completed:', error)
+    throw error
+  }
+}
+
+async function handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
+  try {
+    console.log('Processing expired checkout session:', session.id)
+
+    const paymentId = session.metadata?.payment_id
+    if (!paymentId) {
+      console.error('No payment_id in expired checkout session metadata')
+      return
+    }
+
+    // Update payment status to expired
+    const { error: updateError } = await supabase
+      .from('payments')
+      .update({
+        status: 'expired',
+        expired_at: new Date().toISOString()
+      })
+      .eq('id', paymentId)
+
+    if (updateError) {
+      console.error('Failed to update payment status to expired:', updateError)
+    }
+
+    // TODO: Send email notification about expired session
+    // TODO: Allow customer to retry payment
+
+  } catch (error: any) {
+    console.error('Error handling checkout session expired:', error)
     throw error
   }
 }

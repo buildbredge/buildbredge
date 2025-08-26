@@ -47,7 +47,8 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__get_advisors",
       "WebFetch(domain:builderscrack.co.nz)",
-      "Bash(timeout 10s npm run dev)"
+      "Bash(timeout 10s npm run dev)",
+      "mcp__stripe__search_stripe_documentation"
     ],
     "deny": []
   }
