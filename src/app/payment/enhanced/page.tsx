@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import type { Stripe as StripeJS } from "@stripe/stripe-js"
@@ -206,7 +206,7 @@ function PaymentSuccess({ paymentData }: { paymentData: PaymentData }) {
   )
 }
 
-export default function EnhancedPaymentPage() {
+function EnhancedPaymentContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -434,5 +434,22 @@ export default function EnhancedPaymentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function EnhancedPaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin mr-3" />
+            <span>Loading payment page...</span>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <EnhancedPaymentContent />
+    </Suspense>
   )
 }

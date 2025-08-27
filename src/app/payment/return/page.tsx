@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,7 +40,7 @@ interface CheckoutSession {
   }
 }
 
-export default function PaymentReturnPage() {
+function PaymentReturnContent() {
   const [session, setSession] = useState<CheckoutSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -292,5 +292,21 @@ export default function PaymentReturnPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentReturnPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">正在加载...</h2>
+          <p className="text-gray-600">请稍等，我们正在处理您的请求...</p>
+        </div>
+      </div>
+    }>
+      <PaymentReturnContent />
+    </Suspense>
   )
 }
