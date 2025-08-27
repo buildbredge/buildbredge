@@ -1,160 +1,213 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { Elements } from "@stripe/react-stripe-js"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Elements } from '@stripe/react-stripe-js'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Home,
-  CreditCard,
   Shield,
   Check,
   AlertCircle,
   Lock,
   ArrowLeft,
-  Loader2
-} from "lucide-react"
-import Link from "next/link"
-import { getStripe } from "@/lib/stripe"
-import { PaymentBreakdown } from "@/components/PaymentBreakdown"
-import { useAuth } from "@/contexts/AuthContext"
+  Loader2,
+  ExternalLink
+} from 'lucide-react'
+import Link from 'next/link'
+import { getStripe } from '@/lib/payment/providers/stripe/stripe-client'
+import { PaymentBreakdown } from '@/components/PaymentBreakdown'
+import PaymentMethodSelector from '@/components/PaymentMethodSelector'
+import { useAuth } from '@/contexts/AuthContext'
+import type { PaymentProvider } from '@/lib/payment/interfaces/types'
 
-interface PaymentDetails {
-  projectId: string
-  projectTitle: string
-  tradieName: string
-  amount: number
-  paymentType: "deposit" | "milestone" | "final"
+interface PaymentPageProps {
+  projectId?: string
+  quoteId?: string
+  tradieId?: string
+  amount?: number
+}
+
+interface PaymentStep {
+  step: number
+  title: string
   description: string
 }
 
-interface PaymentMethod {
-  id: string
-  type: "card" | "paypal" | "bank"
-  name: string
-  icon: string
-  description: string
-  available: boolean
-}
+const paymentSteps: PaymentStep[] = [
+  { step: 1, title: 'Select Payment', description: 'Choose payment method' },
+  { step: 2, title: 'Payment Details', description: 'Enter payment information' },
+  { step: 3, title: 'Confirm', description: 'Review and confirm' },
+  { step: 4, title: 'Complete', description: 'Payment complete' }
+]
 
-export default function PaymentPage() {
+function PaymentContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user } = useAuth()
+
+  // Get payment details from URL params
+  const projectId = searchParams.get('projectId')
+  const quoteId = searchParams.get('quoteId')
+  const tradieId = searchParams.get('tradieId')
+  const amount = parseFloat(searchParams.get('amount') || '0')
+
   const [currentStep, setCurrentStep] = useState(1)
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | undefined>()
   const [isProcessing, setIsProcessing] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
+  const [paymentResult, setPaymentResult] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // 模拟支付详情数据
-  const paymentDetails: PaymentDetails = {
-    projectId: "proj_001",
-    projectTitle: "厨房翻新项目",
-    tradieName: "张建国",
-    amount: 6500,
-    paymentType: "milestone",
-    description: "项目进度付款 - 65%完成"
-  }
-
-  const paymentMethods: PaymentMethod[] = [
-    {
-      id: "stripe",
-      type: "card",
-      name: "信用卡/借记卡",
-      icon: "💳",
-      description: "Visa, Mastercard, American Express",
-      available: true
-    },
-    {
-      id: "paypal",
-      type: "paypal",
-      name: "PayPal",
-      icon: "🅿️",
-      description: "通过PayPal账户支付",
-      available: true
-    },
-    {
-      id: "bank",
-      type: "bank",
-      name: "银行转账",
-      icon: "🏦",
-      description: "直接银行转账",
-      available: true
+  // Validate required parameters
+  useEffect(() => {
+    if (!projectId || !quoteId || !tradieId || !amount || amount <= 0) {
+      setError('Missing or invalid payment parameters. Please return to your project and try again.')
     }
-  ]
+  }, [projectId, quoteId, tradieId, amount])
 
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardholderName: ""
-  })
-
-  const [billingAddress, setBillingAddress] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    country: "NZ"
-  })
-
-  const getPaymentTypeText = (type: string) => {
-    switch (type) {
-      case "deposit":
-        return "项目定金"
-      case "milestone":
-        return "进度付款"
-      case "final":
-        return "尾款支付"
-      default:
-        return "项目付款"
-    }
-  }
-
-  const formatAmount = (amount: number) => {
-    return `$${amount.toLocaleString()}`
+  const handleProviderSelect = (provider: PaymentProvider) => {
+    setSelectedProvider(provider)
+    setCurrentStep(2)
   }
 
   const handleStripePayment = async () => {
-    setIsProcessing(true)
-
-    // 模拟支付处理
-    try {
-      // 这里会集成真实的Stripe API
-      await new Promise(resolve => setTimeout(resolve, 3000))
-
-      // 模拟成功响应
-      alert("支付成功！资金已托管，项目完成后将释放给技师。")
-      setCurrentStep(4) // 跳转到成功页面
-    } catch (error) {
-      alert("支付失败，请重试。")
-    } finally {
-      setIsProcessing(false)
+    if (!projectId || !quoteId || !tradieId || !user?.id) {
+      setError('Missing required payment information')
+      return
     }
-  }
 
-  const handlePayPalPayment = async () => {
     setIsProcessing(true)
+    setError(null)
 
     try {
-      // 这里会集成PayPal SDK
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert("PayPal支付成功！")
+      // Create payment intent using new Stripe API
+      const response = await fetch('/api/payments/stripe/create-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId,
+          quoteId,
+          payerId: user.id,
+          tradieId,
+          amount,
+          currency: 'NZD',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create payment')
+      }
+
+      // Initialize Stripe and confirm payment
+      const stripe = await getStripe()
+      if (!stripe) {
+        throw new Error('Failed to load Stripe')
+      }
+
+      const { error: stripeError } = await stripe.confirmPayment({
+        elements: null as any, // This would be replaced with actual Elements in a real implementation
+        clientSecret: data.clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment/return`,
+        },
+      })
+
+      if (stripeError) {
+        throw new Error(stripeError.message)
+      }
+
+      setPaymentResult(data)
       setCurrentStep(4)
-    } catch (error) {
-      alert("PayPal支付失败，请重试。")
+
+    } catch (error: any) {
+      console.error('Stripe payment error:', error)
+      setError(error.message || 'Payment failed. Please try again.')
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const handleBankTransfer = () => {
-    setCurrentStep(3) // 显示银行转账信息
+  const handlePoliPayment = async () => {
+    if (!projectId || !quoteId || !tradieId || !user?.id) {
+      setError('Missing required payment information')
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      // Create POLi payment using new API
+      const response = await fetch('/api/poli/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId,
+          quoteId,
+          payerId: user.id,
+          tradieId,
+          amount,
+          currency: 'NZD',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create POLi payment')
+      }
+
+      // Redirect to POLi bank login
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl
+      } else {
+        throw new Error('No redirect URL received from POLi')
+      }
+
+    } catch (error: any) {
+      console.error('POLi payment error:', error)
+      setError(error.message || 'POLi payment failed. Please try again.')
+      setIsProcessing(false)
+    }
+  }
+
+  const handlePayment = async () => {
+    if (selectedProvider === 'stripe') {
+      await handleStripePayment()
+    } else if (selectedProvider === 'poli') {
+      await handlePoliPayment()
+    }
+  }
+
+  const getUserRegion = () => {
+    // This could be enhanced to detect user's actual region
+    return 'NZ' // Default to New Zealand
+  }
+
+  if (error && !projectId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Invalid Payment Request</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button asChild>
+              <Link href="/dashboard">Return to Dashboard</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -171,7 +224,7 @@ export default function PaymentPage() {
           <Button variant="ghost" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              返回仪表板
+              Back to Dashboard
             </Link>
           </Button>
         </div>
@@ -181,21 +234,21 @@ export default function PaymentPage() {
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-4 mb-4">
-            {[1, 2, 3, 4].map((num) => (
-              <div key={num} className="flex items-center">
+            {paymentSteps.map((step, index) => (
+              <div key={step.step} className="flex items-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep >= num
+                    currentStep >= step.step
                       ? "bg-green-600 text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
                 >
-                  {currentStep > num ? <Check className="w-5 h-5" /> : num}
+                  {currentStep > step.step ? <Check className="w-5 h-5" /> : step.step}
                 </div>
-                {num < 4 && (
+                {index < paymentSteps.length - 1 && (
                   <div
                     className={`w-16 h-1 mx-2 ${
-                      currentStep > num ? "bg-green-600" : "bg-gray-200"
+                      currentStep > step.step ? "bg-green-600" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -204,10 +257,7 @@ export default function PaymentPage() {
           </div>
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              {currentStep === 1 && "选择支付方式"}
-              {currentStep === 2 && "填写支付信息"}
-              {currentStep === 3 && "银行转账信息"}
-              {currentStep === 4 && "支付完成"}
+              {paymentSteps.find(step => step.step === currentStep)?.description}
             </p>
           </div>
         </div>
@@ -215,295 +265,105 @@ export default function PaymentPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Payment Form */}
           <div className="lg:col-span-2">
+            {error && (
+              <Alert className="mb-6 border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-700">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {currentStep === 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    选择支付方式
-                  </CardTitle>
-                  <CardDescription>选择您偏好的支付方式完成付款</CardDescription>
+                  <CardTitle>Select Payment Method</CardTitle>
+                  <CardDescription>
+                    Choose your preferred payment method to complete the transaction
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {paymentMethods.map((method) => (
-                    <div
-                      key={method.id}
-                      onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedPaymentMethod === method.id
-                          ? "border-green-600 bg-green-50"
-                          : "border-gray-200 hover:border-green-300"
-                      } ${!method.available ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{method.icon}</span>
-                          <div>
-                            <h3 className="font-medium">{method.name}</h3>
-                            <p className="text-sm text-gray-600">{method.description}</p>
-                          </div>
-                        </div>
-                        {selectedPaymentMethod === method.id && (
-                          <Check className="w-5 h-5 text-green-600" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="pt-4">
-                    <Button
-                      onClick={() => setCurrentStep(2)}
-                      disabled={!selectedPaymentMethod}
-                      className="w-full"
-                    >
-                      继续
-                    </Button>
-                  </div>
+                <CardContent>
+                  <PaymentMethodSelector
+                    onSelect={handleProviderSelect}
+                    selectedProvider={selectedProvider}
+                    userRegion={getUserRegion()}
+                    currency="NZD"
+                    disabled={isProcessing}
+                  />
                 </CardContent>
               </Card>
             )}
 
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                {selectedPaymentMethod === "stripe" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>信用卡支付</CardTitle>
-                      <CardDescription>请填写您的信用卡信息</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor="cardNumber">卡号</Label>
-                        <Input
-                          id="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={cardDetails.cardNumber}
-                          onChange={(e) => setCardDetails({
-                            ...cardDetails,
-                            cardNumber: e.target.value
-                          })}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="expiryDate">有效期</Label>
-                          <Input
-                            id="expiryDate"
-                            placeholder="MM/YY"
-                            value={cardDetails.expiryDate}
-                            onChange={(e) => setCardDetails({
-                              ...cardDetails,
-                              expiryDate: e.target.value
-                            })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="cvv">CVV</Label>
-                          <Input
-                            id="cvv"
-                            placeholder="123"
-                            value={cardDetails.cvv}
-                            onChange={(e) => setCardDetails({
-                              ...cardDetails,
-                              cvv: e.target.value
-                            })}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="cardholderName">持卡人姓名</Label>
-                        <Input
-                          id="cardholderName"
-                          placeholder="请输入持卡人姓名"
-                          value={cardDetails.cardholderName}
-                          onChange={(e) => setCardDetails({
-                            ...cardDetails,
-                            cardholderName: e.target.value
-                          })}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Billing Address */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>账单地址</CardTitle>
-                    <CardDescription>请填写您的账单地址信息</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">名</Label>
-                        <Input
-                          id="firstName"
-                          value={billingAddress.firstName}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            firstName: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName">姓</Label>
-                        <Input
-                          id="lastName"
-                          value={billingAddress.lastName}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            lastName: e.target.value
-                          })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">邮箱</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={billingAddress.email}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            email: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">电话</Label>
-                        <Input
-                          id="phone"
-                          value={billingAddress.phone}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            phone: e.target.value
-                          })}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="address">地址</Label>
-                      <Input
-                        id="address"
-                        value={billingAddress.address}
-                        onChange={(e) => setBillingAddress({
-                          ...billingAddress,
-                          address: e.target.value
-                        })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="city">城市</Label>
-                        <Input
-                          id="city"
-                          value={billingAddress.city}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            city: e.target.value
-                          })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="postalCode">邮编</Label>
-                        <Input
-                          id="postalCode"
-                          value={billingAddress.postalCode}
-                          onChange={(e) => setBillingAddress({
-                            ...billingAddress,
-                            postalCode: e.target.value
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="flex space-x-4">
-                  <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                    返回
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (selectedPaymentMethod === "stripe") {
-                        handleStripePayment()
-                      } else if (selectedPaymentMethod === "paypal") {
-                        handlePayPalPayment()
-                      } else if (selectedPaymentMethod === "bank") {
-                        handleBankTransfer()
-                      }
-                    }}
-                    disabled={isProcessing}
-                    className="flex-1"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        处理中...
-                      </>
-                    ) : (
-                      `支付 ${formatAmount(paymentDetails.amount)}`
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {currentStep === 3 && (
+            {currentStep === 2 && selectedProvider && (
               <Card>
                 <CardHeader>
-                  <CardTitle>银行转账信息</CardTitle>
-                  <CardDescription>请使用以下信息完成银行转账</CardDescription>
+                  <CardTitle>
+                    {selectedProvider === 'stripe' ? 'Credit Card Payment' : 'POLi Bank Transfer'}
+                  </CardTitle>
+                  <CardDescription>
+                    {selectedProvider === 'stripe' 
+                      ? 'Enter your card details to complete the payment'
+                      : 'You will be redirected to your bank to complete the payment'
+                    }
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-medium mb-3">转账详情</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">收款人：</span>
-                        <span className="font-medium">BuildBridge Limited</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">银行：</span>
-                        <span className="font-medium">ANZ Bank New Zealand</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">账号：</span>
-                        <span className="font-medium">01-0123-0123456-00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">转账备注：</span>
-                        <span className="font-medium">{paymentDetails.projectId}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">转账金额：</span>
-                        <span className="font-medium text-lg">{formatAmount(paymentDetails.amount)}</span>
+                <CardContent className="space-y-6">
+                  {selectedProvider === 'stripe' && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-blue-800 mb-2">Secure Card Payment</h3>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Your payment will be processed securely through Stripe. 
+                        Card details are encrypted and never stored on our servers.
+                      </p>
+                      <div className="text-xs text-blue-600">
+                        🔒 PCI DSS compliant • 256-bit SSL encryption
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-yellow-800 mb-1">重要提醒</p>
-                        <p className="text-yellow-700">
-                          请在转账时务必填写正确的项目编号作为备注，以便我们快速确认您的付款。
-                          资金将在确认收到后进入托管状态。
-                        </p>
+                  {selectedProvider === 'poli' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-green-800 mb-2">POLi Bank Transfer</h3>
+                      <p className="text-sm text-green-700 mb-3">
+                        You will be securely redirected to your bank's online banking platform 
+                        to complete the payment. No card details required.
+                      </p>
+                      <div className="text-xs text-green-600 space-y-1">
+                        <div>✓ Direct from your bank account</div>
+                        <div>✓ No card fees</div>
+                        <div>✓ Supports major NZ banks</div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <Button onClick={() => setCurrentStep(4)} className="w-full">
-                    我已完成转账
-                  </Button>
+                  <div className="flex space-x-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCurrentStep(1)}
+                      disabled={isProcessing}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handlePayment}
+                      disabled={isProcessing}
+                      className="flex-1"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : selectedProvider === 'poli' ? (
+                        <>
+                          Continue to Bank
+                          <ExternalLink className="w-4 h-4 ml-2" />
+                        </>
+                      ) : (
+                        `Pay $${amount.toLocaleString()}`
+                      )}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -514,36 +374,38 @@ export default function PaymentPage() {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="w-8 h-8 text-green-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">支付成功！</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
                   <p className="text-gray-600 mb-6">
-                    您的付款已成功处理，资金已进入安全托管。
+                    Your payment has been processed and funds are now held securely in escrow.
                   </p>
-                  <div className="bg-green-50 p-4 rounded-lg mb-6">
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span>支付金额：</span>
-                        <span className="font-medium">{formatAmount(paymentDetails.amount)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>支付方式：</span>
-                        <span className="font-medium">
-                          {selectedPaymentMethod === "stripe" && "信用卡"}
-                          {selectedPaymentMethod === "paypal" && "PayPal"}
-                          {selectedPaymentMethod === "bank" && "银行转账"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>交易时间：</span>
-                        <span className="font-medium">{new Date().toLocaleString()}</span>
+                  
+                  {paymentResult && (
+                    <div className="bg-green-50 p-4 rounded-lg mb-6 text-left">
+                      <div className="text-sm space-y-2">
+                        <div className="flex justify-between">
+                          <span>Payment Amount:</span>
+                          <span className="font-medium">${amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Payment Method:</span>
+                          <span className="font-medium">
+                            {selectedProvider === 'stripe' ? 'Credit Card' : 'POLi Bank Transfer'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Payment ID:</span>
+                          <span className="font-mono text-xs">{paymentResult.paymentId}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
                   <div className="flex space-x-4">
                     <Button variant="outline" asChild className="flex-1">
-                      <Link href="/dashboard">返回仪表板</Link>
+                      <Link href="/dashboard">Dashboard</Link>
                     </Button>
                     <Button asChild className="flex-1">
-                      <Link href={`/dashboard`}>查看项目</Link>
+                      <Link href={`/my-projects?project=${projectId}`}>View Project</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -551,61 +413,40 @@ export default function PaymentPage() {
             )}
           </div>
 
-          {/* Order Summary */}
+          {/* Payment Summary */}
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>支付摘要</CardTitle>
+                <CardTitle>Payment Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-medium">{paymentDetails.projectTitle}</h3>
-                  <p className="text-sm text-gray-600">技师：{paymentDetails.tradieName}</p>
-                </div>
+                <PaymentBreakdown
+                  amount={amount}
+                  tradieId={tradieId || ''}
+                  currency="NZD"
+                  showDetails={true}
+                />
 
                 <div className="border-t pt-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm">{getPaymentTypeText(paymentDetails.paymentType)}</span>
-                    <Badge variant="secondary">{paymentDetails.paymentType}</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">{paymentDetails.description}</p>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>项目金额：</span>
-                      <span>{formatAmount(paymentDetails.amount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>平台服务费：</span>
-                      <span>$0</span>
-                    </div>
-                    <div className="border-t pt-2 flex justify-between font-medium">
-                      <span>总计：</span>
-                      <span className="text-lg">{formatAmount(paymentDetails.amount)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                     <Shield className="w-4 h-4" />
-                    <span>资金安全托管</span>
+                    <span>Secure Escrow Protection</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    您的付款将在项目完成并验收后释放给技师
+                  <p className="text-xs text-gray-500">
+                    Your funds are held securely until project completion and your approval
                   </p>
                 </div>
 
                 <div className="bg-gray-50 p-3 rounded">
                   <div className="flex items-center space-x-2 text-sm">
                     <Lock className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium">安全保障</span>
+                    <span className="font-medium">Security Features</span>
                   </div>
                   <ul className="text-xs text-gray-600 mt-2 space-y-1">
-                    <li>• SSL加密传输</li>
-                    <li>• PCI DSS安全标准</li>
-                    <li>• 第三方资金托管</li>
-                    <li>• 争议解决保护</li>
+                    <li>• SSL encrypted transmission</li>
+                    <li>• PCI DSS security compliance</li>
+                    <li>• Third-party fund escrow</li>
+                    <li>• Dispute resolution protection</li>
                   </ul>
                 </div>
               </CardContent>
@@ -614,5 +455,13 @@ export default function PaymentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   )
 }

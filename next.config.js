@@ -1,6 +1,5 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  trailingSlash: true,
   images: {
     unoptimized: true,
     domains: ['opguppjcyapztcdvzakj.supabase.co'],
@@ -15,6 +14,9 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
   },
 }
 module.exports = nextConfig

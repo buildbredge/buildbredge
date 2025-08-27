@@ -1,37 +1,55 @@
 import { supabase } from '@/lib/supabase'
-import { stripe, createPaymentIntent, PaymentIntentMetadata, FeeBreakdown } from '@/lib/stripe'
+import { PaymentProviderFactory } from '@/lib/payment/PaymentProviderFactory'
+import { StripePaymentProvider } from '@/lib/payment/providers/stripe/StripePaymentProvider'
+import { PoliPaymentProvider } from '@/lib/payment/providers/poli/PoliPaymentProvider'
 import type { Database } from '@/lib/supabase'
+import type { 
+  PaymentProvider as PaymentProviderType, 
+  FeeBreakdown,
+  PaymentRequest,
+  PaymentResponse,
+  PaymentResult
+} from '@/lib/payment/interfaces/types'
 
 type Payment = Database['public']['Tables']['payments']['Row']
 type EscrowAccount = Database['public']['Tables']['escrow_accounts']['Row']
 type Withdrawal = Database['public']['Tables']['withdrawals']['Row']
 
+// Register payment providers
+PaymentProviderFactory.registerProvider('stripe', () => new StripePaymentProvider())
+PaymentProviderFactory.registerProvider('poli', () => new PoliPaymentProvider())
+
 export class PaymentService {
-  // Calculate fees for a payment
+  // Calculate fees for a payment (legacy method, now uses providers internally)
   static async calculateFees(amount: number, tradieId: string): Promise<FeeBreakdown> {
-    const { data, error } = await supabase
-      .rpc('calculate_payment_fees', {
-        p_amount: amount,
-        p_tradie_id: tradieId,
-        p_currency: 'NZD'
-      })
-      .single()
-
-    if (error) {
-      console.error('Error calculating fees:', error)
-      throw new Error('Failed to calculate payment fees')
-    }
-
-    return {
-      platformFee: parseFloat((data as any).platform_fee),
-      affiliateFee: parseFloat((data as any).affiliate_fee),
-      taxAmount: parseFloat((data as any).tax_amount),
-      netAmount: parseFloat((data as any).net_amount),
-      parentTradieId: (data as any).parent_tradie_id
-    }
+    // Use default provider (Stripe) for fee calculation
+    const provider = PaymentProviderFactory.createProvider('stripe')
+    return provider.calculateFees(amount, tradieId)
   }
 
-  // Create payment intent and database record
+  // Create payment using specified provider
+  static async createPaymentByProvider(
+    provider: PaymentProviderType,
+    projectId: string,
+    quoteId: string,
+    payerId: string,
+    tradieId: string,
+    amount: number,
+    currency: string = 'NZD'
+  ): Promise<PaymentResponse> {
+    const paymentProvider = PaymentProviderFactory.createProvider(provider)
+    
+    return paymentProvider.createPayment({
+      projectId,
+      quoteId,
+      payerId,
+      tradieId,
+      amount,
+      currency,
+    })
+  }
+
+  // Legacy method - Create payment intent and database record (defaults to Stripe)
   static async createPayment(
     projectId: string,
     quoteId: string,
@@ -40,97 +58,50 @@ export class PaymentService {
     amount: number,
     currency: string = 'NZD'
   ): Promise<{ paymentId: string; clientSecret: string; fees: FeeBreakdown }> {
-    try {
-      // Calculate fees
-      const fees = await this.calculateFees(amount, tradieId)
-      
-      // Create payment record in database
-      const { data: payment, error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          project_id: projectId,
-          quote_id: quoteId,
-          payer_id: payerId,
-          tradie_id: tradieId,
-          amount,
-          platform_fee: fees.platformFee,
-          affiliate_fee: fees.affiliateFee,
-          tax_amount: fees.taxAmount,
-          net_amount: fees.netAmount,
-          currency,
-          status: 'pending',
-          payment_method: 'stripe_card'
-        })
-        .select()
-        .single()
+    const result = await this.createPaymentByProvider(
+      'stripe',
+      projectId,
+      quoteId,
+      payerId,
+      tradieId,
+      amount,
+      currency
+    )
 
-      if (paymentError || !payment) {
-        throw new Error(`Failed to create payment record: ${paymentError?.message}`)
-      }
-
-      // Create Stripe payment intent
-      const metadata: PaymentIntentMetadata = {
-        projectId,
-        quoteId,
-        tradieId,
-        payerId,
-        platformFee: fees.platformFee.toString(),
-        affiliateFee: fees.affiliateFee.toString(),
-        taxAmount: fees.taxAmount.toString(),
-        netAmount: fees.netAmount.toString(),
-        parentTradieId: fees.parentTradieId || null
-      }
-
-      const paymentIntent = await createPaymentIntent(amount, currency, metadata)
-
-      // Update payment record with Stripe payment intent ID
-      const { error: updateError } = await supabase
-        .from('payments')
-        .update({
-          stripe_payment_intent_id: paymentIntent.id,
-          status: 'processing'
-        })
-        .eq('id', payment.id)
-
-      if (updateError) {
-        throw new Error(`Failed to update payment with Stripe intent: ${updateError.message}`)
-      }
-
-      return {
-        paymentId: payment.id,
-        clientSecret: paymentIntent.client_secret!,
-        fees
-      }
-    } catch (error: any) {
-      console.error('Error creating payment:', error)
-      throw new Error(`Payment creation failed: ${error.message}`)
+    return {
+      paymentId: result.paymentId,
+      clientSecret: result.clientSecret || '',
+      fees: result.fees
     }
   }
 
-  // Confirm payment and create escrow
+  // Confirm payment using appropriate provider
+  static async confirmPaymentByProvider(
+    provider: PaymentProviderType,
+    providerTransactionId: string
+  ): Promise<PaymentResult> {
+    const paymentProvider = PaymentProviderFactory.createProvider(provider)
+    return paymentProvider.confirmPayment(providerTransactionId)
+  }
+
+  // Legacy method - Confirm payment and create escrow (assumes Stripe)
   static async confirmPayment(paymentIntentId: string): Promise<EscrowAccount> {
     try {
-      // Verify payment with Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+      const result = await this.confirmPaymentByProvider('stripe', paymentIntentId)
       
-      if (paymentIntent.status !== 'succeeded') {
-        throw new Error(`Payment not successful: ${paymentIntent.status}`)
+      if (!result.success) {
+        throw new Error(result.errorMessage || 'Payment confirmation failed')
       }
 
-      // Update payment status in database
+      // Get payment details to create escrow
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
-        .update({
-          status: 'completed',
-          confirmed_at: new Date().toISOString(),
-          stripe_charge_id: (paymentIntent as any).charges?.data[0]?.id
-        })
-        .eq('stripe_payment_intent_id', paymentIntentId)
-        .select()
+        .select('*')
+        .eq('provider_transaction_id', paymentIntentId)
         .single()
 
       if (paymentError || !payment) {
-        throw new Error(`Failed to update payment status: ${paymentError?.message}`)
+        throw new Error(`Failed to find payment: ${paymentError?.message}`)
       }
 
       // Create escrow account
@@ -167,6 +138,45 @@ export class PaymentService {
       console.error('Error confirming payment:', error)
       throw new Error(`Payment confirmation failed: ${error.message}`)
     }
+  }
+
+  // Get payment status using appropriate provider
+  static async getPaymentStatusByProvider(
+    provider: PaymentProviderType,
+    providerTransactionId: string
+  ): Promise<PaymentResult> {
+    const paymentProvider = PaymentProviderFactory.createProvider(provider)
+    return paymentProvider.getPaymentStatus(providerTransactionId)
+  }
+
+  // Process webhook using appropriate provider
+  static async processWebhookByProvider(
+    provider: PaymentProviderType,
+    webhookData: any,
+    signature?: string
+  ): Promise<void> {
+    const paymentProvider = PaymentProviderFactory.createProvider(provider)
+    await paymentProvider.handleWebhook({
+      provider,
+      eventType: 'webhook',
+      data: webhookData,
+      signature
+    })
+  }
+
+  // Get recommended payment provider for user
+  static getRecommendedPaymentProvider(userRegion?: string): PaymentProviderType | null {
+    return PaymentProviderFactory.getRecommendedProvider(userRegion)
+  }
+
+  // Get available payment providers for user
+  static getAvailablePaymentProviders(userRegion?: string): PaymentProviderType[] {
+    return PaymentProviderFactory.getAvailableProvidersForUser(userRegion)
+  }
+
+  // Check if payment provider is available
+  static isPaymentProviderAvailable(provider: PaymentProviderType): boolean {
+    return PaymentProviderFactory.isProviderAvailable(provider)
   }
 
   // Release escrow funds (manual)
@@ -349,6 +359,7 @@ export class PaymentService {
           id,
           amount,
           status,
+          payment_provider,
           projects (
             id,
             title,
@@ -373,43 +384,23 @@ export class PaymentService {
     return data
   }
 
-  // Refund payment
+  // Refund payment using appropriate provider
+  static async refundPaymentByProvider(
+    provider: PaymentProviderType,
+    paymentId: string,
+    refundAmount?: number,
+    reason?: string
+  ): Promise<boolean> {
+    const paymentProvider = PaymentProviderFactory.createProvider(provider)
+    return paymentProvider.refundPayment(paymentId, refundAmount, reason)
+  }
+
+  // Legacy method - Refund payment (assumes Stripe)
   static async refundPayment(
     paymentId: string,
     refundAmount?: number,
     reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer'
   ): Promise<boolean> {
-    try {
-      const { data: payment } = await supabase
-        .from('payments')
-        .select('stripe_payment_intent_id, amount')
-        .eq('id', paymentId)
-        .single()
-
-      if (!payment?.stripe_payment_intent_id) {
-        throw new Error('Payment not found or no Stripe payment intent')
-      }
-
-      // Process refund with Stripe
-      const refund = await stripe.refunds.create({
-        payment_intent: payment.stripe_payment_intent_id,
-        amount: refundAmount ? Math.round(refundAmount * 100) : undefined, // Convert to cents
-        reason
-      })
-
-      // Update payment status
-      await supabase
-        .from('payments')
-        .update({
-          status: 'refunded',
-          refunded_at: new Date().toISOString()
-        })
-        .eq('id', paymentId)
-
-      return refund.status === 'succeeded'
-    } catch (error: any) {
-      console.error('Error processing refund:', error)
-      throw new Error(`Refund failed: ${error.message}`)
-    }
+    return this.refundPaymentByProvider('stripe', paymentId, refundAmount, reason)
   }
 }
