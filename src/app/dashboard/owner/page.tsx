@@ -34,10 +34,17 @@ interface DashboardData {
   projectStats: {
     total: number
     published: number
+    quoted: number
     negotiating: number
+    agreed: number
+    escrowed: number
     inProgress: number
     completed: number
-    reviewed: number
+    protection: number
+    released: number
+    withdrawn: number
+    disputed: number
+    cancelled: number
   }
   recentProjects: Array<{
     id: string
@@ -78,6 +85,7 @@ export default function OwnerDashboardPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [totalProjects, setTotalProjects] = useState(0)
   const [activeTab, setActiveTab] = useState("projects")
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [tabCounts, setTabCounts] = useState({
     projects: 0,
     quotes: 0,
@@ -168,10 +176,17 @@ export default function OwnerDashboardPage() {
           projectStats: {
             total: projectsResponse.data?.projects.length || 0,
             published: projectsResponse.data?.projects.filter(p => p.status === 'published').length || 0,
+            quoted: projectsResponse.data?.projects.filter(p => p.status === 'quoted').length || 0,
             negotiating: projectsResponse.data?.projects.filter(p => p.status === 'negotiating').length || 0,
+            agreed: projectsResponse.data?.projects.filter(p => p.status === 'agreed').length || 0,
+            escrowed: projectsResponse.data?.projects.filter(p => p.status === 'escrowed').length || 0,
             inProgress: projectsResponse.data?.projects.filter(p => p.status === 'in_progress').length || 0,
             completed: projectsResponse.data?.projects.filter(p => p.status === 'completed').length || 0,
-            reviewed: projectsResponse.data?.projects.filter(p => p.status === 'reviewed').length || 0,
+            protection: projectsResponse.data?.projects.filter(p => p.status === 'protection').length || 0,
+            released: projectsResponse.data?.projects.filter(p => p.status === 'released').length || 0,
+            withdrawn: projectsResponse.data?.projects.filter(p => p.status === 'withdrawn').length || 0,
+            disputed: projectsResponse.data?.projects.filter(p => p.status === 'disputed').length || 0,
+            cancelled: projectsResponse.data?.projects.filter(p => p.status === 'cancelled').length || 0
           },
           recentProjects: projectsResponse.data?.projects.slice(0, 5).map(p => ({
             id: p.id,
@@ -191,7 +206,11 @@ export default function OwnerDashboardPage() {
     } catch (error) {
       console.error('Error fetching data:', error)
       const fallbackData: DashboardData = {
-        projectStats: { total: 0, published: 0, negotiating: 0, inProgress: 0, completed: 0, reviewed: 0 },
+        projectStats: { 
+          total: 0, published: 0, quoted: 0, negotiating: 0, agreed: 0, escrowed: 0, 
+          inProgress: 0, completed: 0, protection: 0, released: 0, withdrawn: 0, 
+          disputed: 0, cancelled: 0 
+        },
         recentProjects: [],
         availableCategories: []
       }
@@ -437,6 +456,7 @@ export default function OwnerDashboardPage() {
                     {activeTab === "projects" && (
                       <OwnerProjectsList 
                         userId={user.id} 
+                        statusFilter={statusFilter}
                       />
                     )}
 
@@ -525,31 +545,121 @@ export default function OwnerDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <button 
+                    onClick={() => {
+                      setStatusFilter(null)
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
                     <div className="text-2xl font-bold text-blue-600">{dashboardData?.projectStats.total || 0}</div>
                     <div className="text-xs text-blue-600">项目总数</div>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setStatusFilter('published')
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                  >
                     <div className="text-2xl font-bold text-green-600">{dashboardData?.projectStats.published || 0}</div>
                     <div className="text-xs text-green-600">已发布</div>
-                  </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setStatusFilter('quoted')
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-cyan-50 rounded-lg hover:bg-cyan-100 transition-colors"
+                  >
+                    <div className="text-2xl font-bold text-cyan-600">{dashboardData?.projectStats.quoted || 0}</div>
+                    <div className="text-xs text-cyan-600">已报价</div>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setStatusFilter('negotiating')
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                  >
                     <div className="text-2xl font-bold text-orange-600">{dashboardData?.projectStats.negotiating || 0}</div>
                     <div className="text-xs text-orange-600">协商中</div>
-                  </div>
-                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setStatusFilter('in_progress')
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
+                  >
                     <div className="text-2xl font-bold text-yellow-600">{dashboardData?.projectStats.inProgress || 0}</div>
                     <div className="text-xs text-yellow-600">进行中</div>
-                  </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setStatusFilter('completed')
+                      setActiveTab("projects")
+                    }}
+                    className="text-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                  >
                     <div className="text-2xl font-bold text-purple-600">{dashboardData?.projectStats.completed || 0}</div>
                     <div className="text-xs text-purple-600">已完成</div>
-                  </div>
-                  <div className="text-center p-3 bg-indigo-50 rounded-lg">
-                    <div className="text-2xl font-bold text-indigo-600">{dashboardData?.projectStats.reviewed || 0}</div>
-                    <div className="text-xs text-indigo-600">已评价</div>
-                  </div>
+                  </button>
                 </div>
+                {/* Additional status cards for less common statuses */}
+                {(dashboardData && (dashboardData.projectStats.agreed > 0 || dashboardData.projectStats.escrowed > 0 || 
+                  dashboardData.projectStats.protection > 0 || dashboardData.projectStats.disputed > 0)) && (
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                    {dashboardData.projectStats.agreed > 0 && (
+                      <button 
+                        onClick={() => {
+                          setStatusFilter('agreed')
+                          setActiveTab("projects")
+                        }}
+                        className="text-center p-3 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                      >
+                        <div className="text-2xl font-bold text-indigo-600">{dashboardData.projectStats.agreed}</div>
+                        <div className="text-xs text-indigo-600">已确认</div>
+                      </button>
+                    )}
+                    {dashboardData.projectStats.escrowed > 0 && (
+                      <button 
+                        onClick={() => {
+                          setStatusFilter('escrowed')
+                          setActiveTab("projects")
+                        }}
+                        className="text-center p-3 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
+                      >
+                        <div className="text-2xl font-bold text-violet-600">{dashboardData.projectStats.escrowed}</div>
+                        <div className="text-xs text-violet-600">已托管</div>
+                      </button>
+                    )}
+                    {dashboardData.projectStats.protection > 0 && (
+                      <button 
+                        onClick={() => {
+                          setStatusFilter('protection')
+                          setActiveTab("projects")
+                        }}
+                        className="text-center p-3 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors"
+                      >
+                        <div className="text-2xl font-bold text-teal-600">{dashboardData.projectStats.protection}</div>
+                        <div className="text-xs text-teal-600">保护期</div>
+                      </button>
+                    )}
+                    {dashboardData.projectStats.disputed > 0 && (
+                      <button 
+                        onClick={() => {
+                          setStatusFilter('disputed')
+                          setActiveTab("projects")
+                        }}
+                        className="text-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                      >
+                        <div className="text-2xl font-bold text-red-600">{dashboardData.projectStats.disputed}</div>
+                        <div className="text-xs text-red-600">争议中</div>
+                      </button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

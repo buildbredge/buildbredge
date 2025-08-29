@@ -16,8 +16,17 @@ interface DashboardData {
   projectStats: {
     total: number
     published: number
+    quoted: number
+    negotiating: number
+    agreed: number
+    escrowed: number
     inProgress: number
     completed: number
+    protection: number
+    released: number
+    withdrawn: number
+    disputed: number
+    cancelled: number
   }
   // 最近项目
   recentProjects: Array<{
@@ -84,8 +93,17 @@ export async function GET(request: NextRequest) {
     const projectStats = {
       total: projectCounts?.length || 0,
       published: projectCounts?.filter(p => p.status === 'published').length || 0,
+      quoted: projectCounts?.filter(p => p.status === 'quoted').length || 0,
+      negotiating: projectCounts?.filter(p => p.status === 'negotiating').length || 0,
+      agreed: projectCounts?.filter(p => p.status === 'agreed').length || 0,
+      escrowed: projectCounts?.filter(p => p.status === 'escrowed').length || 0,
       inProgress: projectCounts?.filter(p => p.status === 'in_progress').length || 0,
       completed: projectCounts?.filter(p => p.status === 'completed').length || 0,
+      protection: projectCounts?.filter(p => p.status === 'protection').length || 0,
+      released: projectCounts?.filter(p => p.status === 'released').length || 0,
+      withdrawn: projectCounts?.filter(p => p.status === 'withdrawn').length || 0,
+      disputed: projectCounts?.filter(p => p.status === 'disputed').length || 0,
+      cancelled: projectCounts?.filter(p => p.status === 'cancelled').length || 0
     }
 
     // 2. 获取最近项目（限制5个）

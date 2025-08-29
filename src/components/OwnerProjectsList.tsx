@@ -19,9 +19,10 @@ import type { ProjectData } from "../lib/services/apiClient"
 
 interface OwnerProjectsListProps {
   userId: string
+  statusFilter?: string | null
 }
 
-export function OwnerProjectsList({ userId }: OwnerProjectsListProps) {
+export function OwnerProjectsList({ userId, statusFilter }: OwnerProjectsListProps) {
   const router = useRouter()
   const [projects, setProjects] = useState<ProjectData[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,17 +30,27 @@ export function OwnerProjectsList({ userId }: OwnerProjectsListProps) {
 
   useEffect(() => {
     fetchProjects()
-  }, [userId])
+  }, [userId, statusFilter])
 
   const fetchProjects = async () => {
     try {
       setLoading(true)
       setError("")
 
-      const response = await apiClient.getProjects({ limit: 20 })
+      const response = await apiClient.getProjects({ 
+        limit: 20,
+        status: statusFilter || undefined
+      })
       
       if (response.success && response.data) {
-        setProjects(response.data.projects || [])
+        let filteredProjects = response.data.projects || []
+        
+        // If statusFilter is provided but API doesn't support it, filter client-side
+        if (statusFilter && filteredProjects.length > 0) {
+          filteredProjects = filteredProjects.filter(project => project.status === statusFilter)
+        }
+        
+        setProjects(filteredProjects)
       } else {
         throw new Error(response.error || '获取项目失败')
       }
@@ -54,15 +65,28 @@ export function OwnerProjectsList({ userId }: OwnerProjectsListProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       published: { label: "已发布", variant: "default" as const },
+      quoted: { label: "已报价", variant: "secondary" as const },
       negotiating: { label: "协商中", variant: "default" as const },
+      agreed: { label: "已确认", variant: "default" as const },
+      escrowed: { label: "已托管", variant: "default" as const },
       in_progress: { label: "进行中", variant: "default" as const },
       completed: { label: "已完成", variant: "outline" as const },
-      reviewed: { label: "已评价", variant: "outline" as const },
+      protection: { label: "保护期", variant: "outline" as const },
+      released: { label: "已放款", variant: "outline" as const },
+      withdrawn: { label: "已提现", variant: "outline" as const },
+      disputed: { label: "争议中", variant: "destructive" as const },
       cancelled: { label: "已取消", variant: "destructive" as const }
     }
 
     const config = statusConfig[status as keyof typeof statusConfig]
-    if (!config) return null
+    if (!config) {
+      // Fallback for unknown status
+      return (
+        <Badge variant="outline" className="text-xs">
+          {status}
+        </Badge>
+      )
+    }
 
     return (
       <Badge variant={config.variant} className="text-xs">
@@ -103,21 +127,51 @@ export function OwnerProjectsList({ userId }: OwnerProjectsListProps) {
     )
   }
 
+  const getEmptyStateMessage = () => {
+    if (statusFilter) {
+      const statusLabels: Record<string, string> = {
+        published: '已发布',
+        quoted: '已报价',
+        negotiating: '协商中',
+        agreed: '已确认',
+        escrowed: '已托管',
+        in_progress: '进行中',
+        completed: '已完成',
+        protection: '保护期',
+        released: '已放款',
+        withdrawn: '已提现',
+        disputed: '争议中',
+        cancelled: '已取消'
+      }
+      const statusLabel = statusLabels[statusFilter] || statusFilter
+      return {
+        title: `暂无${statusLabel}状态的项目`,
+        subtitle: '您可以点击上方的"项目总数"查看所有项目'
+      }
+    }
+    return {
+      title: '您还没有发布任何项目',
+      subtitle: '发布您的第一个项目来寻找合适的技师'
+    }
+  }
+
+  const emptyState = getEmptyStateMessage()
+
   return (
     <div>
       {projects.length === 0 ? (
         <div className="text-center py-8">
           <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 mb-2">您还没有发布任何项目</p>
-          <p className="text-sm text-gray-400 mb-4">
-            发布您的第一个项目来寻找合适的技师
-          </p>
-          <Button asChild>
-            <Link href="/post-job">
-              <Plus className="w-4 h-4 mr-2" />
-              发布项目
-            </Link>
-          </Button>
+          <p className="text-gray-500 mb-2">{emptyState.title}</p>
+          <p className="text-sm text-gray-400 mb-4">{emptyState.subtitle}</p>
+          {!statusFilter && (
+            <Button asChild>
+              <Link href="/post-job">
+                <Plus className="w-4 h-4 mr-2" />
+                发布项目
+              </Link>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

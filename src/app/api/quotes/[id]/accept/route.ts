@@ -71,10 +71,10 @@ export async function PUT(
       quoteStatus: quote.status 
     })
     
-    // 检查项目状态
-    if (project?.status !== 'negotiating' && project?.status !== 'published') {
+    // 检查项目状态 - 允许在 published、quoted、negotiating 状态下接受报价
+    if (project?.status !== 'negotiating' && project?.status !== 'published' && project?.status !== 'quoted') {
       return NextResponse.json(
-        { error: "Project is not in negotiating status" },
+        { error: "Project is not in a valid status for accepting quotes" },
         { status: 400 }
       )
     }

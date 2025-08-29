@@ -99,6 +99,7 @@ export default function RegisterPage() {
         phone,
         userType: userType as "homeowner" | "tradie",
         location,
+        coordinates: googlePlace?.coordinates,
         language,
         company: userType === "tradie" ? companyName : undefined,
         categoryId: userType === "tradie" ? selectedCategory : undefined

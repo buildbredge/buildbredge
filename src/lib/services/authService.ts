@@ -19,6 +19,10 @@ interface RegisterData {
   phone: string
   userType: 'homeowner' | 'tradie'
   location: string
+  coordinates?: {
+    lat: number | null
+    lng: number | null
+  }
   language?: string
   company?: string
   categoryId?: string
@@ -136,6 +140,7 @@ class AuthService {
             phone: userData.phone,
             email: userData.email,
             location: userData.location,
+            coordinates: userData.coordinates,
             userType: userData.userType,
             language: userData.language || '中/EN',
             company: userData.company,

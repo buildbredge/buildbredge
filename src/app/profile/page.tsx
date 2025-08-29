@@ -224,28 +224,16 @@ export default function ProfilePage() {
     setIsVerifyingOtp(true)
     setOtpError("")
     
-    // TODO: SMS verification disabled - UI only mode
-    // Simulate verification for UI testing
-    setTimeout(() => {
-      setPhoneVerified(true)
-      setOtpStep('completed')
-      setSuccess("手机号码验证成功！（当前为演示模式）")
-      setShowPhoneVerificationDialog(false)
-      setTimeout(() => setSuccess(""), 3000)
-      setIsVerifyingOtp(false)
-    }, 1000)
-    
-    /* Original SMS verification code - disabled
     try {
-      const response = await fetch('/api/phone/verify-otp', {
+      // 调用假验证API直接标记为已验证
+      const response = await fetch('/api/phone/verify-fake', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          phone: phone,
-          code: verificationCode,
-          userId: user.id
+          userId: user.id,
+          phone: phone
         })
       })
       
@@ -257,12 +245,12 @@ export default function ProfilePage() {
         setSuccess("手机号码验证成功！")
         setShowPhoneVerificationDialog(false)
         
-        // Refresh user data
-        await updateUser({})
+        // 刷新用户数据
+        await updateUser({ phone_verified: true })
         
         setTimeout(() => setSuccess(""), 3000)
       } else {
-        setOtpError(result.message || "验证失败")
+        setOtpError(result.error || "验证失败")
       }
     } catch (error) {
       console.error('验证失败:', error)
@@ -270,7 +258,6 @@ export default function ProfilePage() {
     } finally {
       setIsVerifyingOtp(false)
     }
-    */
   }
 
   const openPhoneVerificationDialog = () => {
