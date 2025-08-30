@@ -702,6 +702,415 @@ BuildBridge - 连接业主与专业技师的平台`
 查看项目详情：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
 
 BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 新增：资金托管通知邮件（发给技师）
+  escrowNotification: (data: EscrowNotificationEmail) => ({
+    subject: `资金已托管 - 可以开始工作 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #059669;">资金已托管 - 可以开始工作！</h2>
+        
+        <p>您好，</p>
+        
+        <p>好消息！业主已完成全额付款，资金已安全托管，您可以开始工作了：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目详情</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>位置：</strong>${data.projectLocation}</p>
+          <p><strong>项目链接：</strong><a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" style="color: #059669;">查看详情</a></p>
+        </div>
+
+        <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
+          <h3 style="margin-top: 0; color: #059669;">💰 费用明细</h3>
+          <div style="margin: 15px 0;">
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+              <span>总金额：</span>
+              <span style="font-weight: bold;">NZD $${data.amount.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0; color: #6b7280;">
+              <span>平台费用 (10%)：</span>
+              <span>-NZD $${data.platformFee.toFixed(2)}</span>
+            </div>
+            ${data.affiliateFee > 0 ? `
+            <div style="display: flex; justify-content: space-between; margin: 5px 0; color: #6b7280;">
+              <span>挂靠费用 (2%)：</span>
+              <span>-NZD $${data.affiliateFee.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            <hr style="border: none; border-top: 1px solid #d1d5db; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+              <span style="font-weight: bold; color: #059669;">您的净收入：</span>
+              <span style="font-weight: bold; color: #059669; font-size: 18px;">NZD $${data.netAmount.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            开始工作
+          </a>
+        </div>
+        
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e;"><strong>重要提醒：</strong></p>
+          <ul style="color: #92400e; margin: 10px 0;">
+            <li>资金已安全托管，您可以放心开始工作</li>
+            <li>完成工作后请在平台上标记"完工"</li>
+            <li>标记完工后将进入15天保护期</li>
+            <li>保护期结束后资金将自动释放到您的账户</li>
+          </ul>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请联系客服。
+        </p>
+      </div>
+    `,
+    text: `资金已托管 - 可以开始工作 - ${data.projectTitle}
+
+您好，
+
+好消息！业主已完成全额付款，资金已安全托管，您可以开始工作了：
+
+项目详情：
+- 项目：${data.projectTitle}
+- 位置：${data.projectLocation}
+
+费用明细：
+- 总金额：NZD $${data.amount.toFixed(2)}
+- 平台费用 (10%)：-NZD $${data.platformFee.toFixed(2)}
+${data.affiliateFee > 0 ? `- 挂靠费用 (2%)：-NZD $${data.affiliateFee.toFixed(2)}\n` : ''}- 您的净收入：NZD $${data.netAmount.toFixed(2)}
+
+重要提醒：
+- 资金已安全托管，您可以放心开始工作
+- 完成工作后请在平台上标记"完工"
+- 标记完工后将进入15天保护期
+- 保护期结束后资金将自动释放到您的账户
+
+查看项目：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
+
+BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 新增：工作开始通知邮件（发给业主）
+  workStartedNotification: (data: WorkStartedNotificationEmail) => ({
+    subject: `工作已开始 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #059669;">工作已开始！</h2>
+        
+        <p>您好${data.ownerName ? ` ${data.ownerName}` : ''}，</p>
+        
+        <p>您的技师已开始工作：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目信息</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>位置：</strong>${data.projectLocation}</p>
+          <p><strong>技师：</strong>${data.tradieName}</p>
+          ${data.tradiePhone ? `<p><strong>技师电话：</strong>${data.tradiePhone}</p>` : ''}
+          ${data.tradieEmail ? `<p><strong>技师邮箱：</strong>${data.tradieEmail}</p>` : ''}
+        </div>
+        
+        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+          <p style="margin: 0; color: #059669;"><strong>✅ 状态更新：</strong></p>
+          <p style="color: #374151; margin: 10px 0;">项目状态已更新为"进行中"，您可以随时查看进度。</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            查看项目进度
+          </a>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请联系客服。
+        </p>
+      </div>
+    `,
+    text: `工作已开始 - ${data.projectTitle}
+
+您好${data.ownerName ? ` ${data.ownerName}` : ''}，
+
+您的技师已开始工作：
+
+项目信息：
+- 项目：${data.projectTitle}
+- 位置：${data.projectLocation}
+- 技师：${data.tradieName}
+${data.tradiePhone ? `- 技师电话：${data.tradiePhone}\n` : ''}${data.tradieEmail ? `- 技师邮箱：${data.tradieEmail}\n` : ''}
+状态更新：
+项目状态已更新为"进行中"，您可以随时查看进度。
+
+查看项目进度：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
+
+BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 新增：工作完成通知邮件（发给业主）
+  workCompletedNotification: (data: WorkCompletedNotificationEmail) => ({
+    subject: `工作已完成 - 进入保护期 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #059669;">工作已完成！</h2>
+        
+        <p>您好${data.ownerName ? ` ${data.ownerName}` : ''}，</p>
+        
+        <p>好消息！技师 <strong>${data.tradieName}</strong> 已标记工作完成：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目信息</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>位置：</strong>${data.projectLocation}</p>
+          <p><strong>技师：</strong>${data.tradieName}</p>
+          <p><strong>完成时间：</strong>${new Date(data.completionDate).toLocaleString('zh-CN')}</p>
+          ${data.completionNotes ? `<p><strong>完工说明：</strong>${data.completionNotes}</p>` : ''}
+        </div>
+
+        <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <h3 style="margin-top: 0; color: #92400e;">🛡️ 保护期已开始</h3>
+          <p style="color: #92400e; margin: 10px 0;">
+            为保护您的权益，我们提供 <strong>${data.protectionDays} 天保护期</strong>：
+          </p>
+          <ul style="color: #92400e; margin: 15px 0;">
+            <li>保护期结束时间：${new Date(data.protectionEndDate).toLocaleString('zh-CN')}</li>
+            <li>在此期间，您可以检查工作质量</li>
+            <li>如发现问题，可以及时联系技师或申请争议处理</li>
+            <li>保护期结束后，NZD $${data.amount.toFixed(2)} 将自动放款给技师</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin-right: 10px;">
+            查看项目详情
+          </a>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}#confirm-complete" 
+             style="background-color: #f59e0b; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            立即确认完成
+          </a>
+        </div>
+        
+        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+          <p style="margin: 0; color: #059669;"><strong>您的选择：</strong></p>
+          <p style="color: #374151; margin: 10px 0;">
+            • <strong>立即确认完成：</strong>如果您满意工作质量，可以立即确认并放款<br>
+            • <strong>等待自动放款：</strong>如果您不采取任何行动，保护期结束后将自动放款
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请联系客服。
+        </p>
+      </div>
+    `,
+    text: `工作已完成 - 进入保护期 - ${data.projectTitle}
+
+您好${data.ownerName ? ` ${data.ownerName}` : ''}，
+
+好消息！技师 ${data.tradieName} 已标记工作完成：
+
+项目信息：
+- 项目：${data.projectTitle}
+- 位置：${data.projectLocation}
+- 技师：${data.tradieName}
+- 完成时间：${new Date(data.completionDate).toLocaleString('zh-CN')}
+${data.completionNotes ? `- 完工说明：${data.completionNotes}\n` : ''}
+保护期已开始：
+为保护您的权益，我们提供 ${data.protectionDays} 天保护期：
+
+- 保护期结束时间：${new Date(data.protectionEndDate).toLocaleString('zh-CN')}
+- 在此期间，您可以检查工作质量
+- 如发现问题，可以及时联系技师或申请争议处理
+- 保护期结束后，NZD $${data.amount.toFixed(2)} 将自动放款给技师
+
+您的选择：
+• 立即确认完成：如果您满意工作质量，可以立即确认并放款
+• 等待自动放款：如果您不采取任何行动，保护期结束后将自动放款
+
+查看项目详情：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}
+
+BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 新增：资金释放通知邮件（发给技师）
+  fundsReleasedNotification: (data: FundsReleasedNotificationEmail) => ({
+    subject: `资金已释放 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #059669;">🎉 资金已释放！</h2>
+        
+        <p>恭喜您，</p>
+        
+        <p>您的项目资金已成功释放到您的账户：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">项目信息</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>释放时间：</strong>${new Date(data.releaseDate).toLocaleString('zh-CN')}</p>
+          <p><strong>释放方式：</strong>${data.releaseTrigger}</p>
+          ${data.confirmationNotes ? `<p><strong>确认说明：</strong>${data.confirmationNotes}</p>` : ''}
+        </div>
+
+        <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #059669;">
+          <h3 style="margin-top: 0; color: #059669;">💰 资金明细</h3>
+          <div style="margin: 15px 0;">
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+              <span>项目总金额：</span>
+              <span>NZD $${data.grossAmount.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0; color: #6b7280;">
+              <span>平台费用 (10%)：</span>
+              <span>-NZD $${data.platformFee.toFixed(2)}</span>
+            </div>
+            ${data.affiliateFee > 0 ? `
+            <div style="display: flex; justify-content: space-between; margin: 5px 0; color: #6b7280;">
+              <span>挂靠费用 (2%)：</span>
+              <span>-NZD $${data.affiliateFee.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            <hr style="border: none; border-top: 2px solid #059669; margin: 15px 0;">
+            <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+              <span style="font-weight: bold; color: #059669; font-size: 18px;">实际到账：</span>
+              <span style="font-weight: bold; color: #059669; font-size: 24px;">NZD $${data.netAmount.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin-right: 10px;">
+            查看我的余额
+          </a>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/withdraw" 
+             style="background-color: #f59e0b; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            申请提现
+          </a>
+        </div>
+        
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e;"><strong>下一步：</strong></p>
+          <ul style="color: #92400e; margin: 10px 0;">
+            <li>资金已添加到您的账户余额</li>
+            <li>您可以随时申请提现到银行账户</li>
+            <li>感谢您使用 BuildBridge 平台！</li>
+          </ul>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请联系客服。
+        </p>
+      </div>
+    `,
+    text: `资金已释放 - ${data.projectTitle}
+
+恭喜您，
+
+您的项目资金已成功释放到您的账户：
+
+项目信息：
+- 项目：${data.projectTitle}
+- 释放时间：${new Date(data.releaseDate).toLocaleString('zh-CN')}
+- 释放方式：${data.releaseTrigger}
+${data.confirmationNotes ? `- 确认说明：${data.confirmationNotes}\n` : ''}
+资金明细：
+- 项目总金额：NZD $${data.grossAmount.toFixed(2)}
+- 平台费用 (10%)：-NZD $${data.platformFee.toFixed(2)}
+${data.affiliateFee > 0 ? `- 挂靠费用 (2%)：-NZD $${data.affiliateFee.toFixed(2)}\n` : ''}- 实际到账：NZD $${data.netAmount.toFixed(2)}
+
+下一步：
+- 资金已添加到您的账户余额
+- 您可以随时申请提现到银行账户
+- 感谢您使用 BuildBridge 平台！
+
+查看余额：${process.env.NEXT_PUBLIC_APP_URL}/dashboard
+申请提现：${process.env.NEXT_PUBLIC_APP_URL}/withdraw
+
+BuildBridge - 连接业主与专业技师的平台`
+  }),
+
+  // 新增：业主资金释放通知邮件
+  ownerFundsReleasedNotification: (data: OwnerFundsReleasedNotificationEmail) => ({
+    subject: `资金已放款 - ${data.projectTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #059669;">资金已成功放款</h2>
+        
+        <p>您好${data.ownerName ? ` ${data.ownerName}` : ''}，</p>
+        
+        <p>您的项目资金已成功放款给技师：</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">放款详情</h3>
+          <p><strong>项目：</strong>${data.projectTitle}</p>
+          <p><strong>技师：</strong>${data.tradieName}</p>
+          <p><strong>放款金额：</strong>NZD $${data.amount.toFixed(2)}</p>
+          <p><strong>放款时间：</strong>${new Date(data.releaseDate).toLocaleString('zh-CN')}</p>
+          <p><strong>放款方式：</strong>${data.releaseTrigger}</p>
+        </div>
+        
+        <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; border-left: 4px solid #059669;">
+          <p style="margin: 0; color: #059669;"><strong>✅ 项目完成</strong></p>
+          <p style="color: #374151; margin: 10px 0;">
+            您的项目已顺利完成，感谢您使用 BuildBridge 平台！
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}/review" 
+             style="background-color: #059669; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            为技师评价
+          </a>
+        </div>
+        
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e;"><strong>邀请评价：</strong></p>
+          <p style="color: #92400e; margin: 10px 0;">
+            您的评价将帮助其他业主选择优质技师，也能帮助技师提升服务质量。
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="color: #6b7280; font-size: 14px;">
+          BuildBridge - 连接业主与专业技师的平台<br>
+          这是一封自动通知邮件，如有疑问请联系客服。
+        </p>
+      </div>
+    `,
+    text: `资金已放款 - ${data.projectTitle}
+
+您好${data.ownerName ? ` ${data.ownerName}` : ''}，
+
+您的项目资金已成功放款给技师：
+
+放款详情：
+- 项目：${data.projectTitle}
+- 技师：${data.tradieName}
+- 放款金额：NZD $${data.amount.toFixed(2)}
+- 放款时间：${new Date(data.releaseDate).toLocaleString('zh-CN')}
+- 放款方式：${data.releaseTrigger}
+
+项目完成：
+您的项目已顺利完成，感谢您使用 BuildBridge 平台！
+
+邀请评价：
+您的评价将帮助其他业主选择优质技师，也能帮助技师提升服务质量。
+
+为技师评价：${process.env.NEXT_PUBLIC_APP_URL}/projects/${data.projectId}/review
+
+BuildBridge - 连接业主与专业技师的平台`
   })
 }
 
@@ -900,6 +1309,61 @@ class SMTPEmailService {
       text: template.text
     })
   }
+
+  // 新增：发送资金托管通知邮件（给技师）
+  async sendEscrowNotification(data: EscrowNotificationEmail) {
+    const template = emailTemplates.escrowNotification(data)
+    return await this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 新增：发送工作开始通知邮件（给业主）
+  async sendWorkStartedNotification(data: WorkStartedNotificationEmail) {
+    const template = emailTemplates.workStartedNotification(data)
+    return await this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 新增：发送工作完成通知邮件（给业主）
+  async sendWorkCompletedNotification(data: WorkCompletedNotificationEmail) {
+    const template = emailTemplates.workCompletedNotification(data)
+    return await this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 新增：发送资金释放通知邮件（给技师）
+  async sendFundsReleasedNotification(data: FundsReleasedNotificationEmail) {
+    const template = emailTemplates.fundsReleasedNotification(data)
+    return await this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
+
+  // 新增：发送业主资金释放通知邮件
+  async sendOwnerFundsReleasedNotification(data: OwnerFundsReleasedNotificationEmail) {
+    const template = emailTemplates.ownerFundsReleasedNotification(data)
+    return await this.sendEmail({
+      to: data.to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    })
+  }
 }
 
 // 导出单例实例
@@ -980,4 +1444,65 @@ export async function getMatchingTradieEmails(
     console.error('❌ 获取匹配技师邮箱时出错:', error)
     return []
   }
+}
+
+// 新增：全额付款流程相关邮件接口
+export interface EscrowNotificationEmail {
+  to: string
+  projectId: string
+  projectTitle: string
+  projectLocation: string
+  amount: number
+  netAmount: number
+  platformFee: number
+  affiliateFee: number
+}
+
+export interface WorkStartedNotificationEmail {
+  to: string
+  ownerName?: string
+  projectId: string
+  projectTitle: string
+  projectLocation: string
+  tradieName: string
+  tradiePhone?: string
+  tradieEmail?: string
+}
+
+export interface WorkCompletedNotificationEmail {
+  to: string
+  ownerName?: string
+  projectId: string
+  projectTitle: string
+  projectLocation: string
+  tradieName: string
+  completionDate: string
+  protectionEndDate: string
+  protectionDays: number
+  amount: number
+  completionNotes?: string
+}
+
+export interface FundsReleasedNotificationEmail {
+  to: string
+  projectId: string
+  projectTitle: string
+  grossAmount: number
+  platformFee: number
+  affiliateFee: number
+  netAmount: number
+  releaseDate: string
+  releaseTrigger: string
+  confirmationNotes?: string
+}
+
+export interface OwnerFundsReleasedNotificationEmail {
+  to: string
+  ownerName?: string
+  projectId: string
+  projectTitle: string
+  tradieName: string
+  amount: number
+  releaseDate: string
+  releaseTrigger: string
 }

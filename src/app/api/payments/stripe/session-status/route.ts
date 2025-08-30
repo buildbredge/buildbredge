@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Retrieve the Checkout Session from Stripe
+    if (!stripe) {
+      throw new Error('Stripe is not configured properly')
+    }
+    
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['payment_intent']
     })

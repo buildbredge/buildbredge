@@ -15,27 +15,61 @@
   10. Withdrawn（已提现） - 提现成功
   11. Disputed（纠纷中） - 纠纷中，仲裁流程
 
-  📁 新增文件
 
-  - src/types/project-status.ts - 状态枚举、标签、颜色和转换规则
-  - src/components/ProjectStatusBadge.tsx - 状态显示组件
-  - src/components/ProjectStatusManager.tsx - 状态管理组件
-  - src/lib/project-status-utils.ts - 状态处理工具函数
+  🔄 状态机更新
 
-  🗄️ 数据库更新
+  - 更新了项目状态转换规则，支持全额付款流程
+  - QUOTED/NEGOTIATING → AGREED → ESCROWED → IN_PROGRESS → COMPLETED → PROTECTION → RELEASED
 
-  - ✅ 更新了 projects 表的状态约束
-  - ✅ 添加了状态相关的新字段（agreed_price, escrow_date, completion_date 等）
-  - ✅ 实现了自动状态历史追踪
-  - ✅ 添加了状态变更触发器
+  🔧 API端点
 
-  🔧 代码更新
+  1. /api/quotes/[id]/accept - 接受报价后状态变为AGREED
+  2. /api/projects/[id]/process-payment - 处理全额付款并创建托管
+  3. /api/projects/[id]/start-work - 技师开始工作
+  4. /api/projects/[id]/mark-completed - 技师标记完工
+  5. /api/projects/[id]/owner-confirm-complete - 业主确认完成
+  6. /api/cron/auto-release-funds - 自动放款定时任务
 
-  - ✅ 更新了 post-job 页面使用新的 ProjectStatus.DRAFT
-  - ✅ 所有现有的 published 状态已迁移为 draft
+  💰 付款验证
 
-  ✅ 测试结果
+  - 全额付款验证：付款金额必须等于agreed_price
+  - 费用自动计算：10%平台费 + 2%挂靠费（如适用）
+  - 安全托管：资金先托管，完成后才释放
 
-  - ✅ 应用程序正常运行
-  - ✅ 状态转换系统正常工作
-  - ✅ 状态历史记录功能正常
+  🛡️ 保护期机制
+
+  - 15天保护期：从技师标记完工开始计算
+  - 自动放款：保护期结束后自动释放资金
+  - 手动放款：业主可提前确认完成并放款
+
+  📧 邮件通知系统
+
+  - 资金托管通知（技师）：付款完成后通知可以开始工作
+  - 工作开始通知（业主）：技师开始工作的通知
+  - 工作完成通知（业主）：进入保护期的通知
+  - 资金释放通知（技师）：资金到账通知
+  - 业主放款通知（业主）：确认资金已放款
+
+  🎨 UI组件
+
+  - PaymentStatusIndicator: 付款状态显示组件，包含保护期倒计时
+  - ProjectActionButtons: 根据状态显示相应操作按钮（付款、开始工作、标记完工、确认完成）
+
+  🗄️ 数据库支持
+
+  - 利用现有的projects表字段：agreed_price, escrow_amount, completion_date等
+  - 利用escrow_accounts表管理托管资金
+  - 利用payments表记录付款详情
+
+  ⚙️ 自动化任务
+
+  - 每日运行的定时任务自动处理保护期到期的项目
+  - 自动更新技师余额，发送通知邮件
+
+  🎯 核心业务流程
+
+  1. 报价接受 → 项目状态: AGREED，设置agreed_price
+  2. 全额付款 → 项目状态: ESCROWED，创建托管记录
+  3. 开始工作 → 项目状态: IN_PROGRESS
+  4. 标记完工 → 项目状态: PROTECTION，开始15天保护期
+  5. 资金释放 → 项目状态: RELEASED，更新技师余额

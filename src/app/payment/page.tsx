@@ -425,6 +425,8 @@ function PaymentContent() {
                   tradieId={tradieId || ''}
                   currency="NZD"
                   showDetails={true}
+                  showPlatformFee={false}
+                  showTradieEarnings={false}
                 />
 
                 <div className="border-t pt-4">

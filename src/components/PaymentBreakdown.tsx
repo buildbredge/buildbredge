@@ -21,6 +21,8 @@ interface PaymentBreakdownProps {
   fees?: FeeBreakdown
   currency?: string
   showDetails?: boolean
+  showPlatformFee?: boolean // 是否显示平台费用
+  showTradieEarnings?: boolean // 是否显示技师收入
   tradieInfo?: {
     name: string
     company?: string
@@ -40,6 +42,8 @@ export function PaymentBreakdown({
   fees: providedFees,
   currency = "NZD",
   showDetails = false,
+  showPlatformFee = true, // 默认显示平台费用
+  showTradieEarnings = true, // 默认显示技师收入
   tradieInfo,
   projectInfo,
   className = ""
@@ -151,22 +155,24 @@ export function PaymentBreakdown({
               Fee Breakdown
             </h4>
             
-            {/* Platform Fee */}
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-600">Platform Service Fee</span>
-                <Badge variant="outline" className="text-xs">
-                  {feePercentage.platform}%
-                </Badge>
-                <div className="group relative">
-                  <InfoIcon className="w-3 h-3 text-gray-400 cursor-help" />
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black text-white text-xs p-2 rounded max-w-xs z-10">
-                    Platform fee covers payment processing, dispute resolution, and platform maintenance
+            {/* Platform Fee - 只在允许时显示 */}
+            {showPlatformFee && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600">Platform Service Fee</span>
+                  <Badge variant="outline" className="text-xs">
+                    {feePercentage.platform}%
+                  </Badge>
+                  <div className="group relative">
+                    <InfoIcon className="w-3 h-3 text-gray-400 cursor-help" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-black text-white text-xs p-2 rounded max-w-xs z-10">
+                      Platform fee covers payment processing, dispute resolution, and platform maintenance
+                    </div>
                   </div>
                 </div>
+                <span className="text-red-600">-{formatAmount(fees.platformFee)}</span>
               </div>
-              <span className="text-red-600">-{formatAmount(fees.platformFee)}</span>
-            </div>
+            )}
 
             {/* Affiliate Fee */}
             {fees.affiliateFee > 0 && feePercentage.affiliate && (
@@ -206,11 +212,13 @@ export function PaymentBreakdown({
 
             <Separator />
 
-            {/* Net Amount to Tradie */}
-            <div className="flex items-center justify-between text-base font-semibold bg-green-50 p-3 rounded-lg">
-              <span className="text-green-800">Tradie will receive:</span>
-              <span className="text-green-600 text-lg">{formatAmount(fees.netAmount)}</span>
-            </div>
+            {/* Net Amount to Tradie - 只在允许时显示 */}
+            {showTradieEarnings && (
+              <div className="flex items-center justify-between text-base font-semibold bg-green-50 p-3 rounded-lg">
+                <span className="text-green-800">Tradie will receive:</span>
+                <span className="text-green-600 text-lg">{formatAmount(fees.netAmount)}</span>
+              </div>
+            )}
           </div>
         )}
 

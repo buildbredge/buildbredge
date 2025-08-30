@@ -41,7 +41,8 @@ export async function GET(
       .select(`
         *,
         category:categories(id, name_en, name_zh),
-        profession:professions(id, name_en, name_zh)
+        profession:professions(id, name_en, name_zh),
+        agreed_quote:quotes!projects_agreed_quote_id_fkey(id, tradie_id)
       `)
       .eq('id', id)
       .single()

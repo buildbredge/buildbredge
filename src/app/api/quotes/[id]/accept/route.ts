@@ -122,12 +122,14 @@ export async function PUT(
       console.log("✅ Other pending quotes rejected")
     }
 
-    // 更新项目状态为进行中，并设置接受的报价ID
+    // 更新项目状态为已确认，并设置接受的报价ID和确认价格
     const { error: projectUpdateError } = await supabase
       .from('projects')
       .update({
-        status: 'in_progress',
+        status: 'agreed',
         accepted_quote_id: quoteId,
+        agreed_price: quote.price,
+        agreed_quote_id: quoteId,
         updated_at: new Date().toISOString()
       })
       .eq('id', quote.project_id)
@@ -139,7 +141,7 @@ export async function PUT(
         { status: 500 }
       )
     } else {
-      console.log("✅ Project status updated to in_progress")
+      console.log("✅ Project status updated to agreed, awaiting full payment")
     }
 
     // 获取项目拥有者信息（如果是注册用户）

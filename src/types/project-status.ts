@@ -128,11 +128,13 @@ export const STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   [ProjectStatus.QUOTED]: [
     ProjectStatus.NEGOTIATING,
     ProjectStatus.AGREED,
+    ProjectStatus.IN_PROGRESS, // 直接接受报价跳过协商
     ProjectStatus.CANCELLED
   ],
   [ProjectStatus.NEGOTIATING]: [
     ProjectStatus.AGREED,
     ProjectStatus.QUOTED,
+    ProjectStatus.IN_PROGRESS, // 协商后直接开始工作
     ProjectStatus.CANCELLED,
     ProjectStatus.DISPUTED
   ],

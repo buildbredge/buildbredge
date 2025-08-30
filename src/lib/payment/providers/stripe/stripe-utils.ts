@@ -8,6 +8,10 @@ export const createPaymentIntent = async (
   currency: string,
   metadata: StripePaymentIntentMetadata
 ): Promise<Stripe.PaymentIntent> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const paymentIntent = await stripe.paymentIntents.create({
     amount: formatAmountForStripe(amount, currency),
     currency: currency.toLowerCase(),
@@ -25,6 +29,10 @@ export const createPaymentIntent = async (
 export const confirmPaymentIntent = async (
   paymentIntentId: string
 ): Promise<Stripe.PaymentIntent> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
   
   if (paymentIntent.status !== 'succeeded') {
@@ -39,6 +47,10 @@ export const constructWebhookEvent = (
   body: string | Buffer,
   signature: string
 ): Stripe.Event => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
   
   try {
@@ -54,6 +66,10 @@ export const createStripeCustomer = async (
   name: string,
   metadata?: Record<string, string>
 ): Promise<Stripe.Customer> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const customer = await stripe.customers.create({
     email,
     name,
@@ -67,6 +83,10 @@ export const createStripeCustomer = async (
 export const refundPayment = async (
   request: StripeRefundRequest
 ): Promise<Stripe.Refund> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const paymentIntent = await stripe.paymentIntents.retrieve(request.paymentIntentId)
   
   if (!(paymentIntent as any).charges?.data[0]) {
@@ -86,6 +106,10 @@ export const refundPayment = async (
 export const getPaymentIntentDetails = async (
   paymentIntentId: string
 ): Promise<Stripe.PaymentIntent> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   return await stripe.paymentIntents.retrieve(paymentIntentId, {
     expand: ['charges', 'customer']
   })
@@ -99,6 +123,10 @@ export const createCheckoutSession = async (
   successUrl: string,
   cancelUrl: string
 ): Promise<Stripe.Checkout.Session> => {
+  if (!stripe) {
+    throw new Error('Stripe is not available on client side')
+  }
+  
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [

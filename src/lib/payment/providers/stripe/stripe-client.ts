@@ -1,10 +1,12 @@
 import Stripe from 'stripe'
 import { loadStripe, type Stripe as StripeJS } from '@stripe/stripe-js'
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-})
+// Server-side Stripe instance - only available on server
+export const stripe = typeof window === 'undefined' 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+      apiVersion: '2025-07-30.basil',
+    })
+  : null
 
 // Client-side Stripe instance
 let stripePromise: Promise<StripeJS | null>

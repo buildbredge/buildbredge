@@ -37,6 +37,8 @@ import { TradieQuoteManagement } from "@/components/TradieQuoteManagement"
 import { ProjectStatusActions } from "@/components/ProjectStatusActions"
 import { ProjectStatus, isActiveStatus } from "@/types/project-status"
 import ProjectStatusBadge from "@/components/ProjectStatusBadge"
+import { PaymentStatusIndicator } from "@/components/PaymentStatusIndicator"
+import { ProjectActionButtons } from "@/components/ProjectActionButtons"
 
 export default function ProjectDetailPage() {
   const params = useParams()
@@ -514,6 +516,32 @@ export default function ProjectDetailPage() {
               isOwner={true}
               projectStatus={project.status}
               onQuoteAccepted={handleRefresh}
+            />
+          )}
+
+          {/* Payment Status Indicator */}
+          {project && (Boolean(isProjectOwner) || Boolean(isTradie)) && (
+            <PaymentStatusIndicator
+              projectStatus={project.status}
+              agreedPrice={(project as any).agreed_price}
+              escrowAmount={(project as any).escrow_amount}
+              protectionEndDate={(project as any).protection_end_date}
+              completionDate={(project as any).completion_date}
+              releaseDate={(project as any).release_date}
+            />
+          )}
+
+          {/* Project Action Buttons */}
+          {project && (
+            <ProjectActionButtons
+              projectId={project.id}
+              projectStatus={project.status}
+              isOwner={Boolean(isProjectOwner)}
+              isTradie={Boolean(isTradie && !isProjectOwner)}
+              agreedPrice={(project as any).agreed_price}
+              agreedQuoteId={(project as any).agreed_quote_id}
+              tradieId={(project as any).agreed_quote?.tradie_id}
+              onStatusChange={handleRefresh}
             />
           )}
 
