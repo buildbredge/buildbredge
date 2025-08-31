@@ -80,7 +80,9 @@ export async function GET(
         created_at,
         email,
         user_id,
-        accepted_quote_id
+        accepted_quote_id,
+        agreed_price,
+        escrow_amount
       `)
       .in('id', projectIds)
       .order('created_at', { ascending: false })
@@ -111,12 +113,62 @@ export async function GET(
       owners = usersData || []
     }
 
+    // 获取支付信息和资金分配详情
+    let payments: any[] = []
+    let escrowAccounts: any[] = []
+    
+    if (projectIds.length > 0) {
+      // 获取支付记录
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select(`
+          id,
+          project_id,
+          amount,
+          platform_fee,
+          affiliate_fee,
+          tax_amount,
+          net_amount,
+          status,
+          confirmed_at,
+          payment_method
+        `)
+        .in('project_id', projectIds)
+        .eq('status', 'completed')
+      
+      payments = paymentsData || []
+
+      // 获取托管账户信息
+      if (payments.length > 0) {
+        const paymentIds = payments.map(p => p.id)
+        const { data: escrowData } = await supabase
+          .from('escrow_accounts')
+          .select(`
+            id,
+            payment_id,
+            gross_amount,
+            platform_fee,
+            affiliate_fee,
+            tax_withheld,
+            net_amount,
+            status,
+            protection_end_date,
+            released_at
+          `)
+          .in('payment_id', paymentIds)
+        
+        escrowAccounts = escrowData || []
+      }
+    }
+
     console.log(`Found ${projects?.length || 0} projects for tradie ${tradieId}`)
 
     // 处理数据结构
     const processedProjects = projects?.map(project => {
       const acceptedQuote = acceptedQuotes.find(q => q.project_id === project.id)
       const owner = owners.find(o => o.id === project.user_id)
+      const payment = payments.find(p => p.project_id === project.id)
+      const escrow = payment ? escrowAccounts.find(e => e.payment_id === payment.id) : null
       
       return {
         id: project.id,
@@ -124,6 +176,8 @@ export async function GET(
         location: project.location,
         status: project.status,
         created_at: project.created_at,
+        agreed_price: project.agreed_price,
+        escrow_amount: project.escrow_amount,
         accepted_quote: {
           id: acceptedQuote?.id,
           price: acceptedQuote?.price,
@@ -133,7 +187,29 @@ export async function GET(
         owner: {
           name: owner?.name,
           email: owner?.email || project.email
-        }
+        },
+        payment_info: payment ? {
+          id: payment.id,
+          amount: payment.amount,
+          platform_fee: payment.platform_fee,
+          affiliate_fee: payment.affiliate_fee,
+          tax_amount: payment.tax_amount,
+          net_amount: payment.net_amount,
+          status: payment.status,
+          confirmed_at: payment.confirmed_at,
+          payment_method: payment.payment_method
+        } : null,
+        escrow_info: escrow ? {
+          id: escrow.id,
+          gross_amount: escrow.gross_amount,
+          platform_fee: escrow.platform_fee,
+          affiliate_fee: escrow.affiliate_fee,
+          tax_withheld: escrow.tax_withheld,
+          net_amount: escrow.net_amount,
+          status: escrow.status,
+          protection_end_date: escrow.protection_end_date,
+          released_at: escrow.released_at
+        } : null
       }
     }) || []
 

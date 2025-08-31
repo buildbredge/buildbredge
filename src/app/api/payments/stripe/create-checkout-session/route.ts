@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
           description,
           user_id,
           status,
-          accepted_quote_id
+          agreed_quote_id
         )
       `)
       .eq('id', quoteId)
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
       currency,
     })
 
-    // Create checkout session metadata
-    const metadata: StripePaymentIntentMetadata = {
+    // Create checkout session metadata with payment ID
+    const metadata: StripePaymentIntentMetadata & { payment_id: string } = {
       projectId,
       quoteId,
       tradieId,
@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
       affiliateFee: result.fees.affiliateFee.toString(),
       taxAmount: result.fees.taxAmount.toString(),
       netAmount: result.fees.netAmount.toString(),
-      parentTradieId: result.fees.parentTradieId || null
+      parentTradieId: result.fees.parentTradieId || null,
+      payment_id: result.paymentId
     }
 
     // Create checkout session

@@ -216,7 +216,15 @@ export function TradieQuoteManagement({
   }
 
   const canEditQuote = quote?.status === 'pending' && 
-    (projectStatus === 'published' || projectStatus === 'negotiating')
+    (projectStatus === 'published' || projectStatus === 'quoted' || projectStatus === 'negotiating')
+    
+  // 只有前三个状态显示报价管理
+  const shouldShowQuoteManagement = ['published', 'quoted', 'negotiating'].includes(projectStatus)
+
+  // 如果项目已进入托管状态，不显示报价管理
+  if (!shouldShowQuoteManagement) {
+    return null
+  }
 
   if (loading) {
     return (
@@ -261,7 +269,7 @@ export function TradieQuoteManagement({
               <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-2">您还没有提交报价</p>
               <p className="text-sm text-gray-400">
-                {projectStatus === 'published' || projectStatus === 'negotiating' 
+                {['published', 'quoted', 'negotiating'].includes(projectStatus)
                   ? '您可以通过上方的"提交报价"按钮来提交您的报价' 
                   : '此项目当前不接受新报价'}
               </p>

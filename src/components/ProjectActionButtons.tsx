@@ -173,44 +173,54 @@ export function ProjectActionButtons({
     switch (projectStatus) {
       case ProjectStatus.ESCROWED:
         return (
-          <Button
-            onClick={handleStartWork}
-            disabled={loading === '开始工作'}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {loading === '开始工作' ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                处理中...
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                开始工作
-              </>
-            )}
-          </Button>
+          <div className="w-full">
+            <Button
+              onClick={handleStartWork}
+              disabled={loading === '开始工作'}
+              className="w-full h-16 text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              {loading === '开始工作' ? (
+                <>
+                  <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                  处理中...
+                </>
+              ) : (
+                <>
+                  <Play className="w-6 h-6 mr-3" />
+                  🚀 开始工作
+                </>
+              )}
+            </Button>
+            <p className="text-center text-sm text-blue-600 mt-2 font-medium">
+              💰 资金已安全托管，可以放心开始工作
+            </p>
+          </div>
         )
 
       case ProjectStatus.IN_PROGRESS:
         return (
-          <Button
-            onClick={handleMarkCompleted}
-            disabled={loading === '标记完工'}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            {loading === '标记完工' ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                处理中...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                标记完工
-              </>
-            )}
-          </Button>
+          <div className="w-full">
+            <Button
+              onClick={handleMarkCompleted}
+              disabled={loading === '标记完工'}
+              className="w-full h-16 text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+            >
+              {loading === '标记完工' ? (
+                <>
+                  <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                  处理中...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-6 h-6 mr-3" />
+                  ✅ 标记完工
+                </>
+              )}
+            </Button>
+            <p className="text-center text-sm text-green-600 mt-2 font-medium">
+              ⏰ 完成工作后将进入15天保护期
+            </p>
+          </div>
         )
 
       default:

@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { Elements } from '@stripe/react-stripe-js'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Home,
@@ -24,12 +22,6 @@ import PaymentMethodSelector from '@/components/PaymentMethodSelector'
 import { useAuth } from '@/contexts/AuthContext'
 import type { PaymentProvider } from '@/lib/payment/interfaces/types'
 
-interface PaymentPageProps {
-  projectId?: string
-  quoteId?: string
-  tradieId?: string
-  amount?: number
-}
 
 interface PaymentStep {
   step: number
@@ -38,15 +30,14 @@ interface PaymentStep {
 }
 
 const paymentSteps: PaymentStep[] = [
-  { step: 1, title: 'Select Payment', description: 'Choose payment method' },
-  { step: 2, title: 'Payment Details', description: 'Enter payment information' },
-  { step: 3, title: 'Confirm', description: 'Review and confirm' },
-  { step: 4, title: 'Complete', description: 'Payment complete' }
+  { step: 1, title: '选择支付', description: '选择支付方式' },
+  { step: 2, title: '支付详情', description: '输入支付信息' },
+  { step: 3, title: '确认', description: '查看并确认' },
+  { step: 4, title: '完成', description: '支付完成' }
 ]
 
 function PaymentContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const { user } = useAuth()
 
   // Get payment details from URL params
@@ -64,7 +55,7 @@ function PaymentContent() {
   // Validate required parameters
   useEffect(() => {
     if (!projectId || !quoteId || !tradieId || !amount || amount <= 0) {
-      setError('Missing or invalid payment parameters. Please return to your project and try again.')
+      setError('缺少或无效的支付参数。请返回到您的项目重试。')
     }
   }, [projectId, quoteId, tradieId, amount])
 
@@ -75,7 +66,7 @@ function PaymentContent() {
 
   const handleStripePayment = async () => {
     if (!projectId || !quoteId || !tradieId || !user?.id) {
-      setError('Missing required payment information')
+      setError('缺少必要的支付信息')
       return
     }
 
@@ -83,8 +74,8 @@ function PaymentContent() {
     setError(null)
 
     try {
-      // Create payment intent using new Stripe API
-      const response = await fetch('/api/payments/stripe/create-intent', {
+      // Create checkout session using Stripe Checkout API
+      const response = await fetch('/api/payments/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,33 +93,30 @@ function PaymentContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create payment')
+        throw new Error(data.error || '创建支付失败')
       }
 
-      // Initialize Stripe and confirm payment
+      // Redirect to Stripe Checkout
       const stripe = await getStripe()
       if (!stripe) {
-        throw new Error('Failed to load Stripe')
+        throw new Error('加载支付系统失败')
       }
 
-      const { error: stripeError } = await stripe.confirmPayment({
-        elements: null as any, // This would be replaced with actual Elements in a real implementation
-        clientSecret: data.clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment/return`,
-        },
+      const { error: stripeError } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId
       })
 
       if (stripeError) {
-        throw new Error(stripeError.message)
+        throw new Error(stripeError.message || '跳转到支付页面失败')
       }
 
-      setPaymentResult(data)
-      setCurrentStep(4)
+      // User will be redirected, so we don't reach this point normally
+      // But if we do, it means something went wrong
+      throw new Error('支付重定向失败')
 
     } catch (error: any) {
       console.error('Stripe payment error:', error)
-      setError(error.message || 'Payment failed. Please try again.')
+      setError(error.message || '支付失败，请重试。')
     } finally {
       setIsProcessing(false)
     }
@@ -136,7 +124,7 @@ function PaymentContent() {
 
   const handlePoliPayment = async () => {
     if (!projectId || !quoteId || !tradieId || !user?.id) {
-      setError('Missing required payment information')
+      setError('缺少必要的支付信息')
       return
     }
 
@@ -163,19 +151,19 @@ function PaymentContent() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create POLi payment')
+        throw new Error(data.error || '创建POLi支付失败')
       }
 
       // Redirect to POLi bank login
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl
       } else {
-        throw new Error('No redirect URL received from POLi')
+        throw new Error('未收到POLi重定向链接')
       }
 
     } catch (error: any) {
       console.error('POLi payment error:', error)
-      setError(error.message || 'POLi payment failed. Please try again.')
+      setError(error.message || 'POLi支付失败，请重试。')
       setIsProcessing(false)
     }
   }
@@ -199,10 +187,10 @@ function PaymentContent() {
         <Card className="max-w-md">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Invalid Payment Request</h2>
+            <h2 className="text-xl font-semibold mb-2">支付请求无效</h2>
             <p className="text-gray-600 mb-4">{error}</p>
             <Button asChild>
-              <Link href="/dashboard">Return to Dashboard</Link>
+              <Link href="/dashboard">返回控制台</Link>
             </Button>
           </CardContent>
         </Card>
@@ -224,7 +212,7 @@ function PaymentContent() {
           <Button variant="ghost" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              返回控制台
             </Link>
           </Button>
         </div>
@@ -277,9 +265,9 @@ function PaymentContent() {
             {currentStep === 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Select Payment Method</CardTitle>
+                  <CardTitle>选择支付方式</CardTitle>
                   <CardDescription>
-                    Choose your preferred payment method to complete the transaction
+                    选择您偏好的支付方式来完成交易
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -298,40 +286,40 @@ function PaymentContent() {
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    {selectedProvider === 'stripe' ? 'Credit Card Payment' : 'POLi Bank Transfer'}
+                    {selectedProvider === 'stripe' ? '信用卡支付' : 'POLi银行转账'}
                   </CardTitle>
                   <CardDescription>
                     {selectedProvider === 'stripe' 
-                      ? 'Enter your card details to complete the payment'
-                      : 'You will be redirected to your bank to complete the payment'
+                      ? '输入您的银行卡信息以完成支付'
+                      : '您将被重定向到您的银行完成支付'
                     }
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {selectedProvider === 'stripe' && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h3 className="font-semibold text-blue-800 mb-2">Secure Card Payment</h3>
+                      <h3 className="font-semibold text-blue-800 mb-2">安全银行卡支付</h3>
                       <p className="text-sm text-blue-700 mb-3">
-                        Your payment will be processed securely through Stripe. 
-                        Card details are encrypted and never stored on our servers.
+                        您的支付将通过Stripe安全处理。
+                        银行卡信息已加密，永远不会存储在我们的服务器上。
                       </p>
                       <div className="text-xs text-blue-600">
-                        🔒 PCI DSS compliant • 256-bit SSL encryption
+                        🔒 PCI DSS合规 • 256位SSL加密
                       </div>
                     </div>
                   )}
 
                   {selectedProvider === 'poli' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h3 className="font-semibold text-green-800 mb-2">POLi Bank Transfer</h3>
+                      <h3 className="font-semibold text-green-800 mb-2">POLi银行转账</h3>
                       <p className="text-sm text-green-700 mb-3">
-                        You will be securely redirected to your bank's online banking platform 
-                        to complete the payment. No card details required.
+                        您将被安全重定向到您银行的网上银行平台
+                        完成支付。无需银行卡信息。
                       </p>
                       <div className="text-xs text-green-600 space-y-1">
-                        <div>✓ Direct from your bank account</div>
-                        <div>✓ No card fees</div>
-                        <div>✓ Supports major NZ banks</div>
+                        <div>✓ 直接从您的银行账户扣款</div>
+                        <div>✓ 无银行卡手续费</div>
+                        <div>✓ 支持新西兰主要银行</div>
                       </div>
                     </div>
                   )}
@@ -342,7 +330,7 @@ function PaymentContent() {
                       onClick={() => setCurrentStep(1)}
                       disabled={isProcessing}
                     >
-                      Back
+                      返回
                     </Button>
                     <Button 
                       onClick={handlePayment}
@@ -352,15 +340,15 @@ function PaymentContent() {
                       {isProcessing ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Processing...
+                          处理中...
                         </>
                       ) : selectedProvider === 'poli' ? (
                         <>
-                          Continue to Bank
+                          前往银行支付
                           <ExternalLink className="w-4 h-4 ml-2" />
                         </>
                       ) : (
-                        `Pay $${amount.toLocaleString()}`
+                        `支付 $${amount.toLocaleString()}`
                       )}
                     </Button>
                   </div>
@@ -374,26 +362,26 @@ function PaymentContent() {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="w-8 h-8 text-green-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">支付成功！</h2>
                   <p className="text-gray-600 mb-6">
-                    Your payment has been processed and funds are now held securely in escrow.
+                    您的支付已处理完成，资金现已安全托管。
                   </p>
                   
                   {paymentResult && (
                     <div className="bg-green-50 p-4 rounded-lg mb-6 text-left">
                       <div className="text-sm space-y-2">
                         <div className="flex justify-between">
-                          <span>Payment Amount:</span>
+                          <span>支付金额:</span>
                           <span className="font-medium">${amount.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Payment Method:</span>
+                          <span>支付方式:</span>
                           <span className="font-medium">
-                            {selectedProvider === 'stripe' ? 'Credit Card' : 'POLi Bank Transfer'}
+                            {selectedProvider === 'stripe' ? '信用卡' : 'POLi银行转账'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Payment ID:</span>
+                          <span>支付ID:</span>
                           <span className="font-mono text-xs">{paymentResult.paymentId}</span>
                         </div>
                       </div>
@@ -402,10 +390,10 @@ function PaymentContent() {
 
                   <div className="flex space-x-4">
                     <Button variant="outline" asChild className="flex-1">
-                      <Link href="/dashboard">Dashboard</Link>
+                      <Link href="/dashboard">控制台</Link>
                     </Button>
                     <Button asChild className="flex-1">
-                      <Link href={`/my-projects?project=${projectId}`}>View Project</Link>
+                      <Link href={`/my-projects?project=${projectId}`}>查看项目</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -417,7 +405,7 @@ function PaymentContent() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Payment Summary</CardTitle>
+                <CardTitle>支付摘要</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <PaymentBreakdown
@@ -432,23 +420,23 @@ function PaymentContent() {
                 <div className="border-t pt-4">
                   <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                     <Shield className="w-4 h-4" />
-                    <span>Secure Escrow Protection</span>
+                    <span>安全托管保护</span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Your funds are held securely until project completion and your approval
+                    您的资金将被安全托管直到项目完成并获得您的批准
                   </p>
                 </div>
 
                 <div className="bg-gray-50 p-3 rounded">
                   <div className="flex items-center space-x-2 text-sm">
                     <Lock className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium">Security Features</span>
+                    <span className="font-medium">安全特性</span>
                   </div>
                   <ul className="text-xs text-gray-600 mt-2 space-y-1">
-                    <li>• SSL encrypted transmission</li>
-                    <li>• PCI DSS security compliance</li>
-                    <li>• Third-party fund escrow</li>
-                    <li>• Dispute resolution protection</li>
+                    <li>• SSL加密传输</li>
+                    <li>• PCI DSS安全合规</li>
+                    <li>• 第三方资金托管</li>
+                    <li>• 争议解决保护</li>
                   </ul>
                 </div>
               </CardContent>

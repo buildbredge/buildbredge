@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
         price,
         status,
         tradie_id,
-        project:projects (
+        project:projects!quotes_project_id_fkey (
           id,
           user_id,
           status,
-          accepted_quote_id
+          agreed_quote_id
         )
       `)
       .eq('id', quoteId)

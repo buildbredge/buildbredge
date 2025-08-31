@@ -17,12 +17,13 @@ export default function ClientBody({
     document.body.className = "antialiased";
   }, []);
 
-  // 如果是管理后台路径，不显示主站导航
+  // 如果是管理后台路径或付款页面，不显示主站导航
   const isAdminPath = pathname?.startsWith('/htgl');
+  const isPaymentPath = pathname?.startsWith('/payment');
 
   return (
     <div className="antialiased">
-      {!isAdminPath && <Navigation />}
+      {!isAdminPath && !isPaymentPath && <Navigation />}
       {children}
     </div>
   );

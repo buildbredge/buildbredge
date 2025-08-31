@@ -36,6 +36,15 @@ import { QuotesList } from "@/components/QuotesList"
 import { TradieQuoteManagement } from "@/components/TradieQuoteManagement"
 import { ProjectStatusActions } from "@/components/ProjectStatusActions"
 import { ProjectStatus, isActiveStatus } from "@/types/project-status"
+
+// 只有前三个状态可以接受报价
+function canAcceptQuotes(status: ProjectStatus): boolean {
+  return [
+    ProjectStatus.PUBLISHED,
+    ProjectStatus.QUOTED,
+    ProjectStatus.NEGOTIATING
+  ].includes(status)
+}
 import ProjectStatusBadge from "@/components/ProjectStatusBadge"
 import { PaymentStatusIndicator } from "@/components/PaymentStatusIndicator"
 import { ProjectActionButtons } from "@/components/ProjectActionButtons"
@@ -126,7 +135,7 @@ export default function ProjectDetailPage() {
   const isProjectOwner = user?.id && project?.user_id === user.id
   const isTradie = user?.activeRole === "tradie"
   const canSubmitQuote = isTradie && !isProjectOwner && 
-    isActiveStatus(project?.status as ProjectStatus)
+    canAcceptQuotes(project?.status as ProjectStatus)
 
   // Use the new ProjectStatusBadge component instead of custom function
   const getStatusBadge = (status: string) => {
