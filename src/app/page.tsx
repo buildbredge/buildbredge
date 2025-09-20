@@ -109,7 +109,7 @@ export default function HomePage() {
       <section id="how-it-works" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">如何运作</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">获得工作</h2>
             <p className="text-gray-600">服务流程，简单、透明、可信赖</p>
           </div>
 

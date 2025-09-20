@@ -166,7 +166,7 @@ export default function BrowseTradiesPage() {
               <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100" asChild>
                 <Link href="/post-job">发布需求</Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600" asChild>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 bg-transparent" asChild>
                 <Link href="/contact">联系我们</Link>
               </Button>
             </div>

@@ -91,7 +91,7 @@ export default function BrowseJobsPage() {
       const params = new URLSearchParams({
         limit: '50',
         sort: 'created_at:desc',
-        status: 'draft,quoted,negotiating'
+        status: 'published,draft,quoted,negotiating'
       })
 
       // 添加筛选参数

@@ -50,7 +50,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
     { href: "/browse-jobs", label: "最新任务" },
     
 
-    { href: "/tradie-signup", label: "如何运作" },
+    { href: "/tradie-signup", label: "获得工作" },
    
   ]
 

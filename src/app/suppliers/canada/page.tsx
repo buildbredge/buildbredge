@@ -225,7 +225,7 @@ export default function CanadaSuppliersPage() {
               <h4 className="font-semibold mb-4">业主服务</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/post-job" className="hover:text-white">发布项目</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-white">如何运作</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-white">获得工作</Link></li>
                 <li><Link href="/browse-tradies" className="hover:text-white">技师目录</Link></li>
               </ul>
             </div>

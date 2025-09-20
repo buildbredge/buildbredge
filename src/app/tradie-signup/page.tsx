@@ -516,7 +516,7 @@ export default function TradieSignupPage() {
                 <li><Link href="/post-job" className="hover:text-white">发布项目</Link></li>
                 <li><Link href="/browse-tradies" className="hover:text-white">技师目录</Link></li>
                 <li><Link href="/cost-estimator" className="hover:text-white">费用估算</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-white">如何运作</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-white">获得工作</Link></li>
               </ul>
             </div>
 
