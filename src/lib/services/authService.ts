@@ -26,6 +26,7 @@ interface RegisterData {
   language?: string
   company?: string
   categoryId?: string
+  professionIds?: string[]
   parentTradieId?: string
 }
 
@@ -145,6 +146,7 @@ class AuthService {
             language: userData.language || '中/EN',
             company: userData.company,
             categoryId: userData.categoryId,
+            professionIds: userData.professionIds,
             parentTradieId: userData.parentTradieId
           })
         })

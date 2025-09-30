@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,16 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
@@ -23,11 +33,20 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [language, setLanguage] = useState("中/EN")
-  const [categories, setCategories] = useState<Array<{id: string, name_en: string, name_zh: string}>>([])
+  const [categories, setCategories] = useState<Array<{ id: string; name_en: string; name_zh: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showVerificationDialog, setShowVerificationDialog] = useState(false)
   const [isNewUser, setIsNewUser] = useState(true)
+  const [isServicesDialogOpen, setIsServicesDialogOpen] = useState(false)
+  const [isLoadingProfessions, setIsLoadingProfessions] = useState(false)
+  const [professionDialogError, setProfessionDialogError] = useState("")
+  const [professions, setProfessions] = useState<Array<{ id: string; name_en: string; name_zh: string }>>([])
+  const [selectedProfessions, setSelectedProfessions] = useState<string[]>([])
+  const [tempSelectedProfessions, setTempSelectedProfessions] = useState<string[]>([])
+  const [selectedProfessionSummaries, setSelectedProfessionSummaries] = useState<
+    Array<{ id: string; name_en: string; name_zh: string }>
+  >([])
 
   const { register } = useAuth()
   const router = useRouter()
@@ -59,6 +78,91 @@ export default function RegisterPage() {
     }
   }
 
+  useEffect(() => {
+    if (userType !== "tradie") {
+      setSelectedCategory("")
+      setSelectedProfessions([])
+      setSelectedProfessionSummaries([])
+    }
+  }, [userType])
+
+  const fetchProfessionsForCategory = async (categoryId: string) => {
+    try {
+      setIsLoadingProfessions(true)
+      setProfessionDialogError("")
+      const response = await fetch(`/api/professions?category_id=${categoryId}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "加载服务类型失败")
+      }
+
+      if (!Array.isArray(result.professions)) {
+        throw new Error("服务类型数据格式不正确")
+      }
+
+      setProfessions(result.professions)
+    } catch (fetchError) {
+      console.error("Error fetching professions:", fetchError)
+      setProfessions([])
+      setProfessionDialogError(
+        fetchError instanceof Error ? fetchError.message : "加载服务类型失败，请稍后重试"
+      )
+    } finally {
+      setIsLoadingProfessions(false)
+    }
+  }
+
+  const handleCategorySelect = async (categoryId: string) => {
+    setSelectedCategory(categoryId)
+    setSelectedProfessions([])
+    setSelectedProfessionSummaries([])
+    setTempSelectedProfessions([])
+    setIsServicesDialogOpen(true)
+    await fetchProfessionsForCategory(categoryId)
+  }
+
+  const toggleTempProfession = (professionId: string, checked: boolean | string) => {
+    setTempSelectedProfessions(prev => {
+      if (checked && checked !== "indeterminate") {
+        if (prev.includes(professionId)) {
+          return prev
+        }
+        return [...prev, professionId]
+      }
+      return prev.filter(id => id !== professionId)
+    })
+  }
+
+  const handleConfirmProfessionSelection = () => {
+    if (tempSelectedProfessions.length === 0) {
+      setProfessionDialogError("请选择至少一个服务类型")
+      return
+    }
+
+    setProfessionDialogError("")
+    setSelectedProfessions(tempSelectedProfessions)
+    const selectedDetails = professions.filter(profession =>
+      tempSelectedProfessions.includes(profession.id)
+    )
+    setSelectedProfessionSummaries(selectedDetails)
+    setIsServicesDialogOpen(false)
+  }
+
+  const handleOpenServicesDialog = () => {
+    if (!selectedCategory) {
+      setError("请先选择专业领域")
+      return
+    }
+
+    setTempSelectedProfessions(selectedProfessions)
+    setProfessionDialogError("")
+    setIsServicesDialogOpen(true)
+    if (professions.length === 0) {
+      void fetchProfessionsForCategory(selectedCategory)
+    }
+  }
+
   // 处理Google Places地址选择
   const handlePlaceSelect = (place: PlaceResult) => {
     setGooglePlace(place)
@@ -74,11 +178,18 @@ export default function RegisterPage() {
       return
     }
 
-    if (userType === 'tradie' && !selectedCategory) {
-      setError("请选择您的专业领域")
-      return
+    if (userType === "tradie") {
+      if (!selectedCategory) {
+        setError("请选择您的专业领域")
+        return
+      }
+
+      if (selectedProfessions.length === 0) {
+        setError("请选择至少一个服务类型")
+        return
+      }
     }
-    
+
     if (password !== confirmPassword) {
       setError("密码不匹配")
       return
@@ -102,7 +213,8 @@ export default function RegisterPage() {
         coordinates: googlePlace?.coordinates,
         language,
         company: userType === "tradie" ? companyName : undefined,
-        categoryId: userType === "tradie" ? selectedCategory : undefined
+        categoryId: userType === "tradie" ? selectedCategory : undefined,
+        professionIds: userType === "tradie" ? selectedProfessions : undefined
       })
       
       if (result.success) {
@@ -145,7 +257,7 @@ export default function RegisterPage() {
             
             <div>
               <Label htmlFor="userType">用户类型 *</Label>
-              <Select onValueChange={(value) => setUserType(value as "homeowner" | "tradie")}>
+              <Select value={userType} onValueChange={(value) => setUserType(value as "homeowner" | "tradie")}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择用户类型" />
                 </SelectTrigger>
@@ -241,7 +353,12 @@ export default function RegisterPage() {
                 
                 <div>
                   <Label htmlFor="category">专业领域 *</Label>
-                  <Select onValueChange={setSelectedCategory}>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={value => {
+                      void handleCategorySelect(value)
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={
                         categories.length === 0 
@@ -267,6 +384,26 @@ export default function RegisterPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       已加载 {categories.length} 个专业领域
                     </p>
+                  )}
+                  {selectedProfessionSummaries.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-xs text-gray-600">已选择的服务类型：</p>
+                      <ul className="text-xs text-gray-600 list-disc pl-4 space-y-0.5">
+                        {selectedProfessionSummaries.map(profession => (
+                          <li key={profession.id}>
+                            {profession.name_zh || profession.name_en}
+                          </li>
+                        ))}
+                      </ul>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-green-700 hover:text-green-800"
+                        onClick={handleOpenServicesDialog}
+                      >
+                        修改服务类型
+                      </Button>
+                    </div>
                   )}
                 </div>
               </>
@@ -312,6 +449,76 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
+
+      <Dialog open={isServicesDialogOpen} onOpenChange={setIsServicesDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>选择服务类型</DialogTitle>
+            <DialogDescription>
+              {selectedCategory
+                ? "请选择您提供的服务类型，可多选"
+                : "请先选择专业领域"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingProfessions ? (
+            <div className="py-10 text-center text-sm text-gray-500">加载服务类型中...</div>
+          ) : (
+            <ScrollArea className="max-h-64 border rounded-md p-3">
+              {professionDialogError && professions.length === 0 ? (
+                <p className="text-sm text-red-600">{professionDialogError}</p>
+              ) : professions.length === 0 ? (
+                <p className="text-sm text-gray-500">当前专业领域暂无可选服务类型</p>
+              ) : (
+                <div className="space-y-3">
+                  {professions.map(profession => {
+                    const isChecked = tempSelectedProfessions.includes(profession.id)
+                    return (
+                      <label
+                        key={profession.id}
+                        className="flex items-start space-x-2 rounded-md border border-transparent px-2 py-1 transition hover:border-gray-200"
+                      >
+                        <Checkbox
+                          className="mt-1"
+                          checked={isChecked}
+                          onCheckedChange={checked => toggleTempProfession(profession.id, checked)}
+                        />
+                        <div className="text-sm leading-5">
+                          <p className="font-medium text-gray-800">{profession.name_zh || profession.name_en}</p>
+                          {profession.name_zh && profession.name_en && (
+                            <p className="text-xs text-gray-500">{profession.name_en}</p>
+                          )}
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+          )}
+
+          {professionDialogError && professions.length > 0 && (
+            <p className="text-sm text-red-600">{professionDialogError}</p>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsServicesDialogOpen(false)
+                setProfessionDialogError("")
+                setTempSelectedProfessions(selectedProfessions)
+              }}
+            >
+              取消
+            </Button>
+            <Button type="button" onClick={handleConfirmProfessionSelection}>
+              确认
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

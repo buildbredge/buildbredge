@@ -16,7 +16,20 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, phone, email, location, coordinates, userType, language, company, categoryId, parentTradieId } = body
+    const {
+      userId,
+      name,
+      phone,
+      email,
+      location,
+      coordinates,
+      userType,
+      language,
+      company,
+      categoryId,
+      professionIds,
+      parentTradieId
+    } = body
 
     // 获取管理客户端
     const supabaseAdmin = getSupabaseAdmin()
@@ -52,6 +65,42 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "无效的用户类型"
       }, { status: 400 })
+    }
+
+    let normalizedCategoryId: string | null = null
+    let normalizedProfessionIds: string[] = []
+
+    if (userType === 'tradie') {
+      if (!categoryId || typeof categoryId !== 'string' || categoryId.trim().length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: "请选择专业领域"
+        }, { status: 400 })
+      }
+
+      normalizedCategoryId = categoryId.trim()
+
+      if (!Array.isArray(professionIds) || professionIds.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: "请选择至少一个服务类型"
+        }, { status: 400 })
+      }
+
+      normalizedProfessionIds = Array.from(
+        new Set(
+          professionIds.filter(
+            (id: unknown): id is string => typeof id === 'string' && id.trim().length > 0
+          )
+        )
+      ).map(id => id.trim())
+
+      if (normalizedProfessionIds.length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: "请选择至少一个有效的服务类型"
+        }, { status: 400 })
+      }
     }
 
     // 如果提供了parentTradieId，验证父技师
@@ -218,12 +267,47 @@ export async function POST(request: NextRequest) {
 
     // 5. 如果是技师且提供了categoryId，在tradie_professions表中创建记录
     if (userType === 'tradie' && categoryId) {
+      // 验证服务类型是否存在且属于所选专业领域
+      const { data: professionRecords, error: professionLookupError } = await supabaseAdmin
+        .from('professions')
+        .select('id, category_id')
+        .in('id', normalizedProfessionIds)
+
+      if (professionLookupError) {
+        console.error('Profession lookup error:', professionLookupError)
+        return NextResponse.json({
+          success: false,
+          error: '验证服务类型失败'
+        }, { status: 500 })
+      }
+
+      if (!professionRecords || professionRecords.length !== normalizedProfessionIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: '部分服务类型不存在，请重新选择'
+        }, { status: 400 })
+      }
+
+      const mismatchedProfession = professionRecords.find(
+        profession => profession.category_id !== normalizedCategoryId
+      )
+
+      if (mismatchedProfession) {
+        return NextResponse.json({
+          success: false,
+          error: '所选服务类型与专业领域不匹配'
+        }, { status: 400 })
+      }
+
+      const insertPayload = professionRecords.map(profession => ({
+        tradie_id: userId,
+        profession_id: profession.id,
+        category_id: profession.category_id
+      }))
+
       const { error: professionError } = await supabaseAdmin
         .from('tradie_professions')
-        .insert({
-          tradie_id: userId,
-          category_id: categoryId
-        })
+        .insert(insertPayload)
 
       if (professionError) {
         console.error('Profession creation error:', professionError)
