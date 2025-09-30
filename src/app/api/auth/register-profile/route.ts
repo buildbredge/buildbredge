@@ -22,12 +22,12 @@ export async function POST(request: NextRequest) {
       phone,
       email,
       location,
-      coordinates,
       userType,
       language,
       company,
       categoryId,
       professionIds,
+      serviceAreaIds,
       parentTradieId
     } = body
 
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     let normalizedCategoryId: string | null = null
     let normalizedProfessionIds: string[] = []
+    let normalizedServiceAreaIds: string[] = []
 
     if (userType === 'tradie') {
       if (!categoryId || typeof categoryId !== 'string' || categoryId.trim().length === 0) {
@@ -100,6 +101,16 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "请选择至少一个有效的服务类型"
         }, { status: 400 })
+      }
+
+      if (Array.isArray(serviceAreaIds)) {
+        normalizedServiceAreaIds = Array.from(
+          new Set(
+            serviceAreaIds.filter(
+              (id: unknown): id is string => typeof id === 'string' && id.trim().length > 0
+            )
+          )
+        ).map(id => id.trim())
       }
     }
 
@@ -180,11 +191,12 @@ export async function POST(request: NextRequest) {
         name,
         phone,
         email,
-        address: location,
+        address: location?.trim() || null,
         language: language || '中/EN',
         status: userType === 'homeowner' ? 'approved' : 'pending', // 房主直接开通，技师需要审核
-        latitude: coordinates?.lat || null,
-        longitude: coordinates?.lng || null
+        latitude: null,
+        longitude: null,
+        service_area: location?.trim() || null
       }
 
       // 如果是tradie且提供了company，则保存
@@ -315,6 +327,90 @@ export async function POST(request: NextRequest) {
           success: false,
           error: `专业技能记录创建失败: ${professionError.message}`
         }, { status: 500 })
+      }
+    }
+
+    if (userType === 'tradie' && normalizedServiceAreaIds.length > 0) {
+      const { data: serviceAreaRecords, error: serviceAreaLookupError } = await supabaseAdmin
+        .from('service_areas')
+        .select('id, city, area')
+        .in('id', normalizedServiceAreaIds)
+
+      if (serviceAreaLookupError) {
+        console.error('Service area lookup error:', serviceAreaLookupError)
+        return NextResponse.json({
+          success: false,
+          error: '验证服务区域失败'
+        }, { status: 500 })
+      }
+
+      if (!serviceAreaRecords || serviceAreaRecords.length !== normalizedServiceAreaIds.length) {
+        return NextResponse.json({
+          success: false,
+          error: '部分服务区域不存在，请重新选择'
+        }, { status: 400 })
+      }
+
+      const uniqueCities = new Set(serviceAreaRecords.map(area => area.city))
+      if (uniqueCities.size > 1) {
+        return NextResponse.json({
+          success: false,
+          error: '请选择同一城市下的服务区域'
+        }, { status: 400 })
+      }
+
+      // 清理已有的服务区域记录（以防重复注册时残留）
+      const { error: deleteServiceAreaError } = await supabaseAdmin
+        .from('tradie_service_areas')
+        .delete()
+        .eq('tradie_id', userId)
+
+      if (deleteServiceAreaError) {
+        console.error('Service area cleanup error:', deleteServiceAreaError)
+        return NextResponse.json({
+          success: false,
+          error: '更新服务区域失败'
+        }, { status: 500 })
+      }
+
+      const orderedRecords = normalizedServiceAreaIds
+        .map(id => serviceAreaRecords.find(area => area.id === id))
+        .filter((area): area is { id: string; city: string; area: string } => Boolean(area))
+
+      const insertServiceAreas = orderedRecords.map(area => ({
+        tradie_id: userId,
+        service_area_id: area.id
+      }))
+
+      if (insertServiceAreas.length > 0) {
+        const { error: serviceAreaInsertError } = await supabaseAdmin
+          .from('tradie_service_areas')
+          .insert(insertServiceAreas)
+
+        if (serviceAreaInsertError) {
+          console.error('Service area creation error:', serviceAreaInsertError)
+          return NextResponse.json({
+            success: false,
+            error: `服务区域记录创建失败: ${serviceAreaInsertError.message}`
+          }, { status: 500 })
+        }
+
+        const serviceAreaSummary = orderedRecords
+          .map(area => `${area.city} - ${area.area}`)
+          .join(', ')
+
+        const { error: serviceAreaSummaryError } = await supabaseAdmin
+          .from('users')
+          .update({ service_area: serviceAreaSummary })
+          .eq('id', userId)
+
+        if (serviceAreaSummaryError) {
+          console.error('Service area summary update error:', serviceAreaSummaryError)
+          return NextResponse.json({
+            success: false,
+            error: '更新服务区域概览失败'
+          }, { status: 500 })
+        }
       }
     }
 

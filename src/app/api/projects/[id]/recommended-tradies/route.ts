@@ -24,7 +24,7 @@ export async function GET(
     }
 
     // Build the query to find matching tradies
-    let query = supabase
+    const query = supabase
       .from("users")
       .select(`
         id,

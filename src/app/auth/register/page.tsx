@@ -9,7 +9,6 @@ import { EmailVerificationDialog } from "@/components/ui/email-verification-dial
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 import {
   Dialog,
   DialogContent,
@@ -28,8 +27,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
   const [userType, setUserType] = useState<"homeowner" | "tradie" | "">("")
-  const [location, setLocation] = useState("")
-  const [googlePlace, setGooglePlace] = useState<PlaceResult | undefined>(undefined)
   const [companyName, setCompanyName] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [language, setLanguage] = useState("中/EN")
@@ -47,14 +44,27 @@ export default function RegisterPage() {
   const [selectedProfessionSummaries, setSelectedProfessionSummaries] = useState<
     Array<{ id: string; name_en: string; name_zh: string }>
   >([])
+  const [serviceCities, setServiceCities] = useState<string[]>([])
+  const [selectedServiceCity, setSelectedServiceCity] = useState("")
+  const [serviceAreas, setServiceAreas] = useState<Array<{ id: string; area: string }>>([])
+  const [selectedServiceAreaIds, setSelectedServiceAreaIds] = useState<string[]>([])
+  const [selectedServiceAreaSummaries, setSelectedServiceAreaSummaries] = useState<
+    Array<{ id: string; area: string }>
+  >([])
+  const [isServiceAreaDialogOpen, setIsServiceAreaDialogOpen] = useState(false)
+  const [isLoadingServiceCities, setIsLoadingServiceCities] = useState(false)
+  const [isLoadingServiceAreas, setIsLoadingServiceAreas] = useState(false)
+  const [serviceAreaDialogError, setServiceAreaDialogError] = useState("")
+  const [tempSelectedServiceAreas, setTempSelectedServiceAreas] = useState<string[]>([])
 
   const { register } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Fetch categories when user selects tradie type
-    if (userType === 'tradie') {
+    // Fetch categories and service cities when user selects tradie type
+    if (userType === "tradie") {
       fetchCategories()
+      fetchServiceCities()
     }
   }, [userType])
 
@@ -78,11 +88,65 @@ export default function RegisterPage() {
     }
   }
 
+  const fetchServiceCities = async () => {
+    try {
+      setIsLoadingServiceCities(true)
+      const response = await fetch('/api/service-areas')
+      const result = await response.json()
+
+      if (response.ok && result.success && Array.isArray(result.data?.cities)) {
+        setServiceCities(result.data.cities)
+      } else {
+        console.error('Failed to fetch service cities:', result.error || 'Unknown error')
+        setError('无法加载服务城市选项，请刷新页面重试')
+      }
+    } catch (serviceCityError) {
+      console.error('Error fetching service cities:', serviceCityError)
+      setError('加载服务城市失败，请检查网络连接')
+    } finally {
+      setIsLoadingServiceCities(false)
+    }
+  }
+
+  const fetchServiceAreas = async (city: string) => {
+    try {
+      setIsLoadingServiceAreas(true)
+      setServiceAreaDialogError("")
+      const response = await fetch(`/api/service-areas?city=${encodeURIComponent(city)}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || '加载服务区域失败')
+      }
+
+      if (!Array.isArray(result.data?.areas)) {
+        throw new Error('服务区域数据格式不正确')
+      }
+
+      setServiceAreas(result.data.areas)
+    } catch (serviceAreaError) {
+      console.error('Error fetching service areas:', serviceAreaError)
+      setServiceAreas([])
+      setServiceAreaDialogError(
+        serviceAreaError instanceof Error ? serviceAreaError.message : '加载服务区域失败，请稍后重试'
+      )
+    } finally {
+      setIsLoadingServiceAreas(false)
+    }
+  }
+
   useEffect(() => {
     if (userType !== "tradie") {
       setSelectedCategory("")
       setSelectedProfessions([])
       setSelectedProfessionSummaries([])
+      setSelectedServiceCity("")
+      setSelectedServiceAreaIds([])
+      setSelectedServiceAreaSummaries([])
+      setServiceCities([])
+      setServiceAreas([])
+      setIsServiceAreaDialogOpen(false)
+      setIsServicesDialogOpen(false)
     }
   }, [userType])
 
@@ -122,6 +186,17 @@ export default function RegisterPage() {
     await fetchProfessionsForCategory(categoryId)
   }
 
+  const handleServiceCitySelect = async (city: string) => {
+    setSelectedServiceCity(city)
+    setSelectedServiceAreaIds([])
+    setSelectedServiceAreaSummaries([])
+    setTempSelectedServiceAreas([])
+    setServiceAreas([])
+    setServiceAreaDialogError("")
+    setIsServiceAreaDialogOpen(true)
+    await fetchServiceAreas(city)
+  }
+
   const toggleTempProfession = (professionId: string, checked: boolean | string) => {
     setTempSelectedProfessions(prev => {
       if (checked && checked !== "indeterminate") {
@@ -131,6 +206,18 @@ export default function RegisterPage() {
         return [...prev, professionId]
       }
       return prev.filter(id => id !== professionId)
+    })
+  }
+
+  const toggleTempServiceArea = (areaId: string, checked: boolean | string) => {
+    setTempSelectedServiceAreas(prev => {
+      if (checked && checked !== "indeterminate") {
+        if (prev.includes(areaId)) {
+          return prev
+        }
+        return [...prev, areaId]
+      }
+      return prev.filter(id => id !== areaId)
     })
   }
 
@@ -149,6 +236,19 @@ export default function RegisterPage() {
     setIsServicesDialogOpen(false)
   }
 
+  const handleConfirmServiceAreaSelection = () => {
+    if (tempSelectedServiceAreas.length === 0) {
+      setServiceAreaDialogError("请选择至少一个服务区域")
+      return
+    }
+
+    setServiceAreaDialogError("")
+    setSelectedServiceAreaIds(tempSelectedServiceAreas)
+    const selectedDetails = serviceAreas.filter(area => tempSelectedServiceAreas.includes(area.id))
+    setSelectedServiceAreaSummaries(selectedDetails)
+    setIsServiceAreaDialogOpen(false)
+  }
+
   const handleOpenServicesDialog = () => {
     if (!selectedCategory) {
       setError("请先选择专业领域")
@@ -163,10 +263,18 @@ export default function RegisterPage() {
     }
   }
 
-  // 处理Google Places地址选择
-  const handlePlaceSelect = (place: PlaceResult) => {
-    setGooglePlace(place)
-    setLocation(place.address) // 同时更新location字段以保持兼容性
+  const handleOpenServiceAreaDialog = () => {
+    if (!selectedServiceCity) {
+      setError("请先选择服务城市")
+      return
+    }
+
+    setTempSelectedServiceAreas(selectedServiceAreaIds)
+    setServiceAreaDialogError("")
+    setIsServiceAreaDialogOpen(true)
+    if (serviceAreas.length === 0) {
+      void fetchServiceAreas(selectedServiceCity)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -186,6 +294,16 @@ export default function RegisterPage() {
 
       if (selectedProfessions.length === 0) {
         setError("请选择至少一个服务类型")
+        return
+      }
+
+      if (!selectedServiceCity) {
+        setError("请选择服务城市")
+        return
+      }
+
+      if (selectedServiceAreaIds.length === 0) {
+        setError("请选择至少一个服务区域")
         return
       }
     }
@@ -209,12 +327,11 @@ export default function RegisterPage() {
         password,
         phone,
         userType: userType as "homeowner" | "tradie",
-        location,
-        coordinates: googlePlace?.coordinates,
         language,
         company: userType === "tradie" ? companyName : undefined,
         categoryId: userType === "tradie" ? selectedCategory : undefined,
-        professionIds: userType === "tradie" ? selectedProfessions : undefined
+        professionIds: userType === "tradie" ? selectedProfessions : undefined,
+        serviceAreaIds: userType === "tradie" ? selectedServiceAreaIds : undefined
       })
       
       if (result.success) {
@@ -317,28 +434,6 @@ export default function RegisterPage() {
               </Select>
             </div>
             
-            <div>
-              <Label htmlFor="location">地址 *</Label>
-              <div className="mt-2">
-                {!googlePlace ? (
-                  <GooglePlacesAutocomplete
-                    onPlaceSelect={handlePlaceSelect}
-                    placeholder="请输入您的地址..."
-                    label=""
-                    className="h-10"
-                  />
-                ) : (
-                  <SelectedAddressDisplay
-                    place={googlePlace}
-                    onEdit={() => {
-                      setGooglePlace(undefined)
-                      setLocation("")
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-            
             {userType === "tradie" && (
               <>
                 <div>
@@ -349,6 +444,72 @@ export default function RegisterPage() {
                     onChange={e => setCompanyName(e.target.value)} 
                     placeholder="请输入公司名称（可选）" 
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="serviceCity">服务城市 *</Label>
+                  <Select
+                    value={selectedServiceCity}
+                    onValueChange={value => {
+                      void handleServiceCitySelect(value)
+                    }}
+                    disabled={isLoadingServiceCities}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          isLoadingServiceCities
+                            ? "加载服务城市中..."
+                            : serviceCities.length === 0
+                              ? "暂无可选服务城市"
+                              : "选择服务城市"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingServiceCities ? (
+                        <SelectItem value="loading" disabled>
+                          加载中...
+                        </SelectItem>
+                      ) : serviceCities.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          暂无服务城市
+                        </SelectItem>
+                      ) : (
+                        serviceCities.map(city => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>服务区域 *</Label>
+                  <div className="mt-2 space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!selectedServiceCity}
+                      onClick={handleOpenServiceAreaDialog}
+                    >
+                      {selectedServiceAreaSummaries.length > 0
+                        ? `已选择 ${selectedServiceAreaSummaries.length} 个服务区域`
+                        : selectedServiceCity
+                          ? "选择服务区域"
+                          : "请先选择服务城市"}
+                    </Button>
+                    {selectedServiceAreaSummaries.length > 0 && (
+                      <ul className="text-xs text-gray-600 list-disc pl-4 space-y-0.5">
+                        {selectedServiceAreaSummaries.map(area => (
+                          <li key={area.id}>{area.area}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
                 
                 <div>
@@ -514,6 +675,77 @@ export default function RegisterPage() {
               取消
             </Button>
             <Button type="button" onClick={handleConfirmProfessionSelection}>
+              确认
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isServiceAreaDialogOpen} onOpenChange={setIsServiceAreaDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>选择服务区域</DialogTitle>
+            <DialogDescription>
+              {selectedServiceCity
+                ? `请选择 ${selectedServiceCity} 下的服务区域，可多选`
+                : "请先选择服务城市"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!selectedServiceCity ? (
+            <div className="py-10 text-center text-sm text-gray-500">
+              请选择服务城市后再选择服务区域
+            </div>
+          ) : isLoadingServiceAreas ? (
+            <div className="py-10 text-center text-sm text-gray-500">加载服务区域中...</div>
+          ) : (
+            <ScrollArea className="max-h-64 border rounded-md p-3">
+              {serviceAreaDialogError && serviceAreas.length === 0 ? (
+                <p className="text-sm text-red-600">{serviceAreaDialogError}</p>
+              ) : serviceAreas.length === 0 ? (
+                <p className="text-sm text-gray-500">当前城市暂无可选服务区域</p>
+              ) : (
+                <div className="space-y-3">
+                  {serviceAreas.map(area => {
+                    const isChecked = tempSelectedServiceAreas.includes(area.id)
+                    return (
+                      <label
+                        key={area.id}
+                        className="flex items-start space-x-2 rounded-md border border-transparent px-2 py-1 transition hover:border-gray-200"
+                      >
+                        <Checkbox
+                          className="mt-1"
+                          checked={isChecked}
+                          onCheckedChange={checked => toggleTempServiceArea(area.id, checked)}
+                        />
+                        <div className="text-sm leading-5">
+                          <p className="font-medium text-gray-800">{area.area}</p>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+          )}
+
+          {serviceAreaDialogError && serviceAreas.length > 0 && (
+            <p className="text-sm text-red-600">{serviceAreaDialogError}</p>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsServiceAreaDialogOpen(false)
+                setServiceAreaDialogError("")
+                setTempSelectedServiceAreas(selectedServiceAreaIds)
+              }}
+            >
+              取消
+            </Button>
+            <Button type="button" onClick={handleConfirmServiceAreaSelection}>
               确认
             </Button>
           </DialogFooter>

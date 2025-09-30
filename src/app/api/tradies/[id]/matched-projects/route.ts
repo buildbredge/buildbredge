@@ -41,7 +41,7 @@ export async function GET(
 
     // Build the base query for matching projects
     // Only show projects that are published and available for tradies to accept
-    let query = supabase
+    const query = supabase
       .from("projects")
       .select(`
         id,
@@ -86,7 +86,7 @@ export async function GET(
         }
       }
 
-      let { data: categoryMatches, count: categoryCount } = await languageQuery
+      const { data: categoryMatches, count: categoryCount } = await languageQuery
         .range(offset, offset + limit - 1)
 
       const processedProjects = processProjectResults(categoryMatches || [], tradieData)

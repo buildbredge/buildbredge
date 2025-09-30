@@ -18,15 +18,12 @@ interface RegisterData {
   password: string
   phone: string
   userType: 'homeowner' | 'tradie'
-  location: string
-  coordinates?: {
-    lat: number | null
-    lng: number | null
-  }
+  location?: string
   language?: string
   company?: string
   categoryId?: string
   professionIds?: string[]
+  serviceAreaIds?: string[]
   parentTradieId?: string
 }
 
@@ -141,12 +138,12 @@ class AuthService {
             phone: userData.phone,
             email: userData.email,
             location: userData.location,
-            coordinates: userData.coordinates,
             userType: userData.userType,
             language: userData.language || '中/EN',
             company: userData.company,
             categoryId: userData.categoryId,
             professionIds: userData.professionIds,
+            serviceAreaIds: userData.serviceAreaIds,
             parentTradieId: userData.parentTradieId
           })
         })

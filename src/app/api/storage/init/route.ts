@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
 
 // 检查是否有服务角色密钥
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 let supabaseAdmin = supabase
 if (supabaseServiceKey) {
-  const { createClient } = require('@supabase/supabase-js')
   supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,

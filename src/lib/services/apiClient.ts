@@ -57,6 +57,7 @@ interface UserProfileData {
   bio?: string
   website?: string
   service_area?: string
+  serviceAreas?: Array<{ id: string; city: string; area: string }>
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string

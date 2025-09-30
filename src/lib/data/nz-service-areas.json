@@ -1,0 +1,4694 @@
+[
+  {
+    "city": "Akaroa",
+    "area": "Akaroa"
+  },
+  {
+    "city": "Alexandra",
+    "area": "Alexandra"
+  },
+  {
+    "city": "Alexandra",
+    "area": "Bridge Hill"
+  },
+  {
+    "city": "Alexandra",
+    "area": "Letts Gully"
+  },
+  {
+    "city": "Algies Bay",
+    "area": "Algies Bay"
+  },
+  {
+    "city": "Amberley",
+    "area": "Amberley"
+  },
+  {
+    "city": "Arrowtown",
+    "area": "Arrowtown"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Allenton"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Ashburton"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Elgin"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Hampstead"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Netherby"
+  },
+  {
+    "city": "Ashburton",
+    "area": "Tinwald"
+  },
+  {
+    "city": "Ashhurst",
+    "area": "Ashhurst"
+  },
+  {
+    "city": "Auckland",
+    "area": "Albany"
+  },
+  {
+    "city": "Auckland",
+    "area": "Albany Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Alfriston"
+  },
+  {
+    "city": "Auckland",
+    "area": "Auckland Airport"
+  },
+  {
+    "city": "Auckland",
+    "area": "Auckland Central"
+  },
+  {
+    "city": "Auckland",
+    "area": "Avondale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Bayswater"
+  },
+  {
+    "city": "Auckland",
+    "area": "Bayview"
+  },
+  {
+    "city": "Auckland",
+    "area": "Beach Haven"
+  },
+  {
+    "city": "Auckland",
+    "area": "Beachlands"
+  },
+  {
+    "city": "Auckland",
+    "area": "Belmont"
+  },
+  {
+    "city": "Auckland",
+    "area": "Birkdale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Birkenhead"
+  },
+  {
+    "city": "Auckland",
+    "area": "Blockhouse Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Botany Downs"
+  },
+  {
+    "city": "Auckland",
+    "area": "Browns Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Bucklands Beach"
+  },
+  {
+    "city": "Auckland",
+    "area": "Burswood"
+  },
+  {
+    "city": "Auckland",
+    "area": "Campbells Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Castor Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Chatswood"
+  },
+  {
+    "city": "Auckland",
+    "area": "Clendon Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Clover Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Cockle Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Cornwallis"
+  },
+  {
+    "city": "Auckland",
+    "area": "Dannemora"
+  },
+  {
+    "city": "Auckland",
+    "area": "Devonport"
+  },
+  {
+    "city": "Auckland",
+    "area": "East Tamaki"
+  },
+  {
+    "city": "Auckland",
+    "area": "East Tamaki Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Eastern Beach"
+  },
+  {
+    "city": "Auckland",
+    "area": "Eden Terrace"
+  },
+  {
+    "city": "Auckland",
+    "area": "Ellerslie"
+  },
+  {
+    "city": "Auckland",
+    "area": "Epsom"
+  },
+  {
+    "city": "Auckland",
+    "area": "Fairview Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Farm Cove"
+  },
+  {
+    "city": "Auckland",
+    "area": "Favona"
+  },
+  {
+    "city": "Auckland",
+    "area": "Flat Bush"
+  },
+  {
+    "city": "Auckland",
+    "area": "Forrest Hill"
+  },
+  {
+    "city": "Auckland",
+    "area": "Freemans Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Glen Eden"
+  },
+  {
+    "city": "Auckland",
+    "area": "Glen Innes"
+  },
+  {
+    "city": "Auckland",
+    "area": "Glendene"
+  },
+  {
+    "city": "Auckland",
+    "area": "Glendowie"
+  },
+  {
+    "city": "Auckland",
+    "area": "Glenfield"
+  },
+  {
+    "city": "Auckland",
+    "area": "Golflands"
+  },
+  {
+    "city": "Auckland",
+    "area": "Goodwood Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Grafton"
+  },
+  {
+    "city": "Auckland",
+    "area": "Green Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Greenhithe"
+  },
+  {
+    "city": "Auckland",
+    "area": "Greenlane"
+  },
+  {
+    "city": "Auckland",
+    "area": "Grey Lynn"
+  },
+  {
+    "city": "Auckland",
+    "area": "Half Moon Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Hauraki"
+  },
+  {
+    "city": "Auckland",
+    "area": "Henderson"
+  },
+  {
+    "city": "Auckland",
+    "area": "Henderson Valley"
+  },
+  {
+    "city": "Auckland",
+    "area": "Herald Island"
+  },
+  {
+    "city": "Auckland",
+    "area": "Herne Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Highland Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Hillcrest"
+  },
+  {
+    "city": "Auckland",
+    "area": "Hillpark"
+  },
+  {
+    "city": "Auckland",
+    "area": "Hillsborough"
+  },
+  {
+    "city": "Auckland",
+    "area": "Hobsonville"
+  },
+  {
+    "city": "Auckland",
+    "area": "Howick"
+  },
+  {
+    "city": "Auckland",
+    "area": "Huia"
+  },
+  {
+    "city": "Auckland",
+    "area": "Huntington Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Kelston"
+  },
+  {
+    "city": "Auckland",
+    "area": "Kingsland"
+  },
+  {
+    "city": "Auckland",
+    "area": "Kohimarama"
+  },
+  {
+    "city": "Auckland",
+    "area": "Laingholm"
+  },
+  {
+    "city": "Auckland",
+    "area": "Long Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Lucas Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Lynfield"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mairangi Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mangere"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mangere Bridge"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mangere East"
+  },
+  {
+    "city": "Auckland",
+    "area": "Manukau"
+  },
+  {
+    "city": "Auckland",
+    "area": "Manurewa"
+  },
+  {
+    "city": "Auckland",
+    "area": "Manurewa East"
+  },
+  {
+    "city": "Auckland",
+    "area": "Maraetai"
+  },
+  {
+    "city": "Auckland",
+    "area": "Massey"
+  },
+  {
+    "city": "Auckland",
+    "area": "Meadowbank"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mechanics Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mellons Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Middlemore Hospital"
+  },
+  {
+    "city": "Auckland",
+    "area": "Milford"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mission Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Morningside"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mount Albert"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mount Eden"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mount Roskill"
+  },
+  {
+    "city": "Auckland",
+    "area": "Mount Wellington"
+  },
+  {
+    "city": "Auckland",
+    "area": "Murrays Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Narrow Neck"
+  },
+  {
+    "city": "Auckland",
+    "area": "New Lynn"
+  },
+  {
+    "city": "Auckland",
+    "area": "New Windsor"
+  },
+  {
+    "city": "Auckland",
+    "area": "Newmarket"
+  },
+  {
+    "city": "Auckland",
+    "area": "Nihotupu"
+  },
+  {
+    "city": "Auckland",
+    "area": "Northcote"
+  },
+  {
+    "city": "Auckland",
+    "area": "Northcote Point"
+  },
+  {
+    "city": "Auckland",
+    "area": "Northcross"
+  },
+  {
+    "city": "Auckland",
+    "area": "Northpark"
+  },
+  {
+    "city": "Auckland",
+    "area": "Okura"
+  },
+  {
+    "city": "Auckland",
+    "area": "One Tree Hill"
+  },
+  {
+    "city": "Auckland",
+    "area": "Onehunga"
+  },
+  {
+    "city": "Auckland",
+    "area": "Orakei"
+  },
+  {
+    "city": "Auckland",
+    "area": "Oratia"
+  },
+  {
+    "city": "Auckland",
+    "area": "Otahuhu"
+  },
+  {
+    "city": "Auckland",
+    "area": "Otara"
+  },
+  {
+    "city": "Auckland",
+    "area": "Oteha"
+  },
+  {
+    "city": "Auckland",
+    "area": "Pakuranga"
+  },
+  {
+    "city": "Auckland",
+    "area": "Pakuranga Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Panmure"
+  },
+  {
+    "city": "Auckland",
+    "area": "Papatoetoe"
+  },
+  {
+    "city": "Auckland",
+    "area": "Parau"
+  },
+  {
+    "city": "Auckland",
+    "area": "Paremoremo"
+  },
+  {
+    "city": "Auckland",
+    "area": "Parnell"
+  },
+  {
+    "city": "Auckland",
+    "area": "Penrose"
+  },
+  {
+    "city": "Auckland",
+    "area": "Pinehill"
+  },
+  {
+    "city": "Auckland",
+    "area": "Point Chevalier"
+  },
+  {
+    "city": "Auckland",
+    "area": "Point England"
+  },
+  {
+    "city": "Auckland",
+    "area": "Ponsonby"
+  },
+  {
+    "city": "Auckland",
+    "area": "Randwick Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Ranui"
+  },
+  {
+    "city": "Auckland",
+    "area": "Redvale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Remuera"
+  },
+  {
+    "city": "Auckland",
+    "area": "Rosedale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Rothesay Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Royal Oak"
+  },
+  {
+    "city": "Auckland",
+    "area": "Saint Heliers"
+  },
+  {
+    "city": "Auckland",
+    "area": "Saint Marys Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Sandringham"
+  },
+  {
+    "city": "Auckland",
+    "area": "Schnapper Rock"
+  },
+  {
+    "city": "Auckland",
+    "area": "Shamrock Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Shelly Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Somerville"
+  },
+  {
+    "city": "Auckland",
+    "area": "St Johns"
+  },
+  {
+    "city": "Auckland",
+    "area": "Stanley Point"
+  },
+  {
+    "city": "Auckland",
+    "area": "Stonefields"
+  },
+  {
+    "city": "Auckland",
+    "area": "Sunnyhills"
+  },
+  {
+    "city": "Auckland",
+    "area": "Sunnynook"
+  },
+  {
+    "city": "Auckland",
+    "area": "Sunnyvale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Swanson"
+  },
+  {
+    "city": "Auckland",
+    "area": "Takanini"
+  },
+  {
+    "city": "Auckland",
+    "area": "Takapuna"
+  },
+  {
+    "city": "Auckland",
+    "area": "Te Atatu Peninsula"
+  },
+  {
+    "city": "Auckland",
+    "area": "Te Atatu South"
+  },
+  {
+    "city": "Auckland",
+    "area": "The Gardens"
+  },
+  {
+    "city": "Auckland",
+    "area": "Three Kings"
+  },
+  {
+    "city": "Auckland",
+    "area": "Titirangi"
+  },
+  {
+    "city": "Auckland",
+    "area": "Torbay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Totara Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Totara Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Totara Vale"
+  },
+  {
+    "city": "Auckland",
+    "area": "Unsworth Heights"
+  },
+  {
+    "city": "Auckland",
+    "area": "Wai o Taiki Bay"
+  },
+  {
+    "city": "Auckland",
+    "area": "Waiake"
+  },
+  {
+    "city": "Auckland",
+    "area": "Waiatarua"
+  },
+  {
+    "city": "Auckland",
+    "area": "Wairau Valley"
+  },
+  {
+    "city": "Auckland",
+    "area": "Waitakere"
+  },
+  {
+    "city": "Auckland",
+    "area": "Waterview"
+  },
+  {
+    "city": "Auckland",
+    "area": "Wattle Downs"
+  },
+  {
+    "city": "Auckland",
+    "area": "Wesley"
+  },
+  {
+    "city": "Auckland",
+    "area": "West Harbour"
+  },
+  {
+    "city": "Auckland",
+    "area": "Western Springs"
+  },
+  {
+    "city": "Auckland",
+    "area": "Westgate"
+  },
+  {
+    "city": "Auckland",
+    "area": "Westhaven"
+  },
+  {
+    "city": "Auckland",
+    "area": "Westmere"
+  },
+  {
+    "city": "Auckland",
+    "area": "Weymouth"
+  },
+  {
+    "city": "Auckland",
+    "area": "Whenuapai"
+  },
+  {
+    "city": "Auckland",
+    "area": "Windsor Park"
+  },
+  {
+    "city": "Auckland",
+    "area": "Wiri"
+  },
+  {
+    "city": "Balclutha",
+    "area": "Balclutha"
+  },
+  {
+    "city": "Big Omaha",
+    "area": "Big Omaha"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Blenheim"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Burleigh"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Grovetown"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Islington"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Mayfield"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Redwoodtown"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Riversdale"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Springlands"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Taylor Pass"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Wither Hills"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Witherlea"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Woodbourne"
+  },
+  {
+    "city": "Blenheim",
+    "area": "Yelverton"
+  },
+  {
+    "city": "Bluff",
+    "area": "Bluff"
+  },
+  {
+    "city": "Bluff",
+    "area": "Ocean Beach"
+  },
+  {
+    "city": "Brightwater",
+    "area": "Brightwater"
+  },
+  {
+    "city": "Bulls",
+    "area": "Bulls"
+  },
+  {
+    "city": "Bulls",
+    "area": "Ohakea"
+  },
+  {
+    "city": "Burnham",
+    "area": "Burnham"
+  },
+  {
+    "city": "Cable Bay",
+    "area": "Cable Bay"
+  },
+  {
+    "city": "Cambridge",
+    "area": "Cambridge"
+  },
+  {
+    "city": "Cambridge",
+    "area": "Leamington"
+  },
+  {
+    "city": "Carterton",
+    "area": "Carterton"
+  },
+  {
+    "city": "Carterton",
+    "area": "Clareville"
+  },
+  {
+    "city": "Cheviot",
+    "area": "Cheviot"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Addington"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Aidanfield"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Aranui"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Avondale"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Avonhead"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Avonside"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Beckenham"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Belfast"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Bexley"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Bishopdale"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Bottle Lake"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Bromley"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Brooklands"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Broomfield"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Bryndwr"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Burnside"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Burwood"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Casebrook"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Cashmere"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Christchurch Airport"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Christchurch Central"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Clifton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Coutts Island"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Cracroft"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Dallington"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Edgeware"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Fendalton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Ferrymead"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Halswell"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Harewood"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Heathcote Valley"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hei Hei"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hillmorton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hillsborough"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hoon Hay"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hornby"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Hornby South"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Huntsbury"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Ilam"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Islington"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Kainga"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Kennedys Bush"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Linwood"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Mairehau"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Marshland"
+  },
+  {
+    "city": "Christchurch",
+    "area": "McLeans Island"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Merivale"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Middleton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Moncks Bay"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Mount Pleasant"
+  },
+  {
+    "city": "Christchurch",
+    "area": "New Brighton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "North New Brighton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Northcote"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Northwood"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Opawa"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Ouruhia"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Papanui"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Parklands"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Phillipstown"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Redcliffs"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Redwood"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Riccarton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Richmond"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Richmond Hill"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Russley"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Saint Martins"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Scarborough"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Shirley"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Sockburn"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Somerfield"
+  },
+  {
+    "city": "Christchurch",
+    "area": "South New Brighton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Southshore"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Spencerville"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Spreydon"
+  },
+  {
+    "city": "Christchurch",
+    "area": "St Albans"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Strowan"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Sumner"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Sydenham"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Te Onepoto / Taylors Mistake"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Templeton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Upper Riccarton"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Waimairi Beach"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Wainoni"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Waltham"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Westmorland"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Wigram"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Woolston"
+  },
+  {
+    "city": "Christchurch",
+    "area": "Yaldhurst"
+  },
+  {
+    "city": "Clarks Beach",
+    "area": "Clarks Beach"
+  },
+  {
+    "city": "Clinton",
+    "area": "Clinton"
+  },
+  {
+    "city": "Clive",
+    "area": "Clive"
+  },
+  {
+    "city": "Clyde",
+    "area": "Clyde"
+  },
+  {
+    "city": "Coopers Beach",
+    "area": "Coopers Beach"
+  },
+  {
+    "city": "Coromandel",
+    "area": "Coromandel"
+  },
+  {
+    "city": "Coromandel",
+    "area": "Preece Point"
+  },
+  {
+    "city": "Coromandel",
+    "area": "Te Rerenga"
+  },
+  {
+    "city": "Cromwell",
+    "area": "Cromwell"
+  },
+  {
+    "city": "Dannevirke",
+    "area": "Dannevirke"
+  },
+  {
+    "city": "Darfield",
+    "area": "Darfield"
+  },
+  {
+    "city": "Dargaville",
+    "area": "Dargaville"
+  },
+  {
+    "city": "Doyleston",
+    "area": "Doyleston"
+  },
+  {
+    "city": "Drury",
+    "area": "Drury"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Abbotsford"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Andersons Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Balaclava"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Belleknowes"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Blackhead"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Bradford"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Brighton"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Broad Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Brockville"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Burnside"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Calton Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Careys Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Caversham"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Chain Hills"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Clyde Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Company Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Concord"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Corstorphine"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Dalmore"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Dunedin Central"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Fairfield"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Forbury"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Glenleith"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Glenross"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Green Island"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Halfway Bush"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Helensburgh"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Highcliff"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Kaikorai"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Kenmure"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Kensington"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Kew"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Larnachs Castle"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Lawyers Head"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Leith Valley"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Liberton"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Lookout Point"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Macandrew Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Maia"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Maori Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Maryhill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Mornington"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Mount Grand"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Musselburgh"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Normanby"
+  },
+  {
+    "city": "Dunedin",
+    "area": "North Dunedin"
+  },
+  {
+    "city": "Dunedin",
+    "area": "North East Valley"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Ocean Grove"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Ocean View"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Opoho"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Pine Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Port Chalmers"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Portobello"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Ravensbourne"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Roseneath"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Roslyn"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Saddle Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Saint Clair"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Saint Kilda"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Saint Leonards"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Sawyers Bay"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Scroggs Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Shiel Hill"
+  },
+  {
+    "city": "Dunedin",
+    "area": "South Dunedin"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Tainui"
+  },
+  {
+    "city": "Dunedin",
+    "area": "The Cove"
+  },
+  {
+    "city": "Dunedin",
+    "area": "The Glen"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Upper Junction"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Vauxhall"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Wakari"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Waldronville"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Waverley"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Westwood"
+  },
+  {
+    "city": "Dunedin",
+    "area": "Woodhaugh"
+  },
+  {
+    "city": "Edendale",
+    "area": "Edendale"
+  },
+  {
+    "city": "Edgecumbe",
+    "area": "Edgecumbe"
+  },
+  {
+    "city": "EketÄhuna",
+    "area": "Eketahuna"
+  },
+  {
+    "city": "Eltham",
+    "area": "Eltham"
+  },
+  {
+    "city": "Fairlie",
+    "area": "Fairlie"
+  },
+  {
+    "city": "Featherston",
+    "area": "Featherston"
+  },
+  {
+    "city": "Feilding",
+    "area": "Feilding"
+  },
+  {
+    "city": "Foxton",
+    "area": "Foxton"
+  },
+  {
+    "city": "Foxton",
+    "area": "Foxton Beach"
+  },
+  {
+    "city": "Geraldine",
+    "area": "Geraldine"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Awapuni"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Elgin"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Gisborne"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Gisborne Airport"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Inner Kaiti"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Kaiti"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Lytton West"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Makaraka"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Makauri"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Mangapapa"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Matawhero"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Okitu"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Outer Kaiti"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Patutahi"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Riverdale"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Tamarau"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Te Hapara"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Waerengaahika"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Waihirere"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Wainui"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Waituhi"
+  },
+  {
+    "city": "Gisborne",
+    "area": "Whataupoko"
+  },
+  {
+    "city": "Gore",
+    "area": "Charlton"
+  },
+  {
+    "city": "Gore",
+    "area": "East Gore"
+  },
+  {
+    "city": "Gore",
+    "area": "Gore"
+  },
+  {
+    "city": "Granity",
+    "area": "Granity"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Blackball"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Blaketown"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Camerons"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Coal Creek"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Cobden"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Dillmanstown"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Dobson"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Gladstone"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Greymouth"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Kaiata"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Karoro"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Kumara"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Kumara Junction"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Marsden"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Nine Mile"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Paroa"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Point Elizabeth"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Rapahoe"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Rutherglen"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Stillwater"
+  },
+  {
+    "city": "Greymouth",
+    "area": "Taylorville"
+  },
+  {
+    "city": "Greytown",
+    "area": "Greytown"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Avalon"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Bader"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Beerescourt"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Chartwell"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Chedworth"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Claudelands"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Deanwell"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Dinsdale"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Enderley"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Fairfield"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Fairview Downs"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Fitzroy"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Flagstaff"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Forest Lake"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Frankton"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Glenview"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Grandview Heights"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Hamilton Central"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Hamilton East"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Hamilton Lake"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Harrowfield"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Hillcrest"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Huntington"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Maeroa"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Melville"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Nawton"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Northgate"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Peacocke"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Pukete"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Queenwood"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Riverlea"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Rotokauri"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Rototuna"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Rototuna North"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Ruakura"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Silverdale"
+  },
+  {
+    "city": "Hamilton",
+    "area": "St Andrews"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Tauwhare"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Te Rapa"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Te Rapa Park"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Temple View"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Waikato Hospital"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Western Heights"
+  },
+  {
+    "city": "Hamilton",
+    "area": "Whitiora"
+  },
+  {
+    "city": "Hampden",
+    "area": "Hampden"
+  },
+  {
+    "city": "Hanmer Springs",
+    "area": "Hanmer Forest"
+  },
+  {
+    "city": "Hanmer Springs",
+    "area": "Hanmer Springs"
+  },
+  {
+    "city": "Hastings",
+    "area": "Akina"
+  },
+  {
+    "city": "Hastings",
+    "area": "Camberley"
+  },
+  {
+    "city": "Hastings",
+    "area": "Flaxmere"
+  },
+  {
+    "city": "Hastings",
+    "area": "Frimley"
+  },
+  {
+    "city": "Hastings",
+    "area": "Hastings"
+  },
+  {
+    "city": "Hastings",
+    "area": "Longlands"
+  },
+  {
+    "city": "Hastings",
+    "area": "Mahora"
+  },
+  {
+    "city": "Hastings",
+    "area": "Mayfair"
+  },
+  {
+    "city": "Hastings",
+    "area": "Parkvale"
+  },
+  {
+    "city": "Hastings",
+    "area": "Raureka"
+  },
+  {
+    "city": "Hastings",
+    "area": "Saint Leonards"
+  },
+  {
+    "city": "Hastings",
+    "area": "Tomoana"
+  },
+  {
+    "city": "Hastings",
+    "area": "Woolwich"
+  },
+  {
+    "city": "Haumoana",
+    "area": "Haumoana"
+  },
+  {
+    "city": "Havelock",
+    "area": "Havelock"
+  },
+  {
+    "city": "Havelock North",
+    "area": "Havelock North"
+  },
+  {
+    "city": "Hector",
+    "area": "Hector"
+  },
+  {
+    "city": "Hector",
+    "area": "Ngakawau"
+  },
+  {
+    "city": "Helensville",
+    "area": "Helensville"
+  },
+  {
+    "city": "Helensville",
+    "area": "Parakai"
+  },
+  {
+    "city": "Hikurangi",
+    "area": "Glenbervie Forest"
+  },
+  {
+    "city": "Hikurangi",
+    "area": "Hikurangi"
+  },
+  {
+    "city": "Hokitika",
+    "area": "Blue Spur"
+  },
+  {
+    "city": "Hokitika",
+    "area": "Hokitika"
+  },
+  {
+    "city": "Hokitika",
+    "area": "Kaniere"
+  },
+  {
+    "city": "Huntly",
+    "area": "Huntly"
+  },
+  {
+    "city": "HÄwera",
+    "area": "Hawera"
+  },
+  {
+    "city": "HÄwera",
+    "area": "Normanby"
+  },
+  {
+    "city": "Inglewood",
+    "area": "Inglewood"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Appleby"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Ascot"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Avenal"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Clifton"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Georgetown"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Gladstone"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Glengarry"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Grasmere"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Hargest"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Hawthorndale"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Heidelberg"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Invercargill"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Kew"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Kingswell"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Lorneville"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Motu Rimu"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Newfield"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Prestonville"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Queens Park"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Richmond"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Rockdale"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Rosedale"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Seaward Bush"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Strathern"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Tisbury"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Turnbull Thomson Park"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Waihopai"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Waikiwi"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Waverley"
+  },
+  {
+    "city": "Invercargill",
+    "area": "West Invercargill"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Windsor"
+  },
+  {
+    "city": "Invercargill",
+    "area": "Woodend"
+  },
+  {
+    "city": "Kaiapoi",
+    "area": "Kaiapoi"
+  },
+  {
+    "city": "Kaikohe",
+    "area": "Kaikohe"
+  },
+  {
+    "city": "KaikÅura",
+    "area": "Kaikoura"
+  },
+  {
+    "city": "KaikÅura",
+    "area": "Kaikoura Flat"
+  },
+  {
+    "city": "KaikÅura",
+    "area": "Kaikoura Peninsula"
+  },
+  {
+    "city": "KaikÅura",
+    "area": "South Bay"
+  },
+  {
+    "city": "Kairaki",
+    "area": "Kairaki"
+  },
+  {
+    "city": "Kaitaia",
+    "area": "Ahipara"
+  },
+  {
+    "city": "Kaitaia",
+    "area": "Kaitaia"
+  },
+  {
+    "city": "Kaitangata",
+    "area": "Kaitangata"
+  },
+  {
+    "city": "Karangahake",
+    "area": "Karangahake"
+  },
+  {
+    "city": "Katikati",
+    "area": "Katikati"
+  },
+  {
+    "city": "Kawakawa",
+    "area": "Kawakawa"
+  },
+  {
+    "city": "Kawakawa",
+    "area": "Waiomio"
+  },
+  {
+    "city": "Kawerau",
+    "area": "Kawerau"
+  },
+  {
+    "city": "Kerikeri",
+    "area": "Kerikeri"
+  },
+  {
+    "city": "Kirwee",
+    "area": "Kirwee"
+  },
+  {
+    "city": "KumeÅ«",
+    "area": "Huapai"
+  },
+  {
+    "city": "KumeÅ«",
+    "area": "Kumeu"
+  },
+  {
+    "city": "Kurow",
+    "area": "Hakataramea"
+  },
+  {
+    "city": "Kurow",
+    "area": "Kurow"
+  },
+  {
+    "city": "Lansdowne",
+    "area": "Lansdowne"
+  },
+  {
+    "city": "Lawrence",
+    "area": "Lawrence"
+  },
+  {
+    "city": "Leeston",
+    "area": "Leeston"
+  },
+  {
+    "city": "Levin",
+    "area": "Levin"
+  },
+  {
+    "city": "Levin",
+    "area": "Poroutawhao"
+  },
+  {
+    "city": "Levin",
+    "area": "Waitarere"
+  },
+  {
+    "city": "Levin",
+    "area": "Waitarere Beach"
+  },
+  {
+    "city": "Lincoln",
+    "area": "Lincoln"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Alicetown"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Avalon"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Belmont"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Boulcott"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Days Bay"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Eastbourne"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Epuni"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Fairfield"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Gracefield"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Harbour View"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Haywards"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Hutt Central"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Kelson"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Korokoro"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Lowry Bay"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Mahina Bay"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Manor Park"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Maungaraki"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Melling"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Moera"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Naenae"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Normandale"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Pencarrow Head"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Petone"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Point Howard"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Seaview"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Sorrento Bay"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Stokes Valley"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Sunshine Bay"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Taita"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Tirohanga"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Wainuiomata"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Waiwhetu"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Waterloo"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "Woburn"
+  },
+  {
+    "city": "Lower Hutt",
+    "area": "York Bay"
+  },
+  {
+    "city": "Lumsden",
+    "area": "Lumsden"
+  },
+  {
+    "city": "Lyttelton",
+    "area": "Cass Bay"
+  },
+  {
+    "city": "Lyttelton",
+    "area": "Corsair Bay"
+  },
+  {
+    "city": "Lyttelton",
+    "area": "Lyttelton"
+  },
+  {
+    "city": "Mamaku",
+    "area": "Mamaku"
+  },
+  {
+    "city": "Manaia",
+    "area": "Manaia"
+  },
+  {
+    "city": "Mangakino",
+    "area": "Mangakino"
+  },
+  {
+    "city": "Mangawhai",
+    "area": "Mangawhai"
+  },
+  {
+    "city": "Mangawhai",
+    "area": "Mangawhai Heads"
+  },
+  {
+    "city": "MangÅnui",
+    "area": "Mangonui"
+  },
+  {
+    "city": "Marlborough Sounds",
+    "area": "Raetihi"
+  },
+  {
+    "city": "Martinborough",
+    "area": "Martinborough"
+  },
+  {
+    "city": "Marton",
+    "area": "Crofton"
+  },
+  {
+    "city": "Marton",
+    "area": "Marton"
+  },
+  {
+    "city": "Masterton",
+    "area": "Homebush"
+  },
+  {
+    "city": "Masterton",
+    "area": "Kuripuni"
+  },
+  {
+    "city": "Masterton",
+    "area": "Lansdowne"
+  },
+  {
+    "city": "Masterton",
+    "area": "Masterton"
+  },
+  {
+    "city": "Masterton",
+    "area": "Solway"
+  },
+  {
+    "city": "Masterton",
+    "area": "Te Ore Ore"
+  },
+  {
+    "city": "Matamata",
+    "area": "Matamata"
+  },
+  {
+    "city": "Mataura",
+    "area": "Mataura"
+  },
+  {
+    "city": "Maungaturoto",
+    "area": "Maungaturoto"
+  },
+  {
+    "city": "Methven",
+    "area": "Methven"
+  },
+  {
+    "city": "Milford Sound",
+    "area": "Milford Sound"
+  },
+  {
+    "city": "Milton",
+    "area": "Milton"
+  },
+  {
+    "city": "Moerewa",
+    "area": "Moerewa"
+  },
+  {
+    "city": "Morrinsville",
+    "area": "Morrinsville"
+  },
+  {
+    "city": "Mosgiel",
+    "area": "East Taieri"
+  },
+  {
+    "city": "Mosgiel",
+    "area": "Kinmont Park"
+  },
+  {
+    "city": "Mosgiel",
+    "area": "Mosgiel"
+  },
+  {
+    "city": "Motueka",
+    "area": "Motueka"
+  },
+  {
+    "city": "Mount Maunganui",
+    "area": "Mount Maunganui"
+  },
+  {
+    "city": "Mount Pleasant",
+    "area": "Mount Pleasant"
+  },
+  {
+    "city": "Murchison",
+    "area": "Murchison"
+  },
+  {
+    "city": "Murupara",
+    "area": "Murupara"
+  },
+  {
+    "city": "MÄkara Beach",
+    "area": "Makara Beach"
+  },
+  {
+    "city": "MÄpua",
+    "area": "Mapua"
+  },
+  {
+    "city": "MÄpua",
+    "area": "Ruby Bay"
+  },
+  {
+    "city": "Napier",
+    "area": "Ahuriri"
+  },
+  {
+    "city": "Napier",
+    "area": "Awatoto"
+  },
+  {
+    "city": "Napier",
+    "area": "Bay View"
+  },
+  {
+    "city": "Napier",
+    "area": "Bluff Hill"
+  },
+  {
+    "city": "Napier",
+    "area": "Greenmeadows"
+  },
+  {
+    "city": "Napier",
+    "area": "Hospital Hill"
+  },
+  {
+    "city": "Napier",
+    "area": "Jervoistown"
+  },
+  {
+    "city": "Napier",
+    "area": "Maraenui"
+  },
+  {
+    "city": "Napier",
+    "area": "Marewa"
+  },
+  {
+    "city": "Napier",
+    "area": "Meeanee"
+  },
+  {
+    "city": "Napier",
+    "area": "Napier Airport"
+  },
+  {
+    "city": "Napier",
+    "area": "Napier Port"
+  },
+  {
+    "city": "Napier",
+    "area": "Napier South"
+  },
+  {
+    "city": "Napier",
+    "area": "Onekawa"
+  },
+  {
+    "city": "Napier",
+    "area": "Pandora"
+  },
+  {
+    "city": "Napier",
+    "area": "Pirimai"
+  },
+  {
+    "city": "Napier",
+    "area": "Poraiti"
+  },
+  {
+    "city": "Napier",
+    "area": "Tamatea"
+  },
+  {
+    "city": "Napier",
+    "area": "Taradale"
+  },
+  {
+    "city": "Napier",
+    "area": "Te Awa"
+  },
+  {
+    "city": "Napier",
+    "area": "Westshore"
+  },
+  {
+    "city": "Nelson",
+    "area": "Annesbrook"
+  },
+  {
+    "city": "Nelson",
+    "area": "Atawhai"
+  },
+  {
+    "city": "Nelson",
+    "area": "Beachville"
+  },
+  {
+    "city": "Nelson",
+    "area": "Bishopdale"
+  },
+  {
+    "city": "Nelson",
+    "area": "Britannia Heights"
+  },
+  {
+    "city": "Nelson",
+    "area": "Enner Glynn"
+  },
+  {
+    "city": "Nelson",
+    "area": "Maitai"
+  },
+  {
+    "city": "Nelson",
+    "area": "Marybank"
+  },
+  {
+    "city": "Nelson",
+    "area": "Moana"
+  },
+  {
+    "city": "Nelson",
+    "area": "Monaco"
+  },
+  {
+    "city": "Nelson",
+    "area": "Nelson"
+  },
+  {
+    "city": "Nelson",
+    "area": "Nelson Airport"
+  },
+  {
+    "city": "Nelson",
+    "area": "Nelson South"
+  },
+  {
+    "city": "Nelson",
+    "area": "Port Nelson"
+  },
+  {
+    "city": "Nelson",
+    "area": "Stepneyville"
+  },
+  {
+    "city": "Nelson",
+    "area": "Stoke"
+  },
+  {
+    "city": "Nelson",
+    "area": "Tahunanui"
+  },
+  {
+    "city": "Nelson",
+    "area": "The Brook"
+  },
+  {
+    "city": "Nelson",
+    "area": "The Wood"
+  },
+  {
+    "city": "Nelson",
+    "area": "Toi Toi"
+  },
+  {
+    "city": "Nelson",
+    "area": "Wakatu"
+  },
+  {
+    "city": "Nelson",
+    "area": "Washington Valley"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Bell Block"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Blagdon"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Brooklands"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Ferndale"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Fitzroy"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Frankleigh Park"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Glen Avon"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Highlands Park"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Hurdon"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Lower Vogeltown"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Lynmouth"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Marfell"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Merrilands"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Moturoa"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "New Plymouth"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Port Taranaki"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Ridgewood"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Spotswood"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Strandon"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Upper Vogeltown"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Vogeltown"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Waiwhakaiho"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Welbourn"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Westown"
+  },
+  {
+    "city": "New Plymouth",
+    "area": "Whalers Gate"
+  },
+  {
+    "city": "Ngaruawahia",
+    "area": "Ngaruawahia"
+  },
+  {
+    "city": "Ngatea",
+    "area": "Ngatea"
+  },
+  {
+    "city": "Ngatea",
+    "area": "Turua"
+  },
+  {
+    "city": "Nightcaps",
+    "area": "Nightcaps"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Ardgowan"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Holmes Hill"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Oamaru"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Oamaru North"
+  },
+  {
+    "city": "Oamaru",
+    "area": "South Hill"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Waiareka Junction"
+  },
+  {
+    "city": "Oamaru",
+    "area": "Weston"
+  },
+  {
+    "city": "Ohai",
+    "area": "Ohai"
+  },
+  {
+    "city": "Ohakune",
+    "area": "Ohakune"
+  },
+  {
+    "city": "Ongarue",
+    "area": "Ongarue"
+  },
+  {
+    "city": "Opua",
+    "area": "Opua"
+  },
+  {
+    "city": "Orewa",
+    "area": "Hatfields Beach"
+  },
+  {
+    "city": "Orewa",
+    "area": "Orewa"
+  },
+  {
+    "city": "Otautau",
+    "area": "Otautau"
+  },
+  {
+    "city": "Otematata",
+    "area": "Otematata"
+  },
+  {
+    "city": "Outram",
+    "area": "Outram"
+  },
+  {
+    "city": "Owaka",
+    "area": "Owaka"
+  },
+  {
+    "city": "Oxford",
+    "area": "Oxford"
+  },
+  {
+    "city": "PaekÄkÄriki",
+    "area": "Paekakariki"
+  },
+  {
+    "city": "Paeroa",
+    "area": "Paeroa"
+  },
+  {
+    "city": "Pahiatua",
+    "area": "Kaitawa"
+  },
+  {
+    "city": "Pahiatua",
+    "area": "Makuri"
+  },
+  {
+    "city": "Pahiatua",
+    "area": "Mangamutu"
+  },
+  {
+    "city": "Pahiatua",
+    "area": "Mangatainoka"
+  },
+  {
+    "city": "Pahiatua",
+    "area": "Pahiatua"
+  },
+  {
+    "city": "Paihia",
+    "area": "Paihia"
+  },
+  {
+    "city": "Palmerston",
+    "area": "Palmerston"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Awapuni"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Cloverlea"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Fitzherbert"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Highbury"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Hokowhitu"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Kelvin Grove"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Linton"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Milson"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Palmerston North"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Roslyn"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Takaro"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Terrace End"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "West End"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Westbrook"
+  },
+  {
+    "city": "Palmerston North",
+    "area": "Whakarongo"
+  },
+  {
+    "city": "Papakura",
+    "area": "Opaheke"
+  },
+  {
+    "city": "Papakura",
+    "area": "Pahurehure"
+  },
+  {
+    "city": "Papakura",
+    "area": "Papakura"
+  },
+  {
+    "city": "Papakura",
+    "area": "Red Hill"
+  },
+  {
+    "city": "Papakura",
+    "area": "Rosehill"
+  },
+  {
+    "city": "Papamoa",
+    "area": "Papamoa"
+  },
+  {
+    "city": "Papamoa",
+    "area": "Papamoa Beach"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Maungakotukutuku"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Nikau Valley"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Otaihanga"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Paraparaumu"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Paraparaumu Beach"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Raumati Beach"
+  },
+  {
+    "city": "Paraparaumu",
+    "area": "Raumati South"
+  },
+  {
+    "city": "Pareora",
+    "area": "Pareora"
+  },
+  {
+    "city": "Picton",
+    "area": "Picton"
+  },
+  {
+    "city": "Picton",
+    "area": "Waikawa"
+  },
+  {
+    "city": "Piopio",
+    "area": "Piopio"
+  },
+  {
+    "city": "Pirongia",
+    "area": "Pirongia"
+  },
+  {
+    "city": "Pleasant Point",
+    "area": "Pleasant Point"
+  },
+  {
+    "city": "Porirua",
+    "area": "Aotea"
+  },
+  {
+    "city": "Porirua",
+    "area": "Ascot Park"
+  },
+  {
+    "city": "Porirua",
+    "area": "Camborne"
+  },
+  {
+    "city": "Porirua",
+    "area": "Cannons Creek"
+  },
+  {
+    "city": "Porirua",
+    "area": "Elsdon"
+  },
+  {
+    "city": "Porirua",
+    "area": "Hongoeka"
+  },
+  {
+    "city": "Porirua",
+    "area": "Kenepuru"
+  },
+  {
+    "city": "Porirua",
+    "area": "Papakowhai"
+  },
+  {
+    "city": "Porirua",
+    "area": "Paremata"
+  },
+  {
+    "city": "Porirua",
+    "area": "Plimmerton"
+  },
+  {
+    "city": "Porirua",
+    "area": "Porirua City Centre"
+  },
+  {
+    "city": "Porirua",
+    "area": "Pukerua Bay"
+  },
+  {
+    "city": "Porirua",
+    "area": "Ranui"
+  },
+  {
+    "city": "Porirua",
+    "area": "Takapuwahia"
+  },
+  {
+    "city": "Porirua",
+    "area": "Titahi Bay"
+  },
+  {
+    "city": "Porirua",
+    "area": "Waitangirua"
+  },
+  {
+    "city": "Porirua",
+    "area": "Whitby"
+  },
+  {
+    "city": "Prebbleton",
+    "area": "Prebbleton"
+  },
+  {
+    "city": "Puhi Puhi",
+    "area": "Puhi Puhi"
+  },
+  {
+    "city": "Pukekohe",
+    "area": "Pukekohe"
+  },
+  {
+    "city": "PutÄruru",
+    "area": "Putaruru"
+  },
+  {
+    "city": "PÄtea",
+    "area": "Patea"
+  },
+  {
+    "city": "Queenstown",
+    "area": "Fernhill"
+  },
+  {
+    "city": "Queenstown",
+    "area": "Frankton"
+  },
+  {
+    "city": "Queenstown",
+    "area": "Kelvin Heights"
+  },
+  {
+    "city": "Queenstown",
+    "area": "Queenstown"
+  },
+  {
+    "city": "Queenstown",
+    "area": "Sunshine Bay"
+  },
+  {
+    "city": "Raetihi",
+    "area": "Makakahi"
+  },
+  {
+    "city": "Raetihi",
+    "area": "Raetihi"
+  },
+  {
+    "city": "Raglan",
+    "area": "Raglan"
+  },
+  {
+    "city": "Rakaia",
+    "area": "Rakaia"
+  },
+  {
+    "city": "Ranfurly",
+    "area": "Ranfurly"
+  },
+  {
+    "city": "Rangiora",
+    "area": "Fernside"
+  },
+  {
+    "city": "Rangiora",
+    "area": "Rangiora"
+  },
+  {
+    "city": "Reefton",
+    "area": "Reefton"
+  },
+  {
+    "city": "Renwick",
+    "area": "Renwick"
+  },
+  {
+    "city": "Richmond",
+    "area": "Hope"
+  },
+  {
+    "city": "Richmond",
+    "area": "Richmond"
+  },
+  {
+    "city": "Riverhead",
+    "area": "Riverhead"
+  },
+  {
+    "city": "Riverton/Aparima",
+    "area": "Longwood"
+  },
+  {
+    "city": "Riverton/Aparima",
+    "area": "Riverton/Aparima"
+  },
+  {
+    "city": "Rolleston",
+    "area": "Rolleston"
+  },
+  {
+    "city": "Ross",
+    "area": "Ross"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Fairy Springs"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Fenton Park"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Fordlands"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Glenholme"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Hannahs Bay"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Hillcrest"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Holdens Bay"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Kawaha Point"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Koutu"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Lake Okareka"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Lake Tarawera"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Lynmore"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Mangakakahi"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Matipo Heights"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Mourea"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Ngapuna"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Ngongotaha"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Ohinemutu"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Owhata"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Pomare"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Pukehangi"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Rotorua"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Selwyn Heights"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Springfield"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Sunnybrook"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Tihiotonga"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Tikitere"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Utuhina"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Victoria"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Western Heights"
+  },
+  {
+    "city": "Rotorua",
+    "area": "Whakarewarewa"
+  },
+  {
+    "city": "Roxburgh",
+    "area": "Roxburgh"
+  },
+  {
+    "city": "RuakÄkÄ",
+    "area": "Ruakaka"
+  },
+  {
+    "city": "Ruatoria",
+    "area": "Ruatoria"
+  },
+  {
+    "city": "Ruawai",
+    "area": "Ruawai"
+  },
+  {
+    "city": "Runanga",
+    "area": "Dunollie"
+  },
+  {
+    "city": "Runanga",
+    "area": "Runanga"
+  },
+  {
+    "city": "Russell",
+    "area": "Okiato"
+  },
+  {
+    "city": "Russell",
+    "area": "Russell"
+  },
+  {
+    "city": "Sanson",
+    "area": "Sanson"
+  },
+  {
+    "city": "Seaward Valley",
+    "area": "Seaward Valley"
+  },
+  {
+    "city": "Seddon",
+    "area": "Seddon"
+  },
+  {
+    "city": "Shannon",
+    "area": "Shannon"
+  },
+  {
+    "city": "Silverdale",
+    "area": "Silverdale"
+  },
+  {
+    "city": "Snells Beach",
+    "area": "Snells Beach"
+  },
+  {
+    "city": "Southbridge",
+    "area": "Southbridge"
+  },
+  {
+    "city": "Spring Creek",
+    "area": "Spring Creek"
+  },
+  {
+    "city": "Springston",
+    "area": "Springston"
+  },
+  {
+    "city": "Stewart Island",
+    "area": "Halfmoon Bay / Oban"
+  },
+  {
+    "city": "Stirling",
+    "area": "Stirling"
+  },
+  {
+    "city": "Stratford",
+    "area": "Stratford"
+  },
+  {
+    "city": "Taihape",
+    "area": "Taihape"
+  },
+  {
+    "city": "Taihape",
+    "area": "Utiku"
+  },
+  {
+    "city": "Taipa",
+    "area": "Taipa"
+  },
+  {
+    "city": "Tairua",
+    "area": "Tairua"
+  },
+  {
+    "city": "Takanini",
+    "area": "Conifer Grove"
+  },
+  {
+    "city": "Takapau",
+    "area": "Takapau"
+  },
+  {
+    "city": "Tangimoana",
+    "area": "Parewanui"
+  },
+  {
+    "city": "Tangimoana",
+    "area": "Tangimoana"
+  },
+  {
+    "city": "Tapanui",
+    "area": "Tapanui"
+  },
+  {
+    "city": "Taumarunui",
+    "area": "Aukopae"
+  },
+  {
+    "city": "Taumarunui",
+    "area": "Hikumutu"
+  },
+  {
+    "city": "Taumarunui",
+    "area": "Kirikau"
+  },
+  {
+    "city": "Taumarunui",
+    "area": "Manunui"
+  },
+  {
+    "city": "Taumarunui",
+    "area": "Taumarunui"
+  },
+  {
+    "city": "Taupiri",
+    "area": "Taupiri"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Acacia Bay"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Hilltop"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Maunganamu"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Nukuhau"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Rainbow Point"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Rangatira Park"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Richmond Heights"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Tauhara"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Taupo"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Two Mile Bay"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Waipahihi"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Wairakei"
+  },
+  {
+    "city": "TaupÅ",
+    "area": "Wharewaka"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Bellevue"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Bethlehem"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Brookfield"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Gate Pa"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Greerton"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Hairini"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Judea"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Matua"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Maungatapu"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Otumoetai"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Parkvale"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Poike"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Pyes Pa"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Tauranga"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Tauranga South"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Tauriko"
+  },
+  {
+    "city": "Tauranga",
+    "area": "Welcome Bay"
+  },
+  {
+    "city": "Te Anau",
+    "area": "Te Anau"
+  },
+  {
+    "city": "Te Aroha",
+    "area": "Te Aroha"
+  },
+  {
+    "city": "Te Awamutu",
+    "area": "Kihikihi"
+  },
+  {
+    "city": "Te Awamutu",
+    "area": "Te Awamutu"
+  },
+  {
+    "city": "Te Awanga",
+    "area": "Te Awanga"
+  },
+  {
+    "city": "Te Karaka",
+    "area": "Te Karaka"
+  },
+  {
+    "city": "Te Kauwhata",
+    "area": "Te Kauwhata"
+  },
+  {
+    "city": "Te KÅ«iti",
+    "area": "Te Kuiti"
+  },
+  {
+    "city": "Te Puke",
+    "area": "Te Puke"
+  },
+  {
+    "city": "Temuka",
+    "area": "Temuka"
+  },
+  {
+    "city": "Thames",
+    "area": "Thames"
+  },
+  {
+    "city": "The Pines Beach",
+    "area": "The Pines Beach"
+  },
+  {
+    "city": "Timaru",
+    "area": "Gleniti"
+  },
+  {
+    "city": "Timaru",
+    "area": "Glenwood"
+  },
+  {
+    "city": "Timaru",
+    "area": "Highfield"
+  },
+  {
+    "city": "Timaru",
+    "area": "Kensington"
+  },
+  {
+    "city": "Timaru",
+    "area": "Maori Hill"
+  },
+  {
+    "city": "Timaru",
+    "area": "Marchwiel"
+  },
+  {
+    "city": "Timaru",
+    "area": "Oceanview"
+  },
+  {
+    "city": "Timaru",
+    "area": "Parkside"
+  },
+  {
+    "city": "Timaru",
+    "area": "Redruth"
+  },
+  {
+    "city": "Timaru",
+    "area": "Seaview"
+  },
+  {
+    "city": "Timaru",
+    "area": "Smithfield"
+  },
+  {
+    "city": "Timaru",
+    "area": "Timaru"
+  },
+  {
+    "city": "Timaru",
+    "area": "Timaru Port"
+  },
+  {
+    "city": "Timaru",
+    "area": "Waimataitai"
+  },
+  {
+    "city": "Timaru",
+    "area": "Washdyke"
+  },
+  {
+    "city": "Timaru",
+    "area": "Watlington"
+  },
+  {
+    "city": "Timaru",
+    "area": "West End"
+  },
+  {
+    "city": "Tokoroa",
+    "area": "Tokoroa"
+  },
+  {
+    "city": "Tuakau",
+    "area": "Tuakau"
+  },
+  {
+    "city": "Tuatapere",
+    "area": "Tuatapere"
+  },
+  {
+    "city": "Twizel",
+    "area": "Twizel"
+  },
+  {
+    "city": "TÄkaka",
+    "area": "Takaka"
+  },
+  {
+    "city": "TÄneatua",
+    "area": "Taneatua"
+  },
+  {
+    "city": "TÄ«rau",
+    "area": "Okoroire"
+  },
+  {
+    "city": "TÄ«rau",
+    "area": "Tirau"
+  },
+  {
+    "city": "TÅ«rangi",
+    "area": "Turangi"
+  },
+  {
+    "city": "TÅ«rangi",
+    "area": "Waiotaka Valley"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Akatarawa"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Akatarawa Valley"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Birchville"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Brown Owl"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Clouston Park"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Craigs Flat"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Ebdentown"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Elderslea"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Heretaunga"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Kaitoke"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Kingsley Heights"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Maidstone"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Mangaroa"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Maoribank"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Maymorn"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Pinehaven"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Riverstone Terraces"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Silverstream"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Te Marua"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Timberlea"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Totara Park"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Trentham"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Upper Hutt Central"
+  },
+  {
+    "city": "Upper Hutt",
+    "area": "Wallaceville"
+  },
+  {
+    "city": "Waddington",
+    "area": "Waddington"
+  },
+  {
+    "city": "Waharoa",
+    "area": "Waharoa"
+  },
+  {
+    "city": "Waiau",
+    "area": "Waiau"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Omiha"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Oneroa"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Onetangi"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Ostend"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Palm Beach"
+  },
+  {
+    "city": "Waiheke Island",
+    "area": "Surfdale"
+  },
+  {
+    "city": "Waihi",
+    "area": "Waihi"
+  },
+  {
+    "city": "Waihi",
+    "area": "Waikino"
+  },
+  {
+    "city": "Waihi Beach",
+    "area": "Athenree"
+  },
+  {
+    "city": "Waihi Beach",
+    "area": "Bowentown"
+  },
+  {
+    "city": "Waihi Beach",
+    "area": "Waihi Beach"
+  },
+  {
+    "city": "Waikanae",
+    "area": "Waikanae"
+  },
+  {
+    "city": "Waikanae",
+    "area": "Waikanae Beach"
+  },
+  {
+    "city": "Waikari",
+    "area": "Waikari"
+  },
+  {
+    "city": "Waikouaiti",
+    "area": "Waikouaiti"
+  },
+  {
+    "city": "Waikuku Beach",
+    "area": "Waikuku Beach"
+  },
+  {
+    "city": "Waimate",
+    "area": "Waimate"
+  },
+  {
+    "city": "Waimauku",
+    "area": "Waimauku"
+  },
+  {
+    "city": "Waiouru",
+    "area": "Waiouru"
+  },
+  {
+    "city": "Waipawa",
+    "area": "Waipawa"
+  },
+  {
+    "city": "Waipu",
+    "area": "Waipu"
+  },
+  {
+    "city": "Waipukurau",
+    "area": "Waipukurau"
+  },
+  {
+    "city": "Wairoa",
+    "area": "Wairoa"
+  },
+  {
+    "city": "Waitara",
+    "area": "Waitara"
+  },
+  {
+    "city": "Waitoa",
+    "area": "Waitoa"
+  },
+  {
+    "city": "Waiuku",
+    "area": "Waiuku"
+  },
+  {
+    "city": "Wakefield",
+    "area": "Pigeon Valley"
+  },
+  {
+    "city": "Wakefield",
+    "area": "Wakefield"
+  },
+  {
+    "city": "Wallacetown",
+    "area": "Wallacetown"
+  },
+  {
+    "city": "Warkworth",
+    "area": "Warkworth"
+  },
+  {
+    "city": "Waverley",
+    "area": "Waverley"
+  },
+  {
+    "city": "Wellington",
+    "area": "Aro Valley"
+  },
+  {
+    "city": "Wellington",
+    "area": "Berhampore"
+  },
+  {
+    "city": "Wellington",
+    "area": "Breaker Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Broadmeadows"
+  },
+  {
+    "city": "Wellington",
+    "area": "Brooklyn"
+  },
+  {
+    "city": "Wellington",
+    "area": "Churton Park"
+  },
+  {
+    "city": "Wellington",
+    "area": "Crofton Downs"
+  },
+  {
+    "city": "Wellington",
+    "area": "Glenside"
+  },
+  {
+    "city": "Wellington",
+    "area": "Grenada North"
+  },
+  {
+    "city": "Wellington",
+    "area": "Grenada Village"
+  },
+  {
+    "city": "Wellington",
+    "area": "Hataitai"
+  },
+  {
+    "city": "Wellington",
+    "area": "Highbury"
+  },
+  {
+    "city": "Wellington",
+    "area": "Horokiwi"
+  },
+  {
+    "city": "Wellington",
+    "area": "Houghton Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Island Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Johnsonville"
+  },
+  {
+    "city": "Wellington",
+    "area": "Kaiwharawhara"
+  },
+  {
+    "city": "Wellington",
+    "area": "Karaka Bays"
+  },
+  {
+    "city": "Wellington",
+    "area": "Karori"
+  },
+  {
+    "city": "Wellington",
+    "area": "Kelburn"
+  },
+  {
+    "city": "Wellington",
+    "area": "Khandallah"
+  },
+  {
+    "city": "Wellington",
+    "area": "Kilbirnie"
+  },
+  {
+    "city": "Wellington",
+    "area": "Kingston"
+  },
+  {
+    "city": "Wellington",
+    "area": "Lyall Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Makara"
+  },
+  {
+    "city": "Wellington",
+    "area": "Maupuia"
+  },
+  {
+    "city": "Wellington",
+    "area": "Melrose"
+  },
+  {
+    "city": "Wellington",
+    "area": "Miramar"
+  },
+  {
+    "city": "Wellington",
+    "area": "Moa Point"
+  },
+  {
+    "city": "Wellington",
+    "area": "Mornington"
+  },
+  {
+    "city": "Wellington",
+    "area": "Mount Cook"
+  },
+  {
+    "city": "Wellington",
+    "area": "Mount Victoria"
+  },
+  {
+    "city": "Wellington",
+    "area": "Newlands"
+  },
+  {
+    "city": "Wellington",
+    "area": "Newtown"
+  },
+  {
+    "city": "Wellington",
+    "area": "Ngaio"
+  },
+  {
+    "city": "Wellington",
+    "area": "Ngauranga"
+  },
+  {
+    "city": "Wellington",
+    "area": "Northland"
+  },
+  {
+    "city": "Wellington",
+    "area": "Ohariu"
+  },
+  {
+    "city": "Wellington",
+    "area": "Oriental Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Owhiro Bay"
+  },
+  {
+    "city": "Wellington",
+    "area": "Paparangi"
+  },
+  {
+    "city": "Wellington",
+    "area": "Pipitea"
+  },
+  {
+    "city": "Wellington",
+    "area": "Rongotai"
+  },
+  {
+    "city": "Wellington",
+    "area": "Roseneath"
+  },
+  {
+    "city": "Wellington",
+    "area": "Seatoun"
+  },
+  {
+    "city": "Wellington",
+    "area": "Southgate"
+  },
+  {
+    "city": "Wellington",
+    "area": "Strathmore Park"
+  },
+  {
+    "city": "Wellington",
+    "area": "Takapu Valley"
+  },
+  {
+    "city": "Wellington",
+    "area": "Tawa"
+  },
+  {
+    "city": "Wellington",
+    "area": "Te Aro"
+  },
+  {
+    "city": "Wellington",
+    "area": "Thorndon"
+  },
+  {
+    "city": "Wellington",
+    "area": "Vogeltown"
+  },
+  {
+    "city": "Wellington",
+    "area": "Wadestown"
+  },
+  {
+    "city": "Wellington",
+    "area": "Wellington Central"
+  },
+  {
+    "city": "Wellington",
+    "area": "Wilton"
+  },
+  {
+    "city": "Wellington",
+    "area": "Woodridge"
+  },
+  {
+    "city": "Wellsford",
+    "area": "Wellsford"
+  },
+  {
+    "city": "Westport",
+    "area": "Carters Beach"
+  },
+  {
+    "city": "Westport",
+    "area": "Westport"
+  },
+  {
+    "city": "WhakatÄne",
+    "area": "Coastlands"
+  },
+  {
+    "city": "WhakatÄne",
+    "area": "Maraetotara"
+  },
+  {
+    "city": "WhakatÄne",
+    "area": "Poroporo"
+  },
+  {
+    "city": "WhakatÄne",
+    "area": "Whakatane"
+  },
+  {
+    "city": "WhangamatÄ",
+    "area": "Whangamata"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Aramoho"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Bastia Hill"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Castlecliff"
+  },
+  {
+    "city": "Whanganui",
+    "area": "College Estate"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Durie Hill"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Gonville"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Okoia"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Otamatea"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Papaiti"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Putiki"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Saint Johns Hill"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Springvale"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Tawhero"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Westmere"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Whanganui"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Whanganui Airport"
+  },
+  {
+    "city": "Whanganui",
+    "area": "Whanganui East"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Arkles Bay"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Army Bay"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Gulf Harbour"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Manly"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Matakatia"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Red Beach"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Stanmore Bay"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Tindalls Beach"
+  },
+  {
+    "city": "WhangaparÄoa",
+    "area": "Wade Heads"
+  },
+  {
+    "city": "Whangateau",
+    "area": "Whangateau"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Abbey Caves"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Avenues"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Horahora"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Kensington"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Mangapai"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Marsden Point"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Mata"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Maunu"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Morningside"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Oakleigh"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "One Tree Point"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Onerahi"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Otaika"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Otangarei"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Parahaki"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Port Whangarei"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Portland"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Pukenui Forest"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Puwera"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Raumanga"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Regent"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Riverside"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Springfield"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Takahiwai"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Te Kamo"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Tikipunga"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Whangarei"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Whangarei Airport"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Whau Valley"
+  },
+  {
+    "city": "WhangÄrei",
+    "area": "Woodhill"
+  },
+  {
+    "city": "Whirinaki",
+    "area": "Whirinaki"
+  },
+  {
+    "city": "Whitianga",
+    "area": "Whitianga"
+  },
+  {
+    "city": "Winchester",
+    "area": "Winchester"
+  },
+  {
+    "city": "Winton",
+    "area": "Winton"
+  },
+  {
+    "city": "Woodend",
+    "area": "Woodend"
+  },
+  {
+    "city": "Woodend",
+    "area": "Woodend Beach"
+  },
+  {
+    "city": "Woodville",
+    "area": "Woodville"
+  },
+  {
+    "city": "Wyndham",
+    "area": "Wyndham"
+  },
+  {
+    "city": "Wanaka",
+    "area": "Wanaka"
+  },
+  {
+    "city": "Oakura",
+    "area": "Oakura"
+  },
+  {
+    "city": "Ohaupo",
+    "area": "Ohaupo"
+  },
+  {
+    "city": "Ohope",
+    "area": "Ohope"
+  },
+  {
+    "city": "Ohura",
+    "area": "Ohura"
+  },
+  {
+    "city": "Okato",
+    "area": "Okato"
+  },
+  {
+    "city": "Omarama",
+    "area": "Omarama"
+  },
+  {
+    "city": "Omokoroa",
+    "area": "Omokoroa"
+  },
+  {
+    "city": "Opunake",
+    "area": "Opunake"
+  },
+  {
+    "city": "ÅŒpÅtiki",
+    "area": "Opotiki"
+  },
+  {
+    "city": "ÅŒpÅtiki",
+    "area": "Waiotahe"
+  },
+  {
+    "city": "ÅŒtaki",
+    "area": "Otaki"
+  },
+  {
+    "city": "ÅŒtaki",
+    "area": "Otaki Beach"
+  },
+  {
+    "city": "ÅŒtorohanga",
+    "area": "Otorohanga"
+  },
+  {
+    "city": "ÅŒtÄne",
+    "area": "Otane"
+  }
+]

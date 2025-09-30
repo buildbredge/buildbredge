@@ -121,7 +121,6 @@ export default function PostJobPage() {
 
       // 如果有文件，先上传文件再创建项目
       let uploadedImageUrls: string[] = []
-      let uploadedVideoUrl: string | null = null
       let uploadedFileUrls: string[] = []
       
       // 为了获取项目ID用于文件上传，我们先生成一个临时ID

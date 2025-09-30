@@ -27,6 +27,7 @@ interface UserProfileResponse {
   roles: UserRole[]
   activeRole: 'owner' | 'tradie'
   parent_tradie_id?: string | null
+  service_areas?: Array<{ id: string; city: string; area: string }>
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string
@@ -45,6 +46,12 @@ interface UserProfileResponse {
     experienceYears?: number
     bio?: string
   }
+}
+
+interface ServiceAreaRow {
+  id: string
+  city: string
+  area: string
 }
 
 // 获取用户资料
@@ -114,6 +121,7 @@ export async function GET(request: NextRequest) {
     // 4. 根据角色获取角色特定信息
     let ownerData = null
     let tradieData = null
+    let serviceAreaDetails: Array<{ id: string; city: string; area: string }> = []
 
     // 获取技师信息（从users表中的tradie相关字段）
     if (userRoles.some(r => r.role_type === 'tradie')) {
@@ -158,6 +166,31 @@ export async function GET(request: NextRequest) {
         bio: userProfile.bio || undefined
       }
       console.log('Created tradieData object with specialty:', tradieData)
+
+      const { data: tradieServiceAreas, error: tradieServiceAreasError } = await supabase
+        .from('tradie_service_areas')
+        .select('service_area_id, service_areas (id, city, area)')
+        .eq('tradie_id', userProfile.id)
+        .order('created_at', { ascending: true })
+
+      if (tradieServiceAreasError) {
+        console.error('Failed to load tradie service areas:', tradieServiceAreasError)
+      } else if (tradieServiceAreas) {
+        serviceAreaDetails = tradieServiceAreas
+          .map(record => {
+            const area = record.service_areas as ServiceAreaRow | ServiceAreaRow[] | null
+            if (!area || Array.isArray(area)) {
+              return null
+            }
+
+            return {
+              id: String(area.id),
+              city: area.city,
+              area: area.area
+            }
+          })
+          .filter((area): area is { id: string; city: string; area: string } => area !== null)
+      }
     }
 
     // 获取业主信息（从users表中的owner相关字段）
@@ -179,6 +212,7 @@ export async function GET(request: NextRequest) {
       language: userProfile.language || '中/EN',
       website: userProfile.website || undefined,
       service_area: userProfile.service_area || undefined,
+      service_areas: serviceAreaDetails.length > 0 ? serviceAreaDetails : undefined,
       bio: userProfile.bio || undefined,
       status: userProfile.status,
       verified: userProfile.status === 'approved',

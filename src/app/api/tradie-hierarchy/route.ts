@@ -19,8 +19,10 @@ export async function GET(request: NextRequest) {
 
     if (action === 'subordinates') {
       // 获取从属技师列表
-      let { data: subordinates, error } = await supabase
+      const { data: initialSubordinates, error } = await supabase
         .rpc('get_subordinate_tradies', { parent_id: tradieId })
+
+      let subordinates = initialSubordinates
 
       if (error) {
         console.error('Error fetching subordinate tradies with function:', error)
@@ -92,8 +94,10 @@ export async function GET(request: NextRequest) {
       })
     } else if (action === 'parent') {
       // 获取父技师信息
-      let { data: parent, error } = await supabase
+      const { data: initialParent, error } = await supabase
         .rpc('get_parent_tradie', { child_id: tradieId })
+
+      let parent = initialParent
 
       if (error) {
         console.error('Error fetching parent tradie with function:', error)

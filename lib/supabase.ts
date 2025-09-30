@@ -67,7 +67,7 @@ export type Database = {
           action: string
           resource_type: string | null
           resource_id: string | null
-          details: Record<string, any>
+          details: Record<string, unknown>
           ip_address: string | null
           user_agent: string | null
           created_at: string
@@ -78,7 +78,7 @@ export type Database = {
           action: string
           resource_type?: string | null
           resource_id?: string | null
-          details?: Record<string, any>
+          details?: Record<string, unknown>
           ip_address?: string | null
           user_agent?: string | null
           created_at?: string
@@ -89,7 +89,7 @@ export type Database = {
           action?: string
           resource_type?: string | null
           resource_id?: string | null
-          details?: Record<string, any>
+          details?: Record<string, unknown>
           ip_address?: string | null
           user_agent?: string | null
         }
@@ -135,6 +135,32 @@ export type Database = {
           name_zh?: string
         }
       }
+      service_areas: {
+        Row: {
+          id: string
+          country: string
+          city: string
+          area: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          country?: string
+          city: string
+          area: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          country?: string
+          city?: string
+          area?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       tradie_professions: {
         Row: {
           id: string
@@ -155,6 +181,26 @@ export type Database = {
           tradie_id?: string
           profession_id?: string
           category_id?: string
+        }
+      }
+      tradie_service_areas: {
+        Row: {
+          id: string
+          tradie_id: string
+          service_area_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tradie_id: string
+          service_area_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tradie_id?: string
+          service_area_id?: string
+          created_at?: string
         }
       }
       users: {
@@ -512,7 +558,7 @@ export interface AdminActivityLogData {
   action: string
   resource_type?: string
   resource_id?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   ip_address?: string
   user_agent?: string
 }

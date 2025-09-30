@@ -58,7 +58,7 @@ async function handleProjectsListRequest(request: NextRequest, adminUser: AdminU
     // Get user details for projects (owners)
     const userIds = [...new Set(projects?.map(p => p.email).filter(Boolean))]
     
-    let userDetails: Record<string, any> = {}
+    const userDetails: Record<string, any> = {}
     
     if (userIds.length > 0) {
       // Try to get owner details by email
