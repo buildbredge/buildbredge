@@ -10,11 +10,24 @@ const getSupabaseAdmin = () => {
   )
 }
 
+type CategoryRouteContext = { params: Promise<{ id: string }> }
+
 // Update category
-async function handleCategoryPatch(request: NextRequest, adminUser: AdminUser, { params }: { params: { id: string } }) {
+async function handleCategoryPatch(
+  request: NextRequest,
+  adminUser: AdminUser,
+  context?: CategoryRouteContext
+) {
   try {
+    if (!context?.params) {
+      return NextResponse.json(
+        { success: false, error: 'Missing route params' },
+        { status: 400 }
+      )
+    }
+
+    const { id: categoryId } = await context.params
     const { name_en, name_zh, description } = await request.json()
-    const categoryId = params.id
 
     if (!name_en || !name_zh) {
       return NextResponse.json(
@@ -76,9 +89,20 @@ async function handleCategoryPatch(request: NextRequest, adminUser: AdminUser, {
 }
 
 // Delete category
-async function handleCategoryDelete(request: NextRequest, adminUser: AdminUser, { params }: { params: { id: string } }) {
+async function handleCategoryDelete(
+  request: NextRequest,
+  adminUser: AdminUser,
+  context?: CategoryRouteContext
+) {
   try {
-    const categoryId = params.id
+    if (!context?.params) {
+      return NextResponse.json(
+        { success: false, error: 'Missing route params' },
+        { status: 400 }
+      )
+    }
+
+    const { id: categoryId } = await context.params
 
     console.log(`Admin ${adminUser.email} deleting category: ${categoryId}`)
 
@@ -100,7 +124,7 @@ async function handleCategoryDelete(request: NextRequest, adminUser: AdminUser, 
 
     // Check if category has associated professions
     const { data: professions, error: professionsError } = await supabaseAdmin
-      .from('professions')
+      .from('tradie_professions')
       .select('id')
       .eq('category_id', categoryId)
 

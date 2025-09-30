@@ -1,216 +1,398 @@
-import { supabase } from './supabase'
+import { supabase } from "./supabase";
 
-// 支持的图片格式
-export const SUPPORTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png', 
-  'image/webp'
-]
+export interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
 
-// 支持的视频格式
-export const SUPPORTED_VIDEO_TYPES = [
-  'video/mp4',
-  'video/mov', 
-  'video/avi',
-  'video/wmv'
-]
+export type UploadProgressCallback = (progress: number) => void;
 
-// 文件大小限制
-export const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
-export const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
+const IMAGE_CONFIG = {
+  maxSize: 10 * 1024 * 1024,
+  allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+  allowedExtensions: [".jpg", ".jpeg", ".png", ".webp"],
+};
 
-// 上传文件到Supabase Storage
-export async function uploadFile(
+const VIDEO_CONFIG = {
+  maxSize: 100 * 1024 * 1024,
+  allowedTypes: [
+    "video/mp4",
+    "video/mov",
+    "video/quicktime",
+    "video/avi",
+    "video/wmv",
+    "video/x-ms-wmv",
+  ],
+  allowedExtensions: [".mp4", ".mov", ".avi", ".wmv"],
+};
+
+const DOCUMENT_CONFIG = {
+  maxSize: 10 * 1024 * 1024,
+  allowedTypes: [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/plain",
+    "text/csv",
+    "application/zip",
+    "application/x-zip-compressed",
+    "application/rar",
+    "application/x-rar-compressed",
+  ],
+  allowedExtensions: [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".csv",
+    ".zip",
+    ".rar",
+  ],
+};
+
+const FILE_CONFIG = {
+  image: IMAGE_CONFIG,
+  video: VIDEO_CONFIG,
+  document: DOCUMENT_CONFIG,
+} as const;
+
+export const SUPPORTED_IMAGE_TYPES = IMAGE_CONFIG.allowedTypes;
+export const SUPPORTED_VIDEO_TYPES = VIDEO_CONFIG.allowedTypes;
+export const MAX_IMAGE_SIZE = IMAGE_CONFIG.maxSize;
+export const MAX_VIDEO_SIZE = VIDEO_CONFIG.maxSize;
+
+export function validateFile(
   file: File,
+  type: "image" | "video" | "document",
+): FileValidationResult {
+  const config = FILE_CONFIG[type];
+
+  if (!config) {
+    return { valid: false, error: "不支持的文件类型" };
+  }
+
+  if (file.size > config.maxSize) {
+    return {
+      valid: false,
+      error: `文件大小超过限制（最大 ${formatFileSize(config.maxSize)}）`,
+    };
+  }
+
+  if (!config.allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: `不支持的文件格式，请使用 ${config.allowedExtensions.join(", ")} 格式`,
+    };
+  }
+
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = config.allowedExtensions.some((ext) =>
+    fileName.endsWith(ext)
+  );
+
+  if (!hasValidExtension) {
+    return {
+      valid: false,
+      error: `文件扩展名不正确，请使用 ${config.allowedExtensions.join(", ")} 格式`,
+    };
+  }
+
+  return { valid: true };
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+function generateFileName(originalName: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  const extension = originalName.substring(originalName.lastIndexOf("."));
+  return `${timestamp}_${random}${extension}`;
+}
+
+async function uploadToStorage(
   bucket: string,
-  path: string
+  filePath: string,
+  file: File,
+  onProgress?: UploadProgressCallback,
+  progressInterval = 200,
+  progressDuration = 1000,
 ): Promise<string> {
-  try {
-    console.log(`📤 上传文件: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
-
-    // 验证文件类型和大小
-    if (file.type.startsWith('image/')) {
-      if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
-        throw new Error(`不支持的图片格式: ${file.type}`)
-      }
-      if (file.size > MAX_IMAGE_SIZE) {
-        throw new Error(`图片文件过大，最大支持 ${MAX_IMAGE_SIZE / 1024 / 1024}MB`)
-      }
-    } else if (file.type.startsWith('video/')) {
-      if (!SUPPORTED_VIDEO_TYPES.includes(file.type)) {
-        throw new Error(`不支持的视频格式: ${file.type}`)
-      }
-      if (file.size > MAX_VIDEO_SIZE) {
-        throw new Error(`视频文件过大，最大支持 ${MAX_VIDEO_SIZE / 1024 / 1024}MB`)
-      }
-    } else {
-      throw new Error(`不支持的文件类型: ${file.type}`)
-    }
-
-    // 生成唯一文件名
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 8)
-    const fileExtension = file.name.split('.').pop()
-    const fileName = `${timestamp}_${randomString}.${fileExtension}`
-    const filePath = `${path}/${fileName}`
-
-    // 上传文件
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      })
-
-    if (error) {
-      console.error('❌ 文件上传失败:', error)
-      throw new Error(`文件上传失败: ${error.message}`)
-    }
-
-    // 获取公共URL
-    const { data: publicData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(filePath)
-
-    if (!publicData?.publicUrl) {
-      throw new Error('获取文件公共URL失败')
-    }
-
-    console.log(`✅ 文件上传成功: ${publicData.publicUrl}`)
-    return publicData.publicUrl
-
-  } catch (error) {
-    console.error('❌ 上传过程出错:', error)
-    throw error
-  }
-}
-
-// 上传项目图片（带进度回调）
-export async function uploadProjectImages(
-  files: File[], 
-  projectId: string,
-  onProgress?: (fileIndex: number, progress: number) => void
-): Promise<string[]> {
-  console.log(`📸 开始上传 ${files.length} 张项目图片...`)
-  
-  const uploadPromises = files.map(async (file, index) => {
-    try {
-      // 模拟进度更新
-      if (onProgress) {
-        onProgress(index, 0)
-      }
-      
-      const url = await uploadFile(file, 'buildbridge', `projects/${projectId}/images`)
-      
-      // 上传完成，设置进度为100%
-      if (onProgress) {
-        onProgress(index, 100)
-      }
-      
-      return url
-    } catch (error) {
-      console.error(`❌ 图片 ${index} 上传失败:`, error)
-      throw error
-    }
-  })
+  let intervalId: ReturnType<typeof setInterval> | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   try {
-    const urls = await Promise.all(uploadPromises)
-    console.log(`✅ 成功上传 ${urls.length} 张图片`)
-    return urls
-  } catch (error) {
-    console.error('❌ 批量上传图片失败:', error)
-    throw new Error('部分图片上传失败，请重试')
-  }
-}
-
-// 上传项目视频（带进度回调）
-export async function uploadProjectVideo(
-  file: File, 
-  projectId: string,
-  onProgress?: (progress: number) => void
-): Promise<string> {
-  console.log('🎬 开始上传项目视频...')
-  
-  try {
-    // 模拟进度更新
     if (onProgress) {
-      onProgress(0)
+      onProgress(0);
+      intervalId = setInterval(() => {
+        onProgress(Math.min(90, Math.random() * 80 + 10));
+      }, progressInterval);
+      timeoutId = setTimeout(() => {
+        if (intervalId) clearInterval(intervalId);
+      }, progressDuration);
     }
-    
-    const url = await uploadFile(file, 'buildbridge', `projects/${projectId}/videos`)
-    
-    // 上传完成，设置进度为100%
-    if (onProgress) {
-      onProgress(100)
-    }
-    
-    console.log('✅ 视频上传成功')
-    return url
-  } catch (error) {
-    console.error('❌ 视频上传失败:', error)
-    throw error
-  }
-}
-
-// 删除文件
-export async function deleteFile(url: string, bucket: string): Promise<void> {
-  try {
-    // 从URL中提取文件路径
-    const urlParts = url.split('/')
-    const fileName = urlParts[urlParts.length - 1]
-    const bucketIndex = urlParts.findIndex(part => part === bucket)
-    
-    if (bucketIndex === -1) {
-      throw new Error('无法解析文件路径')
-    }
-
-    const filePath = urlParts.slice(bucketIndex + 1).join('/')
 
     const { error } = await supabase.storage
       .from(bucket)
-      .remove([filePath])
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
     if (error) {
-      console.error('❌ 文件删除失败:', error)
-      throw new Error(`文件删除失败: ${error.message}`)
+      throw new Error(`文件上传失败: ${error.message}`);
     }
 
-    console.log(`✅ 文件删除成功: ${fileName}`)
+    if (onProgress) {
+      onProgress(100);
+    }
+
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   } catch (error) {
-    console.error('❌ 删除过程出错:', error)
-    throw error
+    if (onProgress) {
+      onProgress(0);
+    }
+    throw error;
+  } finally {
+    if (intervalId) clearInterval(intervalId);
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
-// 验证文件类型
-export function validateFile(file: File, type: 'image' | 'video'): { valid: boolean; error?: string } {
-  if (type === 'image') {
-    if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
-      return { valid: false, error: `不支持的图片格式: ${file.type}` }
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      return { valid: false, error: `图片文件过大，最大支持 ${MAX_IMAGE_SIZE / 1024 / 1024}MB` }
-    }
-  } else if (type === 'video') {
-    if (!SUPPORTED_VIDEO_TYPES.includes(file.type)) {
-      return { valid: false, error: `不支持的视频格式: ${file.type}` }
-    }
-    if (file.size > MAX_VIDEO_SIZE) {
-      return { valid: false, error: `视频文件过大，最大支持 ${MAX_VIDEO_SIZE / 1024 / 1024}MB` }
-    }
+export async function uploadImage(
+  file: File,
+  projectId: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
+  const validation = validateFile(file, "image");
+  if (!validation.valid) {
+    throw new Error(validation.error);
   }
 
-  return { valid: true }
+  const filePath = `projects/${projectId}/images/${generateFileName(file.name)}`;
+  return uploadToStorage("buildbridge", filePath, file, onProgress, 200, 1000);
 }
 
-// 获取文件大小的友好显示
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
-  
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+export async function uploadVideo(
+  file: File,
+  projectId: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
+  const validation = validateFile(file, "video");
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  const filePath = `projects/${projectId}/videos/${generateFileName(file.name)}`;
+  return uploadToStorage("buildbridge", filePath, file, onProgress, 500, 2000);
+}
+
+export async function uploadDocument(
+  file: File,
+  projectId: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
+  const validation = validateFile(file, "document");
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  const filePath = `projects/${projectId}/documents/${generateFileName(file.name)}`;
+  return uploadToStorage("buildbridge", filePath, file, onProgress, 300, 1500);
+}
+
+export async function uploadProjectImages(
+  files: File[],
+  projectId: string,
+  onProgress?: (fileIndex: number, progress: number) => void,
+): Promise<string[]> {
+  const uploadPromises = files.map((file, index) =>
+    uploadImage(file, projectId, (progress) => {
+      if (onProgress) {
+        onProgress(index, progress);
+      }
+    })
+  );
+
+  try {
+    return await Promise.all(uploadPromises);
+  } catch (error) {
+    throw new Error(
+      `批量图片上传失败: ${error instanceof Error ? error.message : "未知错误"}`,
+    );
+  }
+}
+
+export async function uploadProjectVideo(
+  file: File,
+  projectId: string,
+  onProgress?: UploadProgressCallback,
+): Promise<string> {
+  return uploadVideo(file, projectId, onProgress);
+}
+
+export async function uploadProjectDocuments(
+  files: File[],
+  projectId: string,
+  onProgress?: (fileIndex: number, progress: number) => void,
+): Promise<string[]> {
+  const uploadPromises = files.map((file, index) =>
+    uploadDocument(file, projectId, (progress) => {
+      if (onProgress) {
+        onProgress(index, progress);
+      }
+    })
+  );
+
+  try {
+    return await Promise.all(uploadPromises);
+  } catch (error) {
+    throw new Error(
+      `批量文档上传失败: ${error instanceof Error ? error.message : "未知错误"}`,
+    );
+  }
+}
+
+export async function uploadFile(
+  file: File,
+  bucket: string,
+  path: string,
+): Promise<string> {
+  let type: "image" | "video" | "document" | null = null;
+
+  if (file.type.startsWith("image/")) {
+    type = "image";
+  } else if (file.type.startsWith("video/")) {
+    type = "video";
+  } else if (DOCUMENT_CONFIG.allowedTypes.includes(file.type)) {
+    type = "document";
+  }
+
+  if (!type) {
+    throw new Error(`不支持的文件类型: ${file.type}`);
+  }
+
+  const validation = validateFile(file, type);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  const filePath = `${path}/${generateFileName(file.name)}`;
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(`文件上传失败: ${error.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+export async function deleteFile(
+  target: string,
+  bucket: string = "buildbridge",
+): Promise<void> {
+  const filePath = bucket
+    ? extractFilePathFromUrl(target, bucket) ?? target
+    : target;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([filePath]);
+
+  if (error) {
+    throw new Error(`删除文件失败: ${error.message}`);
+  }
+}
+
+export async function deleteProjectFiles(
+  projectId: string,
+  bucket: string = "buildbridge",
+): Promise<void> {
+  try {
+    const targets = [
+      `projects/${projectId}/images`,
+      `projects/${projectId}/videos`,
+      `projects/${projectId}/documents`,
+    ];
+
+    for (const prefix of targets) {
+      const { data: objects, error: listError } = await supabase.storage
+        .from(bucket)
+        .list(prefix, { limit: 1000 });
+
+      if (listError || !objects?.length) {
+        continue;
+      }
+
+      const paths = objects.map((item) => `${prefix}/${item.name}`);
+      const { error: removeError } = await supabase.storage
+        .from(bucket)
+        .remove(paths);
+
+      if (removeError) {
+        console.warn("部分文件删除失败:", { prefix, error: removeError });
+      }
+    }
+  } catch (error) {
+    console.error("删除项目文件时出错:", error);
+    throw new Error("删除项目文件失败");
+  }
+}
+
+export function getPublicUrl(
+  filePath: string,
+  bucket: string = "buildbridge",
+): string {
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+export function extractFilePathFromUrl(
+  url: string,
+  bucket: string = "buildbridge",
+): string | null {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split("/");
+    const bucketIndex = pathParts.findIndex((part) => part === bucket);
+
+    if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+      return pathParts.slice(bucketIndex + 1).join("/");
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }

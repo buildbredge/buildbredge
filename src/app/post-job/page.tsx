@@ -10,7 +10,7 @@ import { X, FileImage, Upload, AlertCircle, Check, FileText, Download, Globe } f
 import Link from "next/link"
 import Image from "next/image"
 import { projectsApi } from "@/lib/api"
-import { uploadProjectImages, uploadProjectDocuments, validateFile } from "../../../lib/storage"
+import { uploadProjectImages, uploadProjectDocuments, validateFile } from "@/lib/storage"
 import GooglePlacesAutocomplete, { SelectedAddressDisplay, PlaceResult } from "@/components/GooglePlacesAutocomplete"
 import CategoryProfessionSelector from "@/components/CategoryProfessionSelector"
 import { useAuth } from "@/contexts/AuthContext"

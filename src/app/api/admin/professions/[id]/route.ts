@@ -10,11 +10,34 @@ const getSupabaseAdmin = () => {
   )
 }
 
+type ProfessionRouteContext = { params: Promise<{ id: string }> }
+
 // Update profession
-async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser, { params }: { params: { id: string } }) {
+async function handleProfessionPatch(
+  request: NextRequest,
+  adminUser: AdminUser,
+  context?: ProfessionRouteContext
+) {
   try {
-    const { category_id, name_en, name_zh, description, icon } = await request.json()
-    const professionId = params.id
+    if (!context?.params) {
+      return NextResponse.json(
+        { success: false, error: 'Missing route params' },
+        { status: 400 }
+      )
+    }
+
+    const { id: professionId } = await context.params
+    const {
+      category_id: rawCategoryId,
+      name_en,
+      name_zh,
+      description,
+      icon
+    } = await request.json()
+    const normalizedCategoryId =
+      typeof rawCategoryId === 'string' && rawCategoryId.trim().length > 0
+        ? rawCategoryId.trim()
+        : null
 
     if (!name_en || !name_zh) {
       return NextResponse.json(
@@ -30,7 +53,7 @@ async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser,
     // Check if profession exists
     const { data: existingProfession, error: fetchError } = await supabaseAdmin
       .from('professions')
-      .select('id')
+      .select('id, category_id')
       .eq('id', professionId)
       .single()
 
@@ -42,11 +65,11 @@ async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser,
     }
 
     // Validate category_id if provided
-    if (category_id) {
+    if (normalizedCategoryId) {
       const { data: category, error: categoryError } = await supabaseAdmin
         .from('categories')
         .select('id')
-        .eq('id', category_id)
+        .eq('id', normalizedCategoryId)
         .single()
 
       if (categoryError || !category) {
@@ -57,14 +80,19 @@ async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser,
       }
     }
 
+    const sanitizedNameEn = name_en.trim()
+    const sanitizedNameZh = name_zh.trim()
+    const sanitizedDescription = description?.trim() || null
+    const sanitizedIcon = icon?.trim() || null
+
     const { data, error } = await supabaseAdmin
       .from('professions')
       .update({
-        category_id: category_id || null,
-        name_en: name_en.trim(),
-        name_zh: name_zh.trim(),
-        description: description?.trim() || null,
-        icon: icon?.trim() || null
+        category_id: normalizedCategoryId,
+        name_en: sanitizedNameEn,
+        name_zh: sanitizedNameZh,
+        description: sanitizedDescription,
+        icon: sanitizedIcon
       })
       .eq('id', professionId)
       .select(`
@@ -84,6 +112,23 @@ async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser,
       )
     }
 
+    const categoryChanged = normalizedCategoryId !== existingProfession.category_id
+
+    if (categoryChanged) {
+      const { error: tradieProfessionUpdateError } = await supabaseAdmin
+        .from('tradie_professions')
+        .update({ category_id: normalizedCategoryId })
+        .eq('profession_id', professionId)
+
+      if (tradieProfessionUpdateError) {
+        console.error('Error syncing tradie_professions category:', tradieProfessionUpdateError)
+        return NextResponse.json(
+          { success: false, error: 'Failed to update associated tradies' },
+          { status: 500 }
+        )
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data,
@@ -100,9 +145,20 @@ async function handleProfessionPatch(request: NextRequest, adminUser: AdminUser,
 }
 
 // Delete profession
-async function handleProfessionDelete(request: NextRequest, adminUser: AdminUser, { params }: { params: { id: string } }) {
+async function handleProfessionDelete(
+  request: NextRequest,
+  adminUser: AdminUser,
+  context?: ProfessionRouteContext
+) {
   try {
-    const professionId = params.id
+    if (!context?.params) {
+      return NextResponse.json(
+        { success: false, error: 'Missing route params' },
+        { status: 400 }
+      )
+    }
+
+    const { id: professionId } = await context.params
 
     console.log(`Admin ${adminUser.email} deleting profession: ${professionId}`)
 
