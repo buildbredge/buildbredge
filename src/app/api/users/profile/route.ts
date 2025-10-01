@@ -9,6 +9,13 @@ interface UserRole {
   created_at: string
 }
 
+interface CertificationSummary {
+  status: 'pending' | 'approved' | 'rejected'
+  submittedAt: string
+  updatedAt: string
+  documentsCount: number
+}
+
 interface UserProfileResponse {
   id: string
   name: string
@@ -48,6 +55,10 @@ interface UserProfileResponse {
     hourlyRate?: number
     experienceYears?: number
     bio?: string
+  }
+  certifications?: {
+    personal?: CertificationSummary
+    professional?: CertificationSummary
   }
 }
 
@@ -125,6 +136,7 @@ export async function GET(request: NextRequest) {
     let ownerData = null
     let tradieData = null
     let serviceAreaDetails: Array<{ id: string; city: string; area: string }> = []
+    let certificationSummary: UserProfileResponse['certifications'] | undefined
 
     // 获取技师信息（从users表中的tradie相关字段）
     if (userRoles.some(r => r.role_type === 'tradie')) {
@@ -238,6 +250,35 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 获取认证状态
+    const { data: certificationRows, error: certificationError } = await supabase
+      .from('tradie_certification_submissions')
+      .select('certification_type, status, submitted_at, updated_at, documents')
+      .eq('user_id', user.id)
+
+    if (certificationError) {
+      console.error('Failed to load certification status:', certificationError)
+    } else if (certificationRows && certificationRows.length > 0) {
+      certificationSummary = {}
+      certificationRows.forEach(row => {
+        const documentsCount = Array.isArray(row.documents) ? row.documents.length : 0
+        const summary: CertificationSummary = {
+          status: row.status as CertificationSummary['status'],
+          submittedAt: row.submitted_at,
+          updatedAt: row.updated_at,
+          documentsCount
+        }
+
+        if (row.certification_type === 'personal') {
+          certificationSummary!.personal = summary
+        }
+
+        if (row.certification_type === 'professional') {
+          certificationSummary!.professional = summary
+        }
+      })
+    }
+
     // 获取业主信息（从users表中的owner相关字段）
     if (userRoles.some(r => r.role_type === 'owner')) {
       ownerData = {
@@ -268,7 +309,8 @@ export async function GET(request: NextRequest) {
       activeRole: activeRole,
       parent_tradie_id: userProfile.parent_tradie_id || null,
       ownerData: ownerData || undefined,
-      tradieData: tradieData || undefined
+      tradieData: tradieData || undefined,
+      certifications: certificationSummary
     }
 
     console.log('Final API Response - tradieData:', tradieData)

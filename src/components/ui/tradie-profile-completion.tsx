@@ -1,521 +1,110 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { 
-  Phone, 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2,
-  User,
-  Mail,
-  FileText,
-  Target
-} from "lucide-react"
-import { authService } from "@/lib/services/authService"
+import { Button } from "@/components/ui/button"
 
+type CertificationStatusValue = "not_submitted" | "pending" | "approved" | "rejected"
+
+interface CertificationSummary {
+  status: 'pending' | 'approved' | 'rejected'
+  submittedAt?: string
+  updatedAt?: string
+  documentsCount?: number
+}
 
 interface TradieProfileCompletionProps {
   userProfile: {
-    id?: string
-    name?: string
-    phone?: string
-    phone_verified?: boolean
-    address?: string
-    tradieData?: {
-      company?: string
-      specialty?: string
+    certifications?: {
+      personal?: CertificationSummary
+      professional?: CertificationSummary
     }
-    roles?: Array<{
-      role_type: string
-    }>
-  }
+  } | null
   emailVerified: boolean
   onProfileUpdate?: () => void
 }
 
-interface CompletionStep {
+interface CertificationCard {
   id: string
   title: string
+  subtitle: string
+  href: string
   description: string
-  completed: boolean
-  critical: boolean
-  icon: React.ReactNode
-  action?: () => void
+  status: CertificationStatusValue
 }
 
-export function TradieProfileCompletion({ 
-  userProfile, 
-  emailVerified, 
-  onProfileUpdate 
-}: TradieProfileCompletionProps) {
-  const [phoneNumber, setPhoneNumber] = useState(userProfile.phone || "")
-  const [showPhoneDialog, setShowPhoneDialog] = useState(false)
-  
-  // OTP verification state
-  const [otpStep, setOtpStep] = useState<'input' | 'verify' | 'completed'>('input')
-  const [verificationCode, setVerificationCode] = useState("")
-  const [isSendingOtp, setIsSendingOtp] = useState(false)
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [otpError, setOtpError] = useState("")
-  
-  // 本地状态跟踪更新
-  const [localPhoneVerified, setLocalPhoneVerified] = useState(false)
-  const [showSuccessMessage, setShowSuccessMessage] = useState("")
-  const [hasVisitedBrowsePage, setHasVisitedBrowsePage] = useState(false)
+const STATUS_LABELS: Record<CertificationStatusValue, string> = {
+  not_submitted: "待验证",
+  pending: "审核中",
+  approved: "已通过",
+  rejected: "需重新提交"
+}
 
-  const isTradie = userProfile.roles?.some(role => role.role_type === 'tradie')
-  
-  // 主要依赖数据库数据，本地状态只在更新过程中临时使用
-  const phoneVerified = !!(userProfile.phone_verified) || localPhoneVerified
-  
-  // 检查用户是否已经访问过浏览页面
-  useEffect(() => {
-    const visited = localStorage.getItem(`tradie_visited_browse_${userProfile.id}`)
-    if (visited) {
-      setHasVisitedBrowsePage(true)
-    }
-  }, [userProfile.id])
+const STATUS_CLASSES: Record<CertificationStatusValue, string> = {
+  not_submitted: "bg-orange-100 text-orange-700",
+  pending: "bg-amber-100 text-amber-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-600"
+}
 
-  // 如果数据库中已有数据，清除本地状态标记（避免重复计算）
-  useEffect(() => {
-    if (userProfile.phone_verified && localPhoneVerified) {
-      setLocalPhoneVerified(false)
-    }
-  }, [userProfile.phone_verified])
-  
-  const completionSteps: CompletionStep[] = [
+const resolveStatus = (summary?: CertificationSummary): CertificationStatusValue => {
+  if (!summary) return "not_submitted"
+  if (summary.status === "approved") return "approved"
+  if (summary.status === "rejected") return "rejected"
+  return "pending"
+}
+
+export function TradieProfileCompletion({ userProfile }: TradieProfileCompletionProps) {
+  const personalStatus = resolveStatus(userProfile?.certifications?.personal)
+  const professionalStatus = resolveStatus(userProfile?.certifications?.professional)
+
+  const certificationCards: CertificationCard[] = [
     {
-      id: "email",
-      title: "验证邮箱地址",
-      description: "完成邮箱验证以确保账户安全",
-      completed: emailVerified,
-      critical: true,
-      icon: <Mail className="w-4 h-4" />,
-      action: emailVerified ? undefined : () => {
-        // TODO: 实现重新发送验证邮件
-        console.log('Resend verification email')
-      }
+      id: "personal",
+      title: "个人信息认证",
+      subtitle: "完成身份核验，提升客户信任",
+      href: "/dashboard/tradie/certifications/personal",
+      description: "完善手机号、地址、身份信息，确保账户安全规范。",
+      status: personalStatus
     },
     {
-      id: "phone",
-      title: "验证手机号码",
-      description: "添加并验证您的手机号码，方便客户联系",
-      completed: phoneVerified,
-      critical: true,
-      icon: <Phone className="w-4 h-4" />,
-      action: () => {
-        setOtpStep('input')
-        setVerificationCode("")
-        setOtpError("")
-        setShowPhoneDialog(true)
-      }
-    },
-    {
-      id: "profile",
-      title: "完善个人资料",
-      description: "填写姓名、地址等基本信息",
-      completed: !!(userProfile.name && userProfile.address),
-      critical: false,
-      icon: <FileText className="w-4 h-4" />,
-      action: () => {
-        window.location.href = '/profile'
-      }
-    },
-    {
-      id: "company",
-      title: "设置公司信息",
-      description: "填写公司名称和专业技能",
-      completed: !!(userProfile.tradieData?.company && userProfile.tradieData?.specialty),
-      critical: false,
-      icon: <User className="w-4 h-4" />,
-      action: () => {
-        window.location.href = '/profile'
-      }
-    },
-    {
-      id: "browse",
-      title: "浏览可接项目",
-      description: "查看适合您技能的项目机会",
-      completed: hasVisitedBrowsePage,
-      critical: false,
-      icon: <Target className="w-4 h-4" />,
-      action: () => {
-        // 标记用户已访问浏览页面
-        if (userProfile.id) {
-          localStorage.setItem(`tradie_visited_browse_${userProfile.id}`, 'true')
-          setHasVisitedBrowsePage(true)
-        }
-        window.location.href = '/browse-jobs'
-      }
+      id: "professional",
+      title: "专业资质认证",
+      subtitle: "展示专业资质，获取更多项目机会",
+      href: "/dashboard/tradie/certifications/professional",
+      description: "上传资质证书、培训记录和保险证明，让客户放心选择您。",
+      status: professionalStatus
     }
   ]
 
-  const incompleteSteps = completionSteps.filter(step => !step.completed)
-  const completionPercentage = Math.round(((completionSteps.length - incompleteSteps.length) / completionSteps.length) * 100)
-
-
-  // 倒计时定时器
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(prev => prev - 1)
-      }, 1000)
-    }
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [countdown])
-
-  // 注释：已经在上面处理了本地状态的清理
-
-  const getAuthToken = async () => {
-    const session = await authService.getCurrentSession()
-    return session?.session?.access_token
-  }
-
-
-  const handleSendOtp = async () => {
-    if (!phoneNumber.trim()) {
-      setOtpError("请输入手机号码")
-      return
-    }
-    
-    if (!userProfile.id) {
-      setOtpError("用户信息错误")
-      return
-    }
-    
-    setIsSendingOtp(true)
-    setOtpError("")
-    
-    // Show development message and directly verify the phone
-    setTimeout(async () => {
-      setShowSuccessMessage("短信验证功能正在开发中，系统已自动完成验证！")
-      
-      // Update phone number in database and mark as verified
-      try {
-        const response = await fetch('/api/users/profile', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await getAuthToken()}`
-          },
-          body: JSON.stringify({
-            name: userProfile.name || "",
-            phone: phoneNumber,
-            phone_verified: true,
-            address: userProfile.address || "",
-            company: userProfile.tradieData?.company
-          })
-        })
-        
-        if (response.ok) {
-          setLocalPhoneVerified(true)
-          setShowPhoneDialog(false)
-          onProfileUpdate?.()
-        } else {
-          setOtpError("更新手机号码失败，请重试")
-        }
-      } catch (error) {
-        console.error('更新手机号码失败:', error)
-        setOtpError("更新手机号码失败，请重试")
-      }
-      
-      setTimeout(() => setShowSuccessMessage(""), 5000)
-      setIsSendingOtp(false)
-    }, 1000)
-    
-    /* Original SMS verification code - disabled
-    try {
-      const response = await fetch('/api/phone/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          userId: userProfile.id
-        })
-      })
-      
-      const result = await response.json()
-      
-      if (response.ok && result.success) {
-        setOtpStep('verify')
-        setCountdown(60) // 60秒倒计时
-        setShowSuccessMessage("验证码发送成功！")
-        setTimeout(() => setShowSuccessMessage(""), 3000)
-      } else {
-        setOtpError(result.message || "发送验证码失败")
-      }
-    } catch (error) {
-      console.error('发送验证码失败:', error)
-      setOtpError("发送验证码失败，请重试")
-    } finally {
-      setIsSendingOtp(false)
-    }
-    */
-  }
-
-  const handleVerifyOtp = async () => {
-    // This function is no longer needed since we directly verify upon sending
-    // Kept for UI compatibility but should not be called
-    console.log("handleVerifyOtp called - this should not happen with the new flow")
-  }
-
-
-  // 如果不是技师角色，不显示
-  if (!isTradie) {
-    return null
-  }
-
-  // 如果用户资料还在加载中，显示加载状态
-  if (!userProfile.id) {
-    return (
-      <Card className="border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600"></div>
-            <p className="text-gray-600">正在加载资料完成状态...</p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // 如果所有步骤都完成了，显示一个简洁的完成状态
-  if (incompleteSteps.length === 0) {
-    return (
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <CheckCircle className="w-6 h-6 text-green-600" />
-            <div>
-              <h3 className="font-medium text-green-800">资料完善和账户设置完成！</h3>
-              <p className="text-sm text-green-700">
-                您的技师资料和账户设置已经完善，现在可以接收更多项目机会了
-              </p>
-            </div>
-            <Badge className="bg-green-100 text-green-700">
-              100% 完成
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
-    <Card className="border-orange-200 bg-orange-50">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-orange-800 flex items-center">
-            <User className="w-5 h-5 mr-2" />
-            完善技师资料和账户设置
-          </CardTitle>
-          <Badge className="bg-orange-100 text-orange-700">
-            {completionPercentage}% 完成
-          </Badge>
-        </div>
-        <p className="text-sm text-orange-700">
-          完善资料和账户设置可以让您获得更多项目机会，提升客户信任度
-        </p>
-        {showSuccessMessage && (
-          <div className="mt-2 p-2 bg-green-100 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800 flex items-center">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              {showSuccessMessage}
-            </p>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {incompleteSteps.map((step) => (
-          <div
-            key={step.id}
-            className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-100"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {step.completed ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-orange-300 flex items-center justify-center">
-                    {step.critical ? (
-                      <AlertCircle className="w-3 h-3 text-orange-600" />
-                    ) : (
-                      step.icon
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
-                  <h4 className="font-medium text-gray-900">{step.title}</h4>
-                  {step.critical && (
-                    <Badge variant="destructive" className="text-xs">
-                      必填
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">{step.description}</p>
-              </div>
+    <div className="space-y-6">
+      {certificationCards.map(card => (
+        <Card key={card.id} className="border-orange-200 bg-gradient-to-br from-orange-50/60 to-white">
+          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                {card.title}
+              </CardTitle>
+              <p className="text-sm text-gray-600">{card.subtitle}</p>
             </div>
-            {!step.completed && step.action && (
-              <Button
-                size="sm"
-                className="ml-3 bg-orange-600 hover:bg-orange-700"
-                onClick={step.action}
-              >
-                完成
-              </Button>
-            )}
-          </div>
-        ))}
-      </CardContent>
-
-      {/* Phone Number OTP Verification Dialog */}
-      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {otpStep === 'input' ? '验证手机号码' : 
-               otpStep === 'verify' ? '输入验证码' : '验证完成'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Step 1: Input Phone Number */}
-            {otpStep === 'input' && (
-              <>
-                <div>
-                  <Label htmlFor="phone">手机号码</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="请输入手机号码 (如: +8613800138000)"
-                    disabled={isSendingOtp}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    我们将发送验证码到此号码进行验证
-                  </p>
-                </div>
-                
-                {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{otpError}</p>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleSendOtp}
-                    disabled={!phoneNumber.trim() || isSendingOtp}
-                    className="flex-1"
-                  >
-                    {isSendingOtp ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    发送验证码
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowPhoneDialog(false)
-                      setOtpError("")
-                    }}
-                  >
-                    取消
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {/* Step 2: Verify Code */}
-            {otpStep === 'verify' && (
-              <>
-                <div>
-                  <Label htmlFor="verification-code">验证码</Label>
-                  <Input
-                    id="verification-code"
-                    type="text"
-                    value={verificationCode}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '')
-                      if (value.length <= 6) {
-                        setVerificationCode(value)
-                        setOtpError("")
-                      }
-                    }}
-                    placeholder="请输入6位验证码"
-                    maxLength={6}
-                    disabled={isVerifyingOtp}
-                  />
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-sm text-gray-500">
-                      验证码已发送到 {phoneNumber.replace(/(.*\d{4})\d{4}(\d{4})/, '$1****$2')}
-                    </p>
-                    {countdown > 0 ? (
-                      <p className="text-sm text-gray-500">
-                        {countdown}秒后可重新发送
-                      </p>
-                    ) : (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={handleSendOtp}
-                        disabled={isSendingOtp}
-                        className="p-0 h-auto text-sm"
-                      >
-                        重新发送
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{otpError}</p>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleVerifyOtp}
-                    disabled={verificationCode.length !== 6 || isVerifyingOtp}
-                    className="flex-1"
-                  >
-                    {isVerifyingOtp ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    验证
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setOtpStep('input')
-                      setVerificationCode("")
-                      setOtpError("")
-                    }}
-                  >
-                    返回
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-    </Card>
+            <Badge className={STATUS_CLASSES[card.status]}>
+              {STATUS_LABELS[card.status]}
+            </Badge>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm text-gray-600 md:max-w-2xl">{card.description}</p>
+            <Button asChild className="bg-green-600 hover:bg-green-700">
+              <Link href={card.href}>
+                前往{card.title}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   )
 }
+
+export default TradieProfileCompletion

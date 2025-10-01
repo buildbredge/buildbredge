@@ -171,6 +171,65 @@ export interface Database {
           created_at?: string
         }
       }
+      tradie_certification_submissions: {
+        Row: {
+          id: string
+          user_id: string
+          certification_type: 'personal' | 'professional'
+          status: 'pending' | 'approved' | 'rejected'
+          documents: Array<{
+            docType: string
+            url: string
+            originalName: string
+            storagePath?: string
+          }>
+          metadata: Record<string, any>
+          notes: string | null
+          rejection_reason: string | null
+          submitted_at: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          certification_type: 'personal' | 'professional'
+          status?: 'pending' | 'approved' | 'rejected'
+          documents?: Array<{
+            docType: string
+            url: string
+            originalName: string
+            storagePath?: string
+          }>
+          metadata?: Record<string, any>
+          notes?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          certification_type?: 'personal' | 'professional'
+          status?: 'pending' | 'approved' | 'rejected'
+          documents?: Array<{
+            docType: string
+            url: string
+            originalName: string
+            storagePath?: string
+          }>
+          metadata?: Record<string, any>
+          notes?: string | null
+          rejection_reason?: string | null
+          submitted_at?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          updated_at?: string
+        }
+      }
       reviews: {
         Row: {
           id: string

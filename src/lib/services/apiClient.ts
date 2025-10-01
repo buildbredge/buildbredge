@@ -79,6 +79,17 @@ interface UserProfileData {
     experienceYears?: number
     bio?: string
   }
+  certifications?: {
+    personal?: CertificationStatus
+    professional?: CertificationStatus
+  }
+}
+
+interface CertificationStatus {
+  status: 'pending' | 'approved' | 'rejected'
+  submittedAt?: string
+  updatedAt?: string
+  documentsCount?: number
 }
 
 interface PaginationData {
