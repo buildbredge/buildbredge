@@ -11,8 +11,13 @@ function getSupabaseAdmin() {
 }
 
 // 删除用户的API - 受保护的管理员功能
-async function handleDeleteUser(request: NextRequest, adminUser: AdminUser, context?: { params: { id: string } }) {
-  const userId = context?.params?.id
+async function handleDeleteUser(
+  request: NextRequest,
+  adminUser: AdminUser,
+  context?: { params: Promise<{ id: string }> }
+) {
+  const params = context?.params ? await context.params : undefined
+  const userId = params?.id
 
   if (!userId) {
     return NextResponse.json(
