@@ -28,6 +28,7 @@ interface UserProfileResponse {
   activeRole: 'owner' | 'tradie'
   parent_tradie_id?: string | null
   service_areas?: Array<{ id: string; city: string; area: string }>
+  serviceAreas?: Array<{ id: string; city: string; area: string }>
   // 融合式设计：包含所有角色数据
   ownerData?: {
     status: string
@@ -37,6 +38,8 @@ interface UserProfileResponse {
   tradieData?: {
     company: string
     specialty: string
+    specialties?: string[]
+    specialtyCategories?: string[]
     serviceRadius: number
     rating: number
     reviewCount: number
@@ -128,34 +131,76 @@ export async function GET(request: NextRequest) {
       console.log('Getting tradie data from users table for user:', userProfile.id)
       
       // 从tradie_professions表中获取技师的专业领域信息
-      console.log('Fetching specialty from tradie_professions table')
+      console.log('Fetching specialties from tradie_professions table')
       const { data: tradieProfessions, error: professionsError } = await supabase
         .from('tradie_professions')
         .select(`
+          professions(name_zh, name_en),
           categories(name_zh, name_en)
         `)
         .eq('tradie_id', userProfile.id)
-        .limit(1)
-        .single()
 
       let specialtyName = ''
-      if (!professionsError && tradieProfessions && tradieProfessions.categories) {
-        // Handle both single object and array cases
-        const category = Array.isArray(tradieProfessions.categories) 
-          ? tradieProfessions.categories[0]
-          : tradieProfessions.categories
-        
-        if (category && typeof category === 'object' && 'name_zh' in category) {
-          specialtyName = (category as any).name_zh || (category as any).name_en || ''
-          console.log('Found specialty from tradie_professions:', specialtyName)
+      let specialtyNames: string[] = []
+      let specialtyCategoryNames: string[] = []
+      if (!professionsError && Array.isArray(tradieProfessions)) {
+        const professionCollected = tradieProfessions.flatMap(record => {
+          const professionData = record.professions
+          const professions = Array.isArray(professionData)
+            ? professionData
+            : professionData
+              ? [professionData]
+              : []
+
+          return professions.flatMap(profession => {
+            if (profession && typeof profession === 'object') {
+              const { name_zh, name_en } = profession as { name_zh?: string; name_en?: string }
+              return name_zh || name_en ? [name_zh || name_en || ''] : []
+            }
+            return []
+          })
+        })
+
+        const categoryCollected = tradieProfessions.flatMap(record => {
+          const categoryData = record.categories
+          const categories = Array.isArray(categoryData)
+            ? categoryData
+            : categoryData
+              ? [categoryData]
+              : []
+
+          return categories.flatMap(category => {
+            if (category && typeof category === 'object') {
+              const { name_zh, name_en } = category as { name_zh?: string; name_en?: string }
+              return name_zh || name_en ? [name_zh || name_en || ''] : []
+            }
+            return []
+          })
+        })
+
+        specialtyNames = [...new Set(professionCollected.filter(Boolean))]
+        specialtyCategoryNames = [...new Set(categoryCollected.filter(Boolean))]
+
+        if (specialtyNames.length === 0) {
+          specialtyNames = [...specialtyCategoryNames]
+        }
+
+        specialtyName = specialtyNames[0] || ''
+
+        if (specialtyNames.length > 0) {
+          console.log('Resolved specialties from tradie_professions:', specialtyNames)
+        } else {
+          console.log('No specialty names resolved from tradie_professions records')
         }
       } else {
-        console.log('No specialty found in tradie_professions table', professionsError)
+        console.log('Failed to load tradie_professions data', professionsError)
       }
       
       tradieData = {
         company: userProfile.company || '',
         specialty: specialtyName,
+        specialties: specialtyNames,
+        specialtyCategories: specialtyCategoryNames,
         serviceRadius: userProfile.service_radius || 50,
         rating: userProfile.rating || 0,
         reviewCount: userProfile.review_count || 0,
@@ -213,6 +258,7 @@ export async function GET(request: NextRequest) {
       website: userProfile.website || undefined,
       service_area: userProfile.service_area || undefined,
       service_areas: serviceAreaDetails.length > 0 ? serviceAreaDetails : undefined,
+      serviceAreas: serviceAreaDetails.length > 0 ? serviceAreaDetails : undefined,
       bio: userProfile.bio || undefined,
       status: userProfile.status,
       verified: userProfile.status === 'approved',
@@ -226,7 +272,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Final API Response - tradieData:', tradieData)
-    console.log('Final API Response - specialty:', tradieData?.specialty)
+    console.log('Final API Response - specialties:', tradieData?.specialties || tradieData?.specialty)
 
     return NextResponse.json({
       success: true,

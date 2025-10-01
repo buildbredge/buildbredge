@@ -57,6 +57,7 @@ interface UserProfileData {
   bio?: string
   website?: string
   service_area?: string
+  service_areas?: Array<{ id: string; city: string; area: string }>
   serviceAreas?: Array<{ id: string; city: string; area: string }>
   // 融合式设计：包含所有角色数据
   ownerData?: {
@@ -67,6 +68,8 @@ interface UserProfileData {
   tradieData?: {
     company: string
     specialty: string
+    specialties?: string[]
+    specialtyCategories?: string[]
     serviceRadius: number
     rating: number
     reviewCount: number

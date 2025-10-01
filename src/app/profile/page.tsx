@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,12 +35,12 @@ export default function ProfilePage() {
   
   // Tradie专用信息
   const [companyName, setCompanyName] = useState("")
-  const [specialty, setSpecialty] = useState("")
-  const [specialties, setSpecialties] = useState<string[]>([])
   const [hourlyRate, setHourlyRate] = useState("")
   const [experienceYears, setExperienceYears] = useState("")
   const [bio, setBio] = useState("")
-  const [tradieCategories, setTradieCategories] = useState<string[]>([])
+  const [tradieSpecialties, setTradieSpecialties] = useState<string[]>([])
+  const [tradieSpecialtyCategories, setTradieSpecialtyCategories] = useState<string[]>([])
+  const [tradieServiceAreas, setTradieServiceAreas] = useState<Array<{ id: string; city: string; area: string }>>([])
   
   // OTP verification states
   const [showPhoneVerificationDialog, setShowPhoneVerificationDialog] = useState(false)
@@ -65,71 +65,48 @@ export default function ProfilePage() {
       setLanguage(user.language || "中/EN")
       setWebsite(user.website || "")
       setServiceArea(user.service_area || "")
+
+      const profileServiceAreas = Array.isArray(user.service_areas)
+        ? user.service_areas
+        : Array.isArray(user.serviceAreas)
+          ? user.serviceAreas
+          : []
+      setTradieServiceAreas(profileServiceAreas)
       
       // Load tradie data if available
       if (user.tradieData) {
         setCompanyName(user.tradieData.company || "")
-        setSpecialty(user.tradieData.specialty || "未设置专业领域")
         setBio(user.tradieData.bio || "")
         setHourlyRate(user.tradieData.hourlyRate?.toString() || "")
         setExperienceYears(user.tradieData.experienceYears?.toString() || "")
-        
-        // If specialty is available, extract it as a category
-        if (user.tradieData.specialty && user.tradieData.specialty !== "未设置专业领域") {
-          setTradieCategories([user.tradieData.specialty])
+
+        const specialtiesFromProfile = Array.isArray(user.tradieData.specialties)
+          ? user.tradieData.specialties
+          : user.tradieData.specialty && user.tradieData.specialty !== "未设置专业领域"
+            ? [user.tradieData.specialty]
+            : []
+
+        setTradieSpecialties(specialtiesFromProfile)
+        const categoryLabels = Array.isArray(user.tradieData.specialtyCategories)
+          ? user.tradieData.specialtyCategories
+          : []
+        setTradieSpecialtyCategories(categoryLabels)
+      } else {
+        if (user.bio) {
+          // For non-tradie users, load bio from main user data
+          setBio(user.bio || "")
         }
-      } else if (user.bio) {
-        // For non-tradie users, load bio from main user data
-        setBio(user.bio || "")
+        setTradieSpecialties([])
+        setTradieSpecialtyCategories([])
       }
       
       console.log("User data:", user)
       console.log("User tradieData:", user.tradieData)
-      console.log("Loaded specialty:", user.tradieData?.specialty)
+      console.log("Loaded specialties:", user.tradieData?.specialties || user.tradieData?.specialty)
+      console.log("Loaded specialty categories:", user.tradieData?.specialtyCategories)
+      console.log("Loaded service areas:", profileServiceAreas)
     }
   }, [user, authLoading, router])
-
-  const fetchTradieCategories = async (tradieId: string) => {
-    try {
-      console.log("Fetching categories for tradie:", tradieId)
-      const response = await fetch(`/api/tradies/${tradieId}/professions/`)
-      console.log("API response status:", response.status)
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log("API response data:", data)
-        
-        if (data.professions && Array.isArray(data.professions)) {
-          // Get unique category names
-          const categoryNames = [...new Set(
-            data.professions
-              .filter((p: any) => p.categories)
-              .map((p: any) => p.categories.name_zh || p.categories.name_en)
-          )]
-          console.log("Extracted category names:", categoryNames)
-          setTradieCategories(categoryNames as string[])
-          
-          // Update specialty display with categories
-          if (categoryNames.length > 0) {
-            setSpecialty(categoryNames.join(", "))
-            console.log("Updated specialty:", categoryNames.join(", "))
-          } else {
-            console.log("No categories found, setting default message")
-            setSpecialty("未设置专业领域")
-          }
-        } else {
-          console.log("No professions data found")
-          setSpecialty("未设置专业领域")
-        }
-      } else {
-        console.error("API request failed with status:", response.status)
-        setSpecialty("未设置专业领域")
-      }
-    } catch (error) {
-      console.error("Error fetching tradie categories:", error)
-      setSpecialty("未设置专业领域")
-    }
-  }
 
   // 倒计时定时器
   useEffect(() => {
@@ -143,16 +120,6 @@ export default function ProfilePage() {
       if (interval) clearInterval(interval)
     }
   }, [countdown])
-
-  const handleAddSpecialty = (specialty: string) => {
-    if (!specialties.includes(specialty)) {
-      setSpecialties([...specialties, specialty])
-    }
-  }
-
-  const handleRemoveSpecialty = (specialty: string) => {
-    setSpecialties(specialties.filter(s => s !== specialty))
-  }
 
   const handleSendOtp = async () => {
     if (!phone.trim()) {
@@ -301,6 +268,16 @@ export default function ProfilePage() {
       setIsLoading(false)
     }
   }
+
+  const serviceAreaCityLabel = useMemo(() => {
+    const cities = Array.from(new Set(tradieServiceAreas.map(area => area.city).filter(Boolean)))
+    return cities.join("、")
+  }, [tradieServiceAreas])
+
+  const specialtyCategoryLabel = useMemo(() => {
+    const categories = Array.from(new Set(tradieSpecialtyCategories.filter(Boolean)))
+    return categories.join("、")
+  }, [tradieSpecialtyCategories])
 
   if (authLoading) {
     return (
@@ -476,19 +453,20 @@ export default function ProfilePage() {
                           placeholder="https://example.com" 
                         />
                       </div>
-                      
-                      <div>
-                        <Label htmlFor="serviceArea">
-                          <MapPin className="w-4 h-4 inline mr-2" />
-                          服务区域
-                        </Label>
-                        <Input 
-                          id="serviceArea" 
-                          value={serviceArea} 
-                          onChange={e => setServiceArea(e.target.value)} 
-                          placeholder="请输入您的服务区域" 
-                        />
-                      </div>
+                      {!isTradie && (
+                        <div>
+                          <Label htmlFor="serviceArea">
+                            <MapPin className="w-4 h-4 inline mr-2" />
+                            服务区域
+                          </Label>
+                          <Input 
+                            id="serviceArea" 
+                            value={serviceArea} 
+                            onChange={e => setServiceArea(e.target.value)} 
+                            placeholder="请输入您的服务区域" 
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -508,13 +486,91 @@ export default function ProfilePage() {
                       </Select>
                     </div>
 
+                    {isTradie && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>服务区域</span>
+                            {serviceAreaCityLabel && (
+                              <span
+                                title={serviceAreaCityLabel}
+                                className="ml-1 flex-1 truncate text-sm text-gray-500"
+                              >
+                                {serviceAreaCityLabel}
+                              </span>
+                            )}
+                          </Label>
+                          <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            {tradieServiceAreas.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {tradieServiceAreas.map((area) => (
+                                  <Badge
+                                    key={area.id}
+                                    variant="secondary"
+                                    className="px-3 py-1 text-sm"
+                                  >
+                                    {area.area}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                暂未配置服务区域，如需更新请联系管理员
+                              </p>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs text-gray-500">
+                            此信息由平台维护，您无法直接修改
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>专业领域</span>
+                            {specialtyCategoryLabel && (
+                              <span
+                                title={specialtyCategoryLabel}
+                                className="ml-1 flex-1 truncate text-sm text-gray-500"
+                              >
+                                {specialtyCategoryLabel}
+                              </span>
+                            )}
+                          </Label>
+                          <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            {tradieSpecialties.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {tradieSpecialties.map((specialty, index) => (
+                                  <Badge
+                                    key={`${specialty}-${index}`}
+                                    variant="outline"
+                                    className="px-3 py-1 text-sm"
+                                  >
+                                    {specialty}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                暂未配置专业领域，如需更新请联系管理员
+                              </p>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs text-gray-500">
+                            专业领域来源于您的职业分类记录
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Tradie专用信息 */}
                     {isTradie && (
                       <>
                         <hr className="my-6" />
                         <h3 className="text-lg font-semibold mb-4">技师信息</h3>
                         
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid gap-4">
                           <div>
                             <Label htmlFor="companyName">
                               <Building className="w-4 h-4 inline mr-2" />
@@ -526,22 +582,6 @@ export default function ProfilePage() {
                               onChange={e => setCompanyName(e.target.value)} 
                               placeholder="请输入公司名称（可选）" 
                             />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="specialty">专业领域</Label>
-                            <Input 
-                              id="specialty" 
-                              value={specialty}
-                              readOnly
-                              className="bg-gray-50"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              {specialty && specialty !== "未设置专业领域"
-                                ? "如需修改专业领域请联系管理员"
-                                : "未设置专业领域，如需设置请联系管理员"
-                              }
-                            </p>
                           </div>
                         </div>
 

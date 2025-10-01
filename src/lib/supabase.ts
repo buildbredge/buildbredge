@@ -615,7 +615,7 @@ export interface Database {
         Returns: boolean
       }
       process_automatic_escrow_releases: {
-        Args: {}
+        Args: Record<string, never>
         Returns: {
           escrow_id: string
           tradie_id: string

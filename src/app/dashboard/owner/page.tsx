@@ -63,10 +63,6 @@ interface DashboardData {
   }>
 }
 
-interface ExtendedUserProfileData extends UserProfileData {
-  // All properties are already defined in UserProfileData
-}
-
 interface AuthUser {
   id: string
   email: string
@@ -76,7 +72,7 @@ interface AuthUser {
 export default function OwnerDashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [userProfile, setUserProfile] = useState<ExtendedUserProfileData | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [projects, setProjects] = useState<ProjectData[]>([])
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
@@ -111,7 +107,7 @@ export default function OwnerDashboardPage() {
       const profileResponse = await apiClient.getUserProfile()
       
       if (profileResponse.success && profileResponse.data) {
-        const profile = profileResponse.data as ExtendedUserProfileData
+        const profile = profileResponse.data as UserProfileData
         setUserProfile(profile)
         
         // Check if user has owner role
