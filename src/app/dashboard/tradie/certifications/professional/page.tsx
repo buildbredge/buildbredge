@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,36 @@ const STATUS_CLASSES: Record<string, string> = {
   rejected: "bg-red-100 text-red-600"
 }
 
+const PROFESSIONAL_DOCUMENT_LABELS: Record<string, string> = {
+  qualification_certificate: "资质证书",
+  training_record: "培训记录",
+  experience_proof: "经验证明",
+  insurance_proof: "保险证明"
+}
+
+interface StoredDocument {
+  docType: string
+  url: string
+  originalName: string
+  storagePath?: string
+}
+
+interface ProfessionalCertificationMetadata {
+  businessNumber?: string
+  extraNotes?: string
+  [key: string]: unknown
+}
+
+interface ProfessionalCertificationSubmission {
+  status: string
+  submittedAt?: string | null
+  updatedAt?: string | null
+  metadata?: ProfessionalCertificationMetadata | null
+  documents: StoredDocument[]
+  notes?: string | null
+  rejectionReason?: string | null
+}
+
 export default function ProfessionalCertificationPage() {
   const router = useRouter()
   const { user } = useAuth()
@@ -40,16 +70,63 @@ export default function ProfessionalCertificationPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  const [existingSubmission, setExistingSubmission] = useState<ProfessionalCertificationSubmission | null>(null)
+  const [existingDocuments, setExistingDocuments] = useState<Record<string, StoredDocument>>({})
+  const [isLoadingSubmission, setIsLoadingSubmission] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   const qualificationRef = useRef<HTMLInputElement | null>(null)
   const trainingRef = useRef<HTMLInputElement | null>(null)
   const experienceRef = useRef<HTMLInputElement | null>(null)
   const insuranceRef = useRef<HTMLInputElement | null>(null)
 
   const certificationStatus = useMemo(() => {
+    if (existingSubmission?.status) {
+      return existingSubmission.status
+    }
+
     const status = user?.certifications?.professional?.status
     if (!status) return "not_submitted"
     return status
-  }, [user?.certifications?.professional?.status])
+  }, [existingSubmission?.status, user?.certifications?.professional?.status])
+
+  const applySubmission = useCallback((rawSubmission: any | null) => {
+    if (!rawSubmission || (rawSubmission.certification_type && rawSubmission.certification_type !== "professional")) {
+      setExistingSubmission(null)
+      setExistingDocuments({})
+      setBusinessNumber("")
+      setExtraNotes("")
+      return
+    }
+
+    const normalized: ProfessionalCertificationSubmission = {
+      status: rawSubmission.status,
+      submittedAt: rawSubmission.submitted_at ?? rawSubmission.submittedAt ?? null,
+      updatedAt: rawSubmission.updated_at ?? rawSubmission.updatedAt ?? null,
+      metadata: rawSubmission.metadata ?? null,
+      documents: Array.isArray(rawSubmission.documents) ? rawSubmission.documents : [],
+      notes: rawSubmission.notes ?? null,
+      rejectionReason: rawSubmission.rejection_reason ?? rawSubmission.rejectionReason ?? null
+    }
+
+    setExistingSubmission(normalized)
+
+    const documentsMap: Record<string, StoredDocument> = {}
+    normalized.documents.forEach(document => {
+      if (document?.docType) {
+        documentsMap[document.docType] = document
+      }
+    })
+    setExistingDocuments(documentsMap)
+
+    const metadata = normalized.metadata ?? {}
+    setBusinessNumber(metadata.businessNumber ?? "")
+    setExtraNotes(metadata.extraNotes ?? normalized.notes ?? "")
+  }, [])
+
+  const existingMetadata = useMemo(() => {
+    return existingSubmission?.metadata ?? {}
+  }, [existingSubmission?.metadata])
 
   const handleFileChange = (
     setter: (file: File | null) => void,
@@ -67,6 +144,52 @@ export default function ProfessionalCertificationPage() {
       ref.current.value = ""
     }
   }
+
+  const loadExistingSubmission = useCallback(async () => {
+    if (!user?.id) {
+      applySubmission(null)
+      return
+    }
+
+    setIsLoadingSubmission(true)
+    setLoadError(null)
+
+    const { data: sessionData } = await supabase.auth.getSession()
+    const session = sessionData.session
+
+    if (!session) {
+      applySubmission(null)
+      setIsLoadingSubmission(false)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/tradies/certifications?type=professional", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      })
+
+      const payload = await response.json()
+
+      if (!response.ok || !payload.success) {
+        if (response.status === 404) {
+          applySubmission(null)
+        } else {
+          setLoadError(payload.error || "加载认证资料失败，请稍后重试")
+        }
+        return
+      }
+
+      const professionalSubmission = payload.data?.professional ?? null
+      applySubmission(professionalSubmission)
+    } catch (fetchError) {
+      console.error("加载专业认证资料失败", fetchError)
+      setLoadError("加载认证资料失败，请稍后重试")
+    } finally {
+      setIsLoadingSubmission(false)
+    }
+  }, [applySubmission, user?.id])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -133,6 +256,7 @@ export default function ProfessionalCertificationPage() {
       resetInput(trainingRef)
       resetInput(experienceRef)
       resetInput(insuranceRef)
+      await loadExistingSubmission()
     } catch (err) {
       const message = err instanceof Error ? err.message : "提交失败，请稍后再试"
       setError(message)
@@ -140,6 +264,15 @@ export default function ProfessionalCertificationPage() {
       setIsSubmitting(false)
     }
   }
+
+  useEffect(() => {
+    if (!user?.id) {
+      applySubmission(null)
+      return
+    }
+
+    loadExistingSubmission()
+  }, [applySubmission, loadExistingSubmission, user?.id])
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -180,10 +313,87 @@ export default function ProfessionalCertificationPage() {
                 <li>保险证明：上传有效期内的公众责任险或相关保险。</li>
                 <li>公司注册编号：填写公司注册号（如 NZBN、IRD）。</li>
               </ul>
+          </CardContent>
+        </Card>
+
+        {loadError && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {loadError}
+          </div>
+        )}
+
+        {isLoadingSubmission && !existingSubmission && (
+          <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            正在加载您的资质认证记录...
+          </div>
+        )}
+
+        {existingSubmission && (
+          <Card className="border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-lg">已提交的资质资料</CardTitle>
+              <p className="text-sm text-gray-600">
+                提交时间：{existingSubmission.submittedAt ? new Date(existingSubmission.submittedAt).toLocaleString("zh-CN") : "—"}
+                {existingSubmission.updatedAt && (
+                  <>
+                    <span className="ml-2">最近更新：{new Date(existingSubmission.updatedAt).toLocaleString("zh-CN")}</span>
+                  </>
+                )}
+              </p>
+              {existingSubmission.rejectionReason && (
+                <p className="text-sm text-red-600">审核反馈：{existingSubmission.rejectionReason}</p>
+              )}
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">公司注册编号</h3>
+                <p className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                  {existingMetadata.businessNumber || "未填写"}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-700">补充说明</h3>
+                <p className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                  {existingMetadata.extraNotes || existingSubmission.notes || "未填写"}
+                </p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <h3 className="text-sm font-medium text-gray-700">已上传的文件</h3>
+                {existingSubmission.documents.length > 0 ? (
+                  <ul className="space-y-2">
+                    {existingSubmission.documents.map((document) => (
+                      <li
+                        key={`${document.docType}-${document.originalName}`}
+                        className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {PROFESSIONAL_DOCUMENT_LABELS[document.docType] || document.docType}
+                          </p>
+                          <p className="text-xs text-gray-500">{document.originalName}</p>
+                        </div>
+                        <a
+                          href={document.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-700"
+                        >
+                          查看
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rounded-md border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-500">
+                    暂无已上传的文件记录
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <Card className="border-gray-200">
               <CardHeader>
                 <CardTitle className="text-lg">资质与培训文件</CardTitle>
@@ -215,6 +425,22 @@ export default function ProfessionalCertificationPage() {
                       </button>
                     </div>
                   )}
+                  {!qualificationFile && existingDocuments.qualification_certificate && (
+                    <div className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <div className="pr-4">
+                        <p className="font-medium">{existingDocuments.qualification_certificate.originalName}</p>
+                        <p className="text-xs text-gray-500">已上传的资质证书</p>
+                      </div>
+                      <a
+                        href={existingDocuments.qualification_certificate.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        查看
+                      </a>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500">例如：电工证、管道工执照、行业协会认证等。</p>
                 </div>
 
@@ -242,6 +468,22 @@ export default function ProfessionalCertificationPage() {
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
+                    </div>
+                  )}
+                  {!trainingFile && existingDocuments.training_record && (
+                    <div className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <div className="pr-4">
+                        <p className="font-medium">{existingDocuments.training_record.originalName}</p>
+                        <p className="text-xs text-gray-500">已上传的培训记录</p>
+                      </div>
+                      <a
+                        href={existingDocuments.training_record.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        查看
+                      </a>
                     </div>
                   )}
                   <p className="text-xs text-gray-500">上传近期参加的培训或课程完成证明。</p>
@@ -273,6 +515,22 @@ export default function ProfessionalCertificationPage() {
                       </button>
                     </div>
                   )}
+                  {!experienceFile && existingDocuments.experience_proof && (
+                    <div className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <div className="pr-4">
+                        <p className="font-medium">{existingDocuments.experience_proof.originalName}</p>
+                        <p className="text-xs text-gray-500">已上传的经验证明</p>
+                      </div>
+                      <a
+                        href={existingDocuments.experience_proof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        查看
+                      </a>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500">可以是推荐信、完工证明或合同节选。</p>
                 </div>
 
@@ -300,6 +558,22 @@ export default function ProfessionalCertificationPage() {
                       >
                         <XCircle className="h-4 w-4" />
                       </button>
+                    </div>
+                  )}
+                  {!insuranceFile && existingDocuments.insurance_proof && (
+                    <div className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <div className="pr-4">
+                        <p className="font-medium">{existingDocuments.insurance_proof.originalName}</p>
+                        <p className="text-xs text-gray-500">已上传的保险证明</p>
+                      </div>
+                      <a
+                        href={existingDocuments.insurance_proof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700"
+                      >
+                        查看
+                      </a>
                     </div>
                   )}
                   <p className="text-xs text-gray-500">请确保保险单据显示有效日期与承保范围。</p>

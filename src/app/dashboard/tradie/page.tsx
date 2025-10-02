@@ -5,18 +5,16 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Wrench, Briefcase, MessageCircle, Star,
   Settings, DollarSign, TrendingUp,
-  Bell, LogOut, CheckCircle, Clock,
+  Clock,
   Target, Calendar
 } from "lucide-react"
 import Link from "next/link"
 import { apiClient } from "@/lib/services/apiClient"
 import { authService } from "@/lib/services/authService"
-import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
-import { RoleSwitcher } from "@/components/ui/role-switcher"
+import { RoleStats } from "@/components/ui/role-badges"
 import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion"
 import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
 import { MatchedProjectsList } from "@/components/MatchedProjectsList"
@@ -198,11 +196,6 @@ export default function TradieDashboardPage() {
     }
   }, [user, fetchDashboardData])
 
-  const handleLogout = async () => {
-    await authService.logout()
-    router.push('/')
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -231,83 +224,9 @@ export default function TradieDashboardPage() {
     )
   }
 
-  const hasOwnerRole = userProfile.roles?.some((r: UserRole) => r.role_type === 'owner')
-  const isMultiRole = (userProfile.roles?.length || 0) > 1
-  const displayName = userProfile.name || user.email?.split('@')[0] || '用户'
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-            <Avatar className="w-16 h-16">
-              <AvatarFallback className="text-lg bg-green-100 text-green-800">
-                {displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                技师工作台
-              </h1>
-              <p className="text-gray-600">欢迎回来，{displayName}</p>
-              {userProfile.tradieData && (
-                <p className="text-sm text-green-600 font-medium">
-                  {userProfile.tradieData.company} • {userProfile.tradieData.specialty}
-                  {userProfile.tradieData.rating > 0 && (
-                    <span className="ml-2">
-                      ⭐ {userProfile.tradieData.rating.toFixed(1)} ({userProfile.tradieData.reviewCount} 评价)
-                    </span>
-                  )}
-                </p>
-              )}
-              {userProfile.language && (
-                <p className="text-sm text-blue-600 font-medium">
-                  🌐 {userProfile.language}
-                </p>
-              )}
-              <div className="flex items-center space-x-2 mt-2">
-                <RoleBadges 
-                  roles={userProfile.roles || []} 
-                  activeRole="tradie"
-                />
-                {user.emailConfirmed ? (
-                  <Badge className="bg-green-100 text-green-800">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    已验证
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">
-                    <Clock className="w-3 h-3 mr-1" />
-                    待验证邮箱
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <RoleSwitcher 
-              roles={userProfile.roles || []}
-              currentRole="tradie"
-            />
-            <Button variant="outline" size="sm">
-              <Bell className="w-4 h-4 mr-2" />
-              通知
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/profile">
-                <Settings className="w-4 h-4 mr-2" />
-                设置
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              退出
-            </Button>
-          </div>
-        </div>
-
         {/* Email Verification Alert */}
         {!user.emailConfirmed && (
           <Card className="mb-6 border-yellow-200 bg-yellow-50">

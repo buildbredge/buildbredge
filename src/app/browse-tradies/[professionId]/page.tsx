@@ -2,8 +2,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, MapPin, Mail, ArrowLeft, Users, Briefcase } from "lucide-react"
+import { Star, MapPin, ArrowLeft, Users, Briefcase, Mail } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
 
 // 技师信息接口（从 tradie_professions 关联查询）
 interface TradieWithProfession {
@@ -22,75 +23,97 @@ interface TradieWithProfession {
   hourly_rate: number | null
 }
 
-export async function generateStaticParams() {
-  try {
-    // 从API获取所有类别id来生成静态路径
-    const response = await fetch(`http://localhost:3000/api/tradies/category/static-params`, {
-      method: 'POST'
-    })
-    
-    if (!response.ok) {
-      console.error('Error generating static params:', response.statusText)
-      // fallback 路径
-      return [
-        { category: "1" },
-        { category: "2" }
-      ]
-    }
+async function loadTradiesForProfession(professionId: string) {
+  console.log('Loading tradies for profession ID:', professionId)
 
-    const result = await response.json()
-    return (result.data || []).map((category: any) => ({
-      category: category.id.toString(),
-    }))
-  } catch (error) {
-    console.error('Error generating static params:', error)
-    // fallback 路径
-    return [
-      { category: "1" },
-      { category: "2" }
-    ]
+  const { data: professionRows, error: professionError } = await supabase
+    .from('professions')
+    .select(`
+      id,
+      name_zh,
+      name_en,
+      category_id,
+      categories(id, name_zh, name_en)
+    `)
+    .eq('id', professionId)
+
+  if (professionError) {
+    console.error('Error loading profession:', professionError)
+    return { profession: null, tradies: [] }
+  }
+
+  const professionData = professionRows?.[0]
+  if (!professionData) {
+    console.warn('Profession not found:', professionId)
+    return { profession: null, tradies: [] }
+  }
+
+  const { data: tradieData, error } = await supabase
+    .from('tradie_professions')
+    .select(`
+      tradie_id,
+      profession_id,
+      users!inner(
+        id,
+        name,
+        email,
+        phone,
+        company,
+        address,
+        rating,
+        review_count,
+        status,
+        created_at,
+        bio,
+        experience_years,
+        hourly_rate
+      )
+    `)
+    .eq('profession_id', professionId)
+
+  if (error) {
+    console.error('Error loading tradies:', error)
+    return {
+      profession: {
+        id: professionData.id,
+        name_zh: professionData.name_zh,
+        name_en: professionData.name_en,
+        category_id: professionData.category_id,
+        category: professionData.categories || null
+      },
+      tradies: []
+    }
+  }
+
+  const uniqueTradies = new Map<string, TradieWithProfession>()
+  tradieData?.forEach((item: any) => {
+    const user = item.users as TradieWithProfession | undefined
+    const isUserApproved = user && (user.status === 'approved' || user.status === 'active')
+
+    if (user && isUserApproved) {
+      uniqueTradies.set(user.id, user)
+    }
+  })
+
+  return {
+    profession: {
+      id: professionData.id,
+      name_zh: professionData.name_zh,
+      name_en: professionData.name_en,
+      category_id: professionData.category_id,
+      category: professionData.categories || null
+    },
+    tradies: Array.from(uniqueTradies.values())
   }
 }
 
-// 强制动态渲染，避免静态生成时的fetch问题
 export const dynamic = 'force-dynamic'
 
-interface PageProps {
-  params: Promise<{
-    category: string // This will be the category_id
-  }>
-}
+export default async function ProfessionPage({ params }: { params: Promise<{ professionId: string }> }) {
+  const { professionId } = await params
 
-async function loadTradiesForCategory(categoryId: string) {
-  try {
-    console.log('Loading tradies for category ID:', categoryId)
-    
-    const response = await fetch(`http://localhost:3000/api/tradies/category/${categoryId}`)
-    
-    if (!response.ok) {
-      console.error('Error loading tradies:', response.statusText)
-      return { category: null, tradies: [] }
-    }
-    
-    const result = await response.json()
-    console.log('API result:', result.data)
-    
-    return {
-      category: result.data.category,
-      tradies: result.data.tradies
-    }
-  } catch (error) {
-    console.error('Error loading tradies for category:', error)
-    return { category: null, tradies: [] }
-  }
-}
-
-export default async function CategoryPage({ params }: PageProps) {
-  const { category } = await params
-  const categoryId = category // Now this is the category ID
-  
   // 服务端数据加载
-  const { category: categoryData, tradies } = await loadTradiesForCategory(categoryId)
+  const { profession: professionData, tradies } = await loadTradiesForProfession(professionId)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,10 +131,10 @@ export default async function CategoryPage({ params }: PageProps) {
           
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {categoryData ? `${categoryData.name_zh}技师` : '技师列表'}
+              {professionData ? `${professionData.name_zh}技师` : '技师列表'}
             </h1>
             <p className="text-gray-600">
-              {categoryData ? `专业的${categoryData.name_zh}技师为您服务` : '专业技师为您服务'}
+              {professionData ? `专业的${professionData.name_zh}技师为您服务` : '专业技师为您服务'}
             </p>
           </div>
         </div>
@@ -123,10 +146,10 @@ export default async function CategoryPage({ params }: PageProps) {
               <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">暂无技师</h3>
               <p className="text-gray-600 mb-6">
-                该类别下暂时还没有技师注册，请尝试其他类别或稍后再来查看
+                该专业下暂时还没有技师注册，请尝试其他类别或稍后再来查看
               </p>
               <Button asChild>
-                <Link href="/browse-tradies">浏览其他类别</Link>
+                <Link href="/browse-tradies">浏览其他专业</Link>
               </Button>
             </div>
           ) : (
@@ -157,7 +180,7 @@ export default async function CategoryPage({ params }: PageProps) {
                           </p>
                         </div>
                         <Badge variant="outline" className="text-xs">
-                          {tradie.status === 'approved' ? '已认证' : '待审核'}
+                          {tradie.status === 'approved' || tradie.status === 'active' ? '已认证' : '待审核'}
                         </Badge>
                       </div>
                     </CardHeader>

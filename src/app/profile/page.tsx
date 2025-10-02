@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, AlertCircle, Loader2, Globe } from "lucide-react"
+import { ArrowLeft, Save, User, Phone, MapPin, Building, CheckCircle, Globe } from "lucide-react"
 import { PortfolioManagement } from "@/components/ui/portfolio-management"
 
 
@@ -27,7 +26,6 @@ export default function ProfilePage() {
   // 基础信息
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
-  const [phoneVerified, setPhoneVerified] = useState(false)
   const [address, setAddress] = useState("")
   const [language, setLanguage] = useState("中/EN")
   const [website, setWebsite] = useState("")
@@ -42,15 +40,6 @@ export default function ProfilePage() {
   const [tradieSpecialtyCategories, setTradieSpecialtyCategories] = useState<string[]>([])
   const [tradieServiceAreas, setTradieServiceAreas] = useState<Array<{ id: string; city: string; area: string }>>([])
   
-  // OTP verification states
-  const [showPhoneVerificationDialog, setShowPhoneVerificationDialog] = useState(false)
-  const [otpStep, setOtpStep] = useState<'input' | 'verify' | 'completed'>('input')
-  const [verificationCode, setVerificationCode] = useState("")
-  const [isSendingOtp, setIsSendingOtp] = useState(false)
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [otpError, setOtpError] = useState("")
-
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/auth/login")
@@ -60,7 +49,6 @@ export default function ProfilePage() {
     if (user) {
       setFullName(user.name || "")
       setPhone(user.phone || "")
-      setPhoneVerified(user.phone_verified || false)
       setAddress(user.address || "")
       setLanguage(user.language || "中/EN")
       setWebsite(user.website || "")
@@ -107,132 +95,6 @@ export default function ProfilePage() {
       console.log("Loaded service areas:", profileServiceAreas)
     }
   }, [user, authLoading, router])
-
-  // 倒计时定时器
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(prev => prev - 1)
-      }, 1000)
-    }
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [countdown])
-
-  const handleSendOtp = async () => {
-    if (!phone.trim()) {
-      setOtpError("请输入手机号码")
-      return
-    }
-    
-    if (!user?.id) {
-      setOtpError("用户信息错误")
-      return
-    }
-    
-    setIsSendingOtp(true)
-    setOtpError("")
-    
-    // TODO: SMS verification disabled - UI only mode
-    // Simulate API call for UI testing
-    setTimeout(() => {
-      setOtpStep('verify')
-      setCountdown(60)
-      setSuccess("验证码发送成功！（当前为演示模式）")
-      setTimeout(() => setSuccess(""), 3000)
-      setIsSendingOtp(false)
-    }, 1000)
-    
-    /* Original SMS verification code - disabled
-    try {
-      const response = await fetch('/api/phone/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          phone: phone,
-          userId: user.id
-        })
-      })
-      
-      const result = await response.json()
-      
-      if (response.ok && result.success) {
-        setOtpStep('verify')
-        setCountdown(60)
-        setSuccess("验证码发送成功！")
-        setTimeout(() => setSuccess(""), 3000)
-      } else {
-        setOtpError(result.message || "发送验证码失败")
-      }
-    } catch (error) {
-      console.error('发送验证码失败:', error)
-      setOtpError("发送验证码失败，请重试")
-    } finally {
-      setIsSendingOtp(false)
-    }
-    */
-  }
-
-  const handleVerifyOtp = async () => {
-    if (!verificationCode.trim() || verificationCode.length !== 6) {
-      setOtpError("请输入6位验证码")
-      return
-    }
-    
-    if (!user?.id) {
-      setOtpError("用户信息错误")
-      return
-    }
-    
-    setIsVerifyingOtp(true)
-    setOtpError("")
-    
-    try {
-      // 调用假验证API直接标记为已验证
-      const response = await fetch('/api/phone/verify-fake', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          phone: phone
-        })
-      })
-      
-      const result = await response.json()
-      
-      if (response.ok && result.success) {
-        setPhoneVerified(true)
-        setOtpStep('completed')
-        setSuccess("手机号码验证成功！")
-        setShowPhoneVerificationDialog(false)
-        
-        // 刷新用户数据
-        await updateUser({ phone_verified: true })
-        
-        setTimeout(() => setSuccess(""), 3000)
-      } else {
-        setOtpError(result.error || "验证失败")
-      }
-    } catch (error) {
-      console.error('验证失败:', error)
-      setOtpError("验证失败，请重试")
-    } finally {
-      setIsVerifyingOtp(false)
-    }
-  }
-
-  const openPhoneVerificationDialog = () => {
-    setOtpStep('input')
-    setVerificationCode("")
-    setOtpError("")
-    setShowPhoneVerificationDialog(true)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -399,29 +261,13 @@ export default function ProfilePage() {
                             required 
                             className="flex-1"
                           />
-                          {phoneVerified ? (
+                          {user.phone_verified ? (
                             <Badge className="bg-green-100 text-green-700 px-2 py-1">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               已验证
                             </Badge>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={openPhoneVerificationDialog}
-                              className="whitespace-nowrap"
-                            >
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              验证
-                            </Button>
-                          )}
+                          ) : null}
                         </div>
-                        {!phoneVerified && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            建议验证手机号码以提高信任度
-                          </p>
-                        )}
                       </div>
                     </div>
 
@@ -662,139 +508,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Phone Verification Dialog */}
-      <Dialog open={showPhoneVerificationDialog} onOpenChange={setShowPhoneVerificationDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {otpStep === 'input' ? '验证手机号码' : 
-               otpStep === 'verify' ? '输入验证码' : '验证完成'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Step 1: Input Phone Number */}
-            {otpStep === 'input' && (
-              <>
-                <div>
-                  <Label htmlFor="verification-phone">手机号码</Label>
-                  <Input
-                    id="verification-phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="请输入手机号码 (如: +8613800138000)"
-                    disabled={isSendingOtp}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    我们将发送验证码到此号码进行验证
-                  </p>
-                </div>
-                
-                {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{otpError}</p>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleSendOtp}
-                    disabled={!phone.trim() || isSendingOtp}
-                    className="flex-1"
-                  >
-                    {isSendingOtp ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    发送验证码
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowPhoneVerificationDialog(false)
-                      setOtpError("")
-                    }}
-                  >
-                    取消
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {/* Step 2: Verify Code */}
-            {otpStep === 'verify' && (
-              <>
-                <div>
-                  <Label htmlFor="verification-code">验证码</Label>
-                  <Input
-                    id="verification-code"
-                    type="text"
-                    value={verificationCode}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '')
-                      if (value.length <= 6) {
-                        setVerificationCode(value)
-                        setOtpError("")
-                      }
-                    }}
-                    placeholder="请输入6位验证码"
-                    maxLength={6}
-                    disabled={isVerifyingOtp}
-                  />
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-sm text-gray-500">
-                      验证码已发送到 {phone.replace(/(.*\d{4})\d{4}(\d{4})/, '$1****$2')}
-                    </p>
-                    {countdown > 0 ? (
-                      <p className="text-sm text-gray-500">
-                        {countdown}秒后可重新发送
-                      </p>
-                    ) : (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={handleSendOtp}
-                        disabled={isSendingOtp}
-                        className="p-0 h-auto text-sm"
-                      >
-                        重新发送
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{otpError}</p>
-                  </div>
-                )}
-                
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleVerifyOtp}
-                    disabled={verificationCode.length !== 6 || isVerifyingOtp}
-                    className="flex-1"
-                  >
-                    {isVerifyingOtp ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    验证
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setOtpStep('input')
-                      setVerificationCode("")
-                      setOtpError("")
-                    }}
-                  >
-                    返回
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -124,6 +124,26 @@ export async function POST(request: NextRequest) {
       if (smsNote && typeof smsNote === "string") {
         metadata.smsNote = smsNote
       }
+
+      const bankName = formData.get("bankName")
+      const bankAccountName = formData.get("bankAccountName")
+      const bankAccountNumber = formData.get("bankAccountNumber")
+
+      if (!bankName || typeof bankName !== "string" || !bankName.trim()) {
+        return NextResponse.json({ success: false, error: "请填写银行名称" }, { status: 400 })
+      }
+
+      if (!bankAccountName || typeof bankAccountName !== "string" || !bankAccountName.trim()) {
+        return NextResponse.json({ success: false, error: "请填写开户姓名" }, { status: 400 })
+      }
+
+      if (!bankAccountNumber || typeof bankAccountNumber !== "string" || !bankAccountNumber.trim()) {
+        return NextResponse.json({ success: false, error: "请填写银行账号" }, { status: 400 })
+      }
+
+      metadata.bankName = bankName.trim()
+      metadata.bankAccountName = bankAccountName.trim()
+      metadata.bankAccountNumber = bankAccountNumber.trim()
     } else {
       const requiredProfessionalFields = [
         { key: "qualification", docType: "qualification_certificate" },
@@ -183,5 +203,71 @@ export async function POST(request: NextRequest) {
     console.error("Certification submission unexpected error", error)
     const message = error instanceof Error ? error.message : "提交失败，请稍后再试"
     return NextResponse.json({ success: false, error: message }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get("authorization")
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ success: false, error: "未授权访问" }, { status: 401 })
+    }
+
+    const token = authHeader.split(" ")[1]
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: "用户验证失败" }, { status: 401 })
+    }
+
+    const url = new URL(request.url)
+    const typeParam = url.searchParams.get("type")
+
+    let filterType: CertificationType | null = null
+    if (typeParam) {
+      if (!CERTIFICATION_TYPES.includes(typeParam as CertificationType)) {
+        return NextResponse.json({ success: false, error: "认证类型无效" }, { status: 400 })
+      }
+      filterType = typeParam as CertificationType
+    }
+
+    let query = supabaseAdmin
+      .from("tradie_certification_submissions")
+      .select("certification_type, status, submitted_at, updated_at, documents, metadata, notes, rejection_reason")
+      .eq("user_id", user.id)
+      .order("submitted_at", { ascending: false })
+
+    if (filterType) {
+      query = query.eq("certification_type", filterType)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error("Certification fetch error", error)
+      return NextResponse.json({ success: false, error: "加载认证资料失败，请稍后重试" }, { status: 500 })
+    }
+
+    const submissions: Partial<Record<CertificationType, any>> = {}
+
+    data?.forEach((row) => {
+      if (!row) return
+
+      const type = row.certification_type as CertificationType
+      submissions[type] = {
+        status: row.status,
+        submittedAt: row.submitted_at,
+        updatedAt: row.updated_at,
+        documents: Array.isArray(row.documents) ? row.documents : [],
+        metadata: row.metadata ?? null,
+        notes: row.notes ?? null,
+        rejectionReason: row.rejection_reason ?? null
+      }
+    })
+
+    return NextResponse.json({ success: true, data: submissions })
+  } catch (error) {
+    console.error("Certification fetch unexpected error", error)
+    return NextResponse.json({ success: false, error: "加载认证资料失败，请稍后重试" }, { status: 500 })
   }
 }
