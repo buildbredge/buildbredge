@@ -1,8 +1,14 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   Shield,
   Star,
@@ -20,92 +26,114 @@ import {
   Clock,
   DollarSign,
   Users,
-  Globe
-} from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+  Globe,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 // 强制动态渲染，避免静态生成时的fetch问题
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 // 技师数据接口
 interface TradieData {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  address?: string
-  rating: number
-  review_count: number
-  status: string
-  created_at: string
-  bio?: string
-  experience_years?: number
-  hourly_rate?: number
-  phone_verified?: boolean
-  service_area?: string
-  website?: string
-  categories: string[]
-  portfolio: any[]
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  rating: number;
+  review_count: number;
+  status: string;
+  created_at: string;
+  bio?: string;
+  experience_years?: number;
+  hourly_rate?: number;
+  phone_verified?: boolean;
+  service_area?: string;
+  website?: string;
+  categories: string[];
+  portfolio: any[];
 }
 
 interface ReviewData {
-  id: string
-  clientName: string
-  project: string
-  date: string
-  rating: number
-  comment: string
+  id: string;
+  clientName: string;
+  project: string;
+  date: string;
+  rating: number;
+  comment: string;
   ratings: {
-    workmanship: number
-    communication: number
-    punctuality: number
-    cleanliness: number
-  }
+    workmanship: number;
+    communication: number;
+    punctuality: number;
+    cleanliness: number;
+  };
 }
+
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
+};
 
 // 从API获取技师数据
 async function getTradieData(tradieId: string): Promise<TradieData | null> {
   try {
-    console.log('Fetching tradie data for ID:', tradieId)
-    
-    const response = await fetch(`http://localhost:3000/api/tradies/${tradieId}`)
-    
+    const baseUrl = getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/tradies/${tradieId}`, {
+      cache: "no-store",
+    });
+
     if (!response.ok) {
-      console.error('Error fetching tradie data:', response.statusText)
-      return null
+      console.error("Error fetching tradie data:", response.statusText);
+      return null;
     }
-    
-    const result = await response.json()
-    console.log('Found user data:', result.data)
-    return result.data
+
+    const result = await response.json();
+    return result.data;
   } catch (error) {
-    console.error('Error in getTradieData:', error)
-    return null
+    console.error("Error in getTradieData:", error);
+    return null;
   }
 }
 
-export default async function TradieProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  
+export default async function TradieProfilePage({
+  params,
+}: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   // 获取技师数据
-  const tradieData = await getTradieData(id)
-  
+  const tradieData = await getTradieData(id);
+
   if (!tradieData) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">技师不存在</h1>
-            <p className="text-gray-600 mb-8">您访问的技师资料不存在或已被删除</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              技师不存在
+            </h1>
+            <p className="text-gray-600 mb-8">
+              您访问的技师资料不存在或已被删除
+            </p>
             <Button asChild>
               <Link href="/browse-tradies">返回技师目录</Link>
             </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   const tradie = {
@@ -119,11 +147,15 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
     yearsExperience: tradieData.experience_years || 0,
     location: tradieData.address || "未设置地址",
     category: tradieData.categories.join(", ") || "未设置专业",
-    verified: tradieData.status === 'approved',
-    memberSince: new Date(tradieData.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' }),
+    verified: tradieData.status === "approved",
+    memberSince: new Date(tradieData.created_at).toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+    }),
     responseTime: "24小时内",
     bio: tradieData.bio || "这位技师还没有添加个人简介。",
-    skills: tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"],
+    skills:
+      tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"],
     serviceAreas: tradieData.service_area ? [tradieData.service_area] : [],
     insurance: true,
     backgroundCheck: true,
@@ -131,18 +163,21 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
     phone: tradieData.phone,
     email: tradieData.email,
     website: tradieData.website,
-    projects: tradieData.portfolio.map(project => ({
+    projects: tradieData.portfolio.map((project) => ({
       id: project.id,
       title: project.title,
       description: project.description || "",
-      completedDate: project.completed_date ? new Date(project.completed_date).toLocaleDateString('zh-CN') : "",
+      completedDate: project.completed_date
+        ? new Date(project.completed_date).toLocaleDateString("zh-CN")
+        : "",
       location: project.location || "",
       budget: project.budget || "",
-      images: project.images || []
+      images: project.images || [],
     })),
     reviews: [] as ReviewData[], // 暂时为空，可以后续从数据库获取
-    specialties: tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"]
-  }
+    specialties:
+      tradieData.categories.length > 0 ? tradieData.categories : ["专业服务"],
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -158,10 +193,12 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   {tradie.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="text-center md:text-left">
                 <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">{tradie.name}</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {tradie.name}
+                  </h1>
                   {tradie.verified && (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       <Shield className="w-3 h-3 mr-1" />
@@ -169,9 +206,11 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                     </Badge>
                   )}
                 </div>
-                
-                <div className="text-lg text-gray-600 mb-2">{tradie.companyName}</div>
-                
+
+                <div className="text-lg text-gray-600 mb-2">
+                  {tradie.companyName}
+                </div>
+
                 <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center">
@@ -187,9 +226,11 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                       ))}
                     </div>
                     <span className="font-semibold">{tradie.rating}</span>
-                    <span className="text-gray-500">({tradie.reviewCount}评价)</span>
+                    <span className="text-gray-500">
+                      ({tradie.reviewCount}评价)
+                    </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
                       <CheckCircle className="w-4 h-4 text-green-600" />
@@ -204,8 +245,13 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge variant="secondary">{tradie.category}</Badge>
-                  <Badge variant="outline">{tradie.yearsExperience}年经验</Badge>
-                  <Badge variant="outline" className="text-green-600 border-green-200">
+                  <Badge variant="outline">
+                    {tradie.yearsExperience}年经验
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-green-600 border-green-200"
+                  >
                     <Clock className="w-3 h-3 mr-1" />
                     {tradie.responseTime}回复
                   </Badge>
@@ -243,20 +289,26 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 <CardTitle>关于我们</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 leading-relaxed mb-4">{tradie.bio}</p>
-                
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  {tradie.bio}
+                </p>
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-semibold mb-3">专业技能</h4>
                     <div className="flex flex-wrap gap-2">
                       {tradie.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-blue-50 text-blue-700">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-blue-50 text-blue-700"
+                        >
                           {skill}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-semibold mb-3">服务区域</h4>
                     <div className="space-y-1">
@@ -264,13 +316,17 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                         tradie.serviceAreas.map((area, index) => (
                           <div key={index} className="flex items-center gap-2">
                             <MapPin className="w-3 h-3 text-gray-500" />
-                            <span className="text-sm text-gray-600">{area}</span>
+                            <span className="text-sm text-gray-600">
+                              {area}
+                            </span>
                           </div>
                         ))
                       ) : (
                         <div className="flex items-center gap-2">
                           <MapPin className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-400">未设置服务区域</span>
+                          <span className="text-sm text-gray-400">
+                            未设置服务区域
+                          </span>
                         </div>
                       )}
                     </div>
@@ -282,8 +338,12 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                     <h4 className="font-semibold mb-3">网站链接</h4>
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-gray-500" />
-                      <Link 
-                        href={tradie.website.startsWith('http') ? tradie.website : `https://${tradie.website}`}
+                      <Link
+                        href={
+                          tradie.website.startsWith("http")
+                            ? tradie.website
+                            : `https://${tradie.website}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 hover:underline break-all"
@@ -310,7 +370,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 {tradie.projects.length === 0 ? (
                   <div className="text-center py-12">
                     <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无项目案例</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      暂无项目案例
+                    </h3>
                     <p className="text-gray-600">
                       该技师还没有上传项目案例，您可以直接联系了解更多信息
                     </p>
@@ -318,32 +380,45 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 ) : (
                   <div className="space-y-8">
                     {tradie.projects.map((project) => (
-                      <div key={project.id} className="border-b pb-8 last:border-b-0 last:pb-0">
+                      <div
+                        key={project.id}
+                        className="border-b pb-8 last:border-b-0 last:pb-0"
+                      >
                         <div className="flex flex-col md:flex-row gap-6">
                           <div className="md:w-1/3">
                             <div className="grid grid-cols-2 gap-2">
-                              {project.images.slice(0, 4).map((image: string, index: number) => (
-                                <div key={index} className="relative aspect-square overflow-hidden rounded-lg">
-                                  <Image
-                                    src={image}
-                                    alt={`${project.title} - 图片 ${index + 1}`}
-                                    fill
-                                    className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                                  />
-                                  {index === 3 && project.images.length > 4 && (
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-semibold">
-                                      +{project.images.length - 4}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
+                              {project.images
+                                .slice(0, 4)
+                                .map((image: string, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="relative aspect-square overflow-hidden rounded-lg"
+                                  >
+                                    <Image
+                                      src={image}
+                                      alt={`${project.title} - 图片 ${index + 1}`}
+                                      fill
+                                      className="object-cover hover:scale-105 transition-transform cursor-pointer"
+                                    />
+                                    {index === 3 &&
+                                      project.images.length > 4 && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-semibold">
+                                          +{project.images.length - 4}
+                                        </div>
+                                      )}
+                                  </div>
+                                ))}
                             </div>
                           </div>
-                          
+
                           <div className="md:w-2/3">
-                            <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                            <p className="text-gray-600 mb-4">{project.description}</p>
-                            
+                            <h3 className="text-xl font-semibold mb-2">
+                              {project.title}
+                            </h3>
+                            <p className="text-gray-600 mb-4">
+                              {project.description}
+                            </p>
+
                             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
@@ -389,9 +464,13 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                           />
                         ))}
                       </div>
-                      <span className="font-semibold text-lg">{tradie.rating}/5</span>
+                      <span className="font-semibold text-lg">
+                        {tradie.rating}/5
+                      </span>
                     </div>
-                    <span className="text-gray-500">基于 {tradie.reviewCount} 条评价</span>
+                    <span className="text-gray-500">
+                      基于 {tradie.reviewCount} 条评价
+                    </span>
                   </div>
                 </CardDescription>
               </CardHeader>
@@ -399,7 +478,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 {tradie.reviews.length === 0 ? (
                   <div className="text-center py-12">
                     <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无用户评价</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      暂无用户评价
+                    </h3>
                     <p className="text-gray-600">
                       该技师还没有收到评价，成为第一个评价的客户吧！
                     </p>
@@ -408,19 +489,26 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   <>
                     <div className="space-y-6">
                       {tradie.reviews.map((review) => (
-                        <div key={review.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                        <div
+                          key={review.id}
+                          className="border-b pb-6 last:border-b-0 last:pb-0"
+                        >
                           <div className="flex items-start gap-4">
                             <Avatar className="w-10 h-10">
                               <AvatarFallback className="bg-gray-100 text-gray-600">
                                 {review.clientName.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            
+
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
                                 <div>
-                                  <h4 className="font-semibold">{review.clientName}</h4>
-                                  <p className="text-sm text-gray-500">{review.project} · {review.date}</p>
+                                  <h4 className="font-semibold">
+                                    {review.clientName}
+                                  </h4>
+                                  <p className="text-sm text-gray-500">
+                                    {review.project} · {review.date}
+                                  </p>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {[...Array(5)].map((_, i) => (
@@ -435,12 +523,16 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                                   ))}
                                 </div>
                               </div>
-                              
-                              <p className="text-gray-700 mb-4">{review.comment}</p>
-                              
+
+                              <p className="text-gray-700 mb-4">
+                                {review.comment}
+                              </p>
+
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                 <div className="text-center">
-                                  <div className="text-gray-500 mb-1">工艺质量</div>
+                                  <div className="text-gray-500 mb-1">
+                                    工艺质量
+                                  </div>
                                   <div className="flex items-center justify-center">
                                     {[...Array(5)].map((_, i) => (
                                       <Star
@@ -455,7 +547,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                                   </div>
                                 </div>
                                 <div className="text-center">
-                                  <div className="text-gray-500 mb-1">沟通交流</div>
+                                  <div className="text-gray-500 mb-1">
+                                    沟通交流
+                                  </div>
                                   <div className="flex items-center justify-center">
                                     {[...Array(5)].map((_, i) => (
                                       <Star
@@ -470,7 +564,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                                   </div>
                                 </div>
                                 <div className="text-center">
-                                  <div className="text-gray-500 mb-1">守时程度</div>
+                                  <div className="text-gray-500 mb-1">
+                                    守时程度
+                                  </div>
                                   <div className="flex items-center justify-center">
                                     {[...Array(5)].map((_, i) => (
                                       <Star
@@ -485,7 +581,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                                   </div>
                                 </div>
                                 <div className="text-center">
-                                  <div className="text-gray-500 mb-1">整洁度</div>
+                                  <div className="text-gray-500 mb-1">
+                                    整洁度
+                                  </div>
                                   <div className="flex items-center justify-center">
                                     {[...Array(5)].map((_, i) => (
                                       <Star
@@ -505,7 +603,7 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="mt-6 text-center">
                       <Button variant="outline">
                         查看所有评价
@@ -534,9 +632,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   <Phone className="w-4 h-4 mr-2" />
                   查看电话
                 </Button>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
@@ -592,7 +690,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">完成项目</span>
-                    <span className="font-semibold">{tradie.jobsCompleted}</span>
+                    <span className="font-semibold">
+                      {tradie.jobsCompleted}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">用户评价</span>
@@ -600,7 +700,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">工作经验</span>
-                    <span className="font-semibold">{tradie.yearsExperience}年</span>
+                    <span className="font-semibold">
+                      {tradie.yearsExperience}年
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">平均评分</span>
@@ -612,7 +714,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                   {tradie.hourlyRate && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">时薪</span>
-                      <span className="font-semibold">${tradie.hourlyRate}/小时</span>
+                      <span className="font-semibold">
+                        ${tradie.hourlyRate}/小时
+                      </span>
                     </div>
                   )}
                 </div>
@@ -628,7 +732,10 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
               <CardContent>
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    >
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-blue-100 text-blue-600">
                           李
@@ -636,7 +743,9 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
                       </Avatar>
                       <div className="flex-1">
                         <h4 className="font-semibold text-sm">李师傅</h4>
-                        <p className="text-xs text-gray-500">水电工程 · 4.7⭐</p>
+                        <p className="text-xs text-gray-500">
+                          水电工程 · 4.7⭐
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -647,5 +756,5 @@ export default async function TradieProfilePage({ params }: { params: Promise<{ 
         </div>
       </div>
     </div>
-  )
+  );
 }
