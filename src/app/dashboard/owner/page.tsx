@@ -1,231 +1,305 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Home, Briefcase, MessageCircle, Star,
-  Settings, Plus, Eye, DollarSign,
-  Bell, LogOut, CheckCircle, Clock,
-  ChevronLeft, ChevronRight, Users
-} from "lucide-react"
-import Link from "next/link"
-import { apiClient } from "@/lib/services/apiClient"
-import { authService } from "@/lib/services/authService"
-import { RoleBadges, RoleStats } from "@/components/ui/role-badges"
-import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding"
-import { RoleSwitcher } from "@/components/ui/role-switcher"
-import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
-import { OwnerProjectsList } from "@/components/OwnerProjectsList"
-import { OwnerQuotesManagement } from "@/components/OwnerQuotesManagement"
-import type { ProjectData, UserProfileData } from "@/lib/services/apiClient"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Home,
+  Briefcase,
+  MessageCircle,
+  Star,
+  Settings,
+  Plus,
+  Eye,
+  DollarSign,
+  Bell,
+  LogOut,
+  CheckCircle,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { apiClient } from "@/lib/services/apiClient";
+import { authService } from "@/lib/services/authService";
+import { RoleBadges, RoleStats } from "@/components/ui/role-badges";
+import { ProgressiveOnboarding } from "@/components/ui/progressive-onboarding";
+import { RoleSwitcher } from "@/components/ui/role-switcher";
+import { OwnerProjectsList } from "@/components/OwnerProjectsList";
+import { OwnerQuotesManagement } from "@/components/OwnerQuotesManagement";
+import type { ProjectData, UserProfileData } from "@/lib/services/apiClient";
 
 interface UserRole {
-  role_type: 'owner' | 'tradie'
-  is_primary: boolean
-  created_at: string
+  role_type: "owner" | "tradie";
+  is_primary: boolean;
+  created_at: string;
 }
 
 interface DashboardData {
   projectStats: {
-    total: number
-    published: number
-    quoted: number
-    negotiating: number
-    agreed: number
-    escrowed: number
-    inProgress: number
-    completed: number
-    protection: number
-    released: number
-    withdrawn: number
-    disputed: number
-    cancelled: number
-  }
+    total: number;
+    published: number;
+    quoted: number;
+    negotiating: number;
+    agreed: number;
+    escrowed: number;
+    inProgress: number;
+    completed: number;
+    protection: number;
+    released: number;
+    withdrawn: number;
+    disputed: number;
+    cancelled: number;
+  };
   recentProjects: Array<{
-    id: string
-    title: string
-    description: string
-    status: string
-    category: string
-    profession: string
-    location: string
-    createdAt: string
-  }>
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    category: string;
+    profession: string;
+    location: string;
+    createdAt: string;
+  }>;
   availableCategories: Array<{
-    id: string
-    name: string
-    count: number
-  }>
+    id: string;
+    name: string;
+    count: number;
+  }>;
 }
 
 interface AuthUser {
-  id: string
-  email: string
-  emailConfirmed: boolean
+  id: string;
+  email: string;
+  emailConfirmed: boolean;
 }
 
 export default function OwnerDashboardPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [projects, setProjects] = useState<ProjectData[]>([])
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [loadingProjects, setLoadingProjects] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [totalProjects, setTotalProjects] = useState(0)
-  const [activeTab, setActiveTab] = useState("projects")
-  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null,
+  );
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalProjects, setTotalProjects] = useState(0);
+  const [activeTab, setActiveTab] = useState("projects");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [tabCounts, setTabCounts] = useState({
     projects: 0,
     quotes: 0,
     messages: 0,
-    reviews: 0
-  })
+    reviews: 0,
+  });
 
   useEffect(() => {
-    checkUser()
-  }, [])
+    checkUser();
+  }, []);
 
   const checkUser = async () => {
     try {
-      const session = await authService.getCurrentSession()
+      const session = await authService.getCurrentSession();
 
       if (!session) {
-        router.push('/auth/login')
-        return
+        router.push("/auth/login");
+        return;
       }
 
-      setUser(session.user)
+      setUser(session.user);
 
-      const profileResponse = await apiClient.getUserProfile()
-      
+      const profileResponse = await apiClient.getUserProfile();
+
       if (profileResponse.success && profileResponse.data) {
-        const profile = profileResponse.data as UserProfileData
-        setUserProfile(profile)
-        
+        const profile = profileResponse.data as UserProfileData;
+        setUserProfile(profile);
+
         // Check if user has owner role
-        const hasOwnerRole = profile.roles?.some((r: UserRole) => r.role_type === 'owner')
+        const hasOwnerRole = profile.roles?.some(
+          (r: UserRole) => r.role_type === "owner",
+        );
         if (!hasOwnerRole) {
           // If user doesn't have owner role, redirect to their appropriate dashboard
-          const hasTradieRole = profile.roles?.some((r: UserRole) => r.role_type === 'tradie')
+          const hasTradieRole = profile.roles?.some(
+            (r: UserRole) => r.role_type === "tradie",
+          );
           if (hasTradieRole) {
-            router.push('/dashboard/tradie')
+            router.push("/dashboard/tradie");
           } else {
-            router.push('/dashboard')
+            router.push("/dashboard");
           }
-          return
+          return;
         }
       } else {
-        console.error('Failed to fetch user profile:', profileResponse.error)
+        console.error("Failed to fetch user profile:", profileResponse.error);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error)
+      console.error("Error fetching user data:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return
-    
-    setLoadingProjects(true)
+    if (!user) return;
+
+    setLoadingProjects(true);
     try {
-      const sessionResult = await authService.getCurrentSession()
-      const token = sessionResult?.session?.access_token
-      
-      let dashboardResponse = null
+      const sessionResult = await authService.getCurrentSession();
+      const token = sessionResult?.session?.access_token;
+
+      let dashboardResponse = null;
       if (token) {
-        dashboardResponse = await fetch('/api/dashboard/data', {
+        dashboardResponse = await fetch("/api/dashboard/data", {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
       }
-      
-      let dashboardData = null
+
+      let dashboardData = null;
       if (dashboardResponse && dashboardResponse.ok) {
-        const dashResult = await dashboardResponse.json()
+        const dashResult = await dashboardResponse.json();
         if (dashResult.success) {
-          dashboardData = dashResult.data
-          setDashboardData(dashResult.data)
+          dashboardData = dashResult.data;
+          setDashboardData(dashResult.data);
         }
       }
-      
-      const projectsResponse = await apiClient.getProjects({ page: currentPage, limit: itemsPerPage })
+
+      const projectsResponse = await apiClient.getProjects({
+        page: currentPage,
+        limit: itemsPerPage,
+      });
       if (projectsResponse.success && projectsResponse.data) {
-        setProjects(projectsResponse.data.projects)
-        setTotalProjects(projectsResponse.data.pagination?.total || projectsResponse.data.projects.length)
+        setProjects(projectsResponse.data.projects);
+        setTotalProjects(
+          projectsResponse.data.pagination?.total ||
+            projectsResponse.data.projects.length,
+        );
       } else {
-        console.error('Error fetching projects:', projectsResponse.error)
+        console.error("Error fetching projects:", projectsResponse.error);
       }
-      
+
       if (!dashboardData) {
         const mockDashboardData: DashboardData = {
           projectStats: {
             total: projectsResponse.data?.projects.length || 0,
-            published: projectsResponse.data?.projects.filter(p => p.status === 'published').length || 0,
-            quoted: projectsResponse.data?.projects.filter(p => p.status === 'quoted').length || 0,
-            negotiating: projectsResponse.data?.projects.filter(p => p.status === 'negotiating').length || 0,
-            agreed: projectsResponse.data?.projects.filter(p => p.status === 'agreed').length || 0,
-            escrowed: projectsResponse.data?.projects.filter(p => p.status === 'escrowed').length || 0,
-            inProgress: projectsResponse.data?.projects.filter(p => p.status === 'in_progress').length || 0,
-            completed: projectsResponse.data?.projects.filter(p => p.status === 'completed').length || 0,
-            protection: projectsResponse.data?.projects.filter(p => p.status === 'protection').length || 0,
-            released: projectsResponse.data?.projects.filter(p => p.status === 'released').length || 0,
-            withdrawn: projectsResponse.data?.projects.filter(p => p.status === 'withdrawn').length || 0,
-            disputed: projectsResponse.data?.projects.filter(p => p.status === 'disputed').length || 0,
-            cancelled: projectsResponse.data?.projects.filter(p => p.status === 'cancelled').length || 0
+            published:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "published",
+              ).length || 0,
+            quoted:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "quoted",
+              ).length || 0,
+            negotiating:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "negotiating",
+              ).length || 0,
+            agreed:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "agreed",
+              ).length || 0,
+            escrowed:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "escrowed",
+              ).length || 0,
+            inProgress:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "in_progress",
+              ).length || 0,
+            completed:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "completed",
+              ).length || 0,
+            protection:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "protection",
+              ).length || 0,
+            released:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "released",
+              ).length || 0,
+            withdrawn:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "withdrawn",
+              ).length || 0,
+            disputed:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "disputed",
+              ).length || 0,
+            cancelled:
+              projectsResponse.data?.projects.filter(
+                (p) => p.status === "cancelled",
+              ).length || 0,
           },
-          recentProjects: projectsResponse.data?.projects.slice(0, 5).map(p => ({
-            id: p.id,
-            title: p.category,
-            description: p.description,
-            status: p.status,
-            category: p.category,
-            profession: p.profession,
-            location: p.location,
-            createdAt: p.createdAt
-          })) || [],
-          availableCategories: []
-        }
-        setDashboardData(mockDashboardData)
+          recentProjects:
+            projectsResponse.data?.projects.slice(0, 5).map((p) => ({
+              id: p.id,
+              title: p.category,
+              description: p.description,
+              status: p.status,
+              category: p.category,
+              profession: p.profession,
+              location: p.location,
+              createdAt: p.createdAt,
+            })) || [],
+          availableCategories: [],
+        };
+        setDashboardData(mockDashboardData);
       }
-      
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error("Error fetching data:", error);
       const fallbackData: DashboardData = {
-        projectStats: { 
-          total: 0, published: 0, quoted: 0, negotiating: 0, agreed: 0, escrowed: 0, 
-          inProgress: 0, completed: 0, protection: 0, released: 0, withdrawn: 0, 
-          disputed: 0, cancelled: 0 
+        projectStats: {
+          total: 0,
+          published: 0,
+          quoted: 0,
+          negotiating: 0,
+          agreed: 0,
+          escrowed: 0,
+          inProgress: 0,
+          completed: 0,
+          protection: 0,
+          released: 0,
+          withdrawn: 0,
+          disputed: 0,
+          cancelled: 0,
         },
         recentProjects: [],
-        availableCategories: []
-      }
-      setDashboardData(fallbackData)
+        availableCategories: [],
+      };
+      setDashboardData(fallbackData);
     } finally {
-      setLoadingProjects(false)
+      setLoadingProjects(false);
     }
-  }, [user, currentPage, itemsPerPage])
+  }, [user, currentPage, itemsPerPage]);
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData()
+      fetchDashboardData();
     }
-  }, [user, currentPage, itemsPerPage, fetchDashboardData])
+  }, [user, currentPage, itemsPerPage, fetchDashboardData]);
 
   const handleLogout = async () => {
-    await authService.logout()
-    router.push('/')
-  }
+    await authService.logout();
+    router.push("/");
+  };
 
   if (isLoading) {
     return (
@@ -237,7 +311,7 @@ export default function OwnerDashboardPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user || !userProfile) {
@@ -246,18 +320,20 @@ export default function OwnerDashboardPage() {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <p className="text-red-600">获取用户信息失败</p>
-            <Button onClick={() => router.push('/auth/login')} className="mt-4">
+            <Button onClick={() => router.push("/auth/login")} className="mt-4">
               返回登录
             </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  const hasTradieRole = userProfile.roles?.some((r: UserRole) => r.role_type === 'tradie') 
-  const isMultiRole = (userProfile.roles?.length || 0) > 1
-  const displayName = userProfile.name || user.email?.split('@')[0] || '用户'
+  const hasTradieRole = userProfile.roles?.some(
+    (r: UserRole) => r.role_type === "tradie",
+  );
+  const isMultiRole = (userProfile.roles?.length || 0) > 1;
+  const displayName = userProfile.name || user.email?.split("@")[0] || "用户";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -271,9 +347,7 @@ export default function OwnerDashboardPage() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                业主工作台
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">业主工作台</h1>
               <p className="text-gray-600">欢迎回来，{displayName}</p>
               {userProfile.language && (
                 <p className="text-sm text-blue-600 font-medium">
@@ -281,8 +355,8 @@ export default function OwnerDashboardPage() {
                 </p>
               )}
               <div className="flex items-center space-x-2 mt-2">
-                <RoleBadges 
-                  roles={userProfile.roles || []} 
+                <RoleBadges
+                  roles={userProfile.roles || []}
                   activeRole="owner"
                 />
                 {user.emailConfirmed ? (
@@ -301,10 +375,7 @@ export default function OwnerDashboardPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <RoleSwitcher 
-              roles={userProfile.roles || []}
-              currentRole="owner"
-            />
+            <RoleSwitcher roles={userProfile.roles || []} currentRole="owner" />
             <Button variant="outline" size="sm">
               <Bell className="w-4 h-4 mr-2" />
               通知
@@ -342,12 +413,6 @@ export default function OwnerDashboardPage() {
           </Card>
         )}
 
-        {/* Anonymous Project Claim Notification */}
-        <AnonymousProjectClaimNotification onClaim={() => {
-          checkUser()
-          fetchDashboardData()
-        }} />
-
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -355,12 +420,17 @@ export default function OwnerDashboardPage() {
             <ProgressiveOnboarding
               userRoles={userProfile.roles || []}
               projectCount={dashboardData?.projectStats.total || 0}
-              profileComplete={!!(userProfile.name && userProfile.phone && userProfile.address)}
+              profileComplete={
+                !!(userProfile.name && userProfile.phone && userProfile.address)
+              }
               emailVerified={user.emailConfirmed}
             />
-            
+
             {/* Primary CTA - Post Job */}
-            <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium mb-6" asChild>
+            <Button
+              className="w-full h-20 flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium mb-6"
+              asChild
+            >
               <Link href="/post-job">
                 <Plus className="w-8 h-8" />
                 <span>发布新项目</span>
@@ -387,14 +457,16 @@ export default function OwnerDashboardPage() {
                       }`}
                     >
                       <Briefcase className="w-5 h-5 mb-1 text-blue-600" />
-                      <span className="text-xs font-medium text-gray-700">我的项目</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        我的项目
+                      </span>
                       {tabCounts.projects > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.projects}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("quotes")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -404,14 +476,16 @@ export default function OwnerDashboardPage() {
                       }`}
                     >
                       <DollarSign className="w-5 h-5 mb-1 text-green-600" />
-                      <span className="text-xs font-medium text-gray-700">报价管理</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        报价管理
+                      </span>
                       {tabCounts.quotes > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.quotes}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("messages")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -421,14 +495,16 @@ export default function OwnerDashboardPage() {
                       }`}
                     >
                       <MessageCircle className="w-5 h-5 mb-1 text-orange-600" />
-                      <span className="text-xs font-medium text-gray-700">消息中心</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        消息中心
+                      </span>
                       {tabCounts.messages > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.messages}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("reviews")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -438,7 +514,9 @@ export default function OwnerDashboardPage() {
                       }`}
                     >
                       <Star className="w-5 h-5 mb-1 text-purple-600" />
-                      <span className="text-xs font-medium text-gray-700">评价管理</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        评价管理
+                      </span>
                       {tabCounts.reviews > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.reviews}
@@ -450,16 +528,14 @@ export default function OwnerDashboardPage() {
                   {/* Tab Content */}
                   <div className="mt-6">
                     {activeTab === "projects" && (
-                      <OwnerProjectsList 
-                        userId={user.id} 
+                      <OwnerProjectsList
+                        userId={user.id}
                         statusFilter={statusFilter}
                       />
                     )}
 
                     {activeTab === "quotes" && (
-                      <OwnerQuotesManagement 
-                        userId={user.id}
-                      />
+                      <OwnerQuotesManagement userId={user.id} />
                     )}
 
                     {activeTab === "messages" && (
@@ -472,9 +548,7 @@ export default function OwnerDashboardPage() {
                               当技师联系您时，消息会显示在这里
                             </p>
                             <Button className="mt-4" variant="outline" asChild>
-                              <Link href="/messages">
-                                查看所有消息
-                              </Link>
+                              <Link href="/messages">查看所有消息</Link>
                             </Button>
                           </div>
                         </CardContent>
@@ -491,9 +565,7 @@ export default function OwnerDashboardPage() {
                               项目完成后您可以在这里管理对技师的评价
                             </p>
                             <Button className="mt-4" variant="outline" asChild>
-                              <Link href="/reviews">
-                                查看评价历史
-                              </Link>
+                              <Link href="/reviews">查看评价历史</Link>
                             </Button>
                           </div>
                         </CardContent>
@@ -513,16 +585,22 @@ export default function OwnerDashboardPage() {
                 <CardTitle>账户信息</CardTitle>
               </CardHeader>
               <CardContent>
-                <RoleStats 
+                <RoleStats
                   ownerData={userProfile.ownerData}
                   tradieData={undefined}
                 />
                 <div className="mt-4 pt-4 border-t space-y-3">
                   <div>
                     <label className="text-sm text-gray-500">联系信息</label>
-                    <p className="font-medium text-sm">{userProfile.name || '未填写'}</p>
-                    <p className="text-sm text-gray-600">{userProfile.phone || '未填写'}</p>
-                    <p className="text-sm text-gray-600">{userProfile.address || userProfile.location || '未填写'}</p>
+                    <p className="font-medium text-sm">
+                      {userProfile.name || "未填写"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {userProfile.phone || "未填写"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {userProfile.address || userProfile.location || "未填写"}
+                    </p>
                   </div>
                   <Button className="w-full" variant="outline" asChild>
                     <Link href="/profile">
@@ -541,121 +619,144 @@ export default function OwnerDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter(null)
-                      setActiveTab("projects")
+                      setStatusFilter(null);
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-blue-600">{dashboardData?.projectStats.total || 0}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {dashboardData?.projectStats.total || 0}
+                    </div>
                     <div className="text-xs text-blue-600">项目总数</div>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter('published')
-                      setActiveTab("projects")
+                      setStatusFilter("published");
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-green-600">{dashboardData?.projectStats.published || 0}</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {dashboardData?.projectStats.published || 0}
+                    </div>
                     <div className="text-xs text-green-600">已发布</div>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter('quoted')
-                      setActiveTab("projects")
+                      setStatusFilter("quoted");
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-cyan-50 rounded-lg hover:bg-cyan-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-cyan-600">{dashboardData?.projectStats.quoted || 0}</div>
+                    <div className="text-2xl font-bold text-cyan-600">
+                      {dashboardData?.projectStats.quoted || 0}
+                    </div>
                     <div className="text-xs text-cyan-600">已报价</div>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter('negotiating')
-                      setActiveTab("projects")
+                      setStatusFilter("negotiating");
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-orange-600">{dashboardData?.projectStats.negotiating || 0}</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {dashboardData?.projectStats.negotiating || 0}
+                    </div>
                     <div className="text-xs text-orange-600">协商中</div>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter('in_progress')
-                      setActiveTab("projects")
+                      setStatusFilter("in_progress");
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-yellow-600">{dashboardData?.projectStats.inProgress || 0}</div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {dashboardData?.projectStats.inProgress || 0}
+                    </div>
                     <div className="text-xs text-yellow-600">进行中</div>
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      setStatusFilter('completed')
-                      setActiveTab("projects")
+                      setStatusFilter("completed");
+                      setActiveTab("projects");
                     }}
                     className="text-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                   >
-                    <div className="text-2xl font-bold text-purple-600">{dashboardData?.projectStats.completed || 0}</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {dashboardData?.projectStats.completed || 0}
+                    </div>
                     <div className="text-xs text-purple-600">已完成</div>
                   </button>
                 </div>
                 {/* Additional status cards for less common statuses */}
-                {(dashboardData && (dashboardData.projectStats.agreed > 0 || dashboardData.projectStats.escrowed > 0 || 
-                  dashboardData.projectStats.protection > 0 || dashboardData.projectStats.disputed > 0)) && (
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                    {dashboardData.projectStats.agreed > 0 && (
-                      <button 
-                        onClick={() => {
-                          setStatusFilter('agreed')
-                          setActiveTab("projects")
-                        }}
-                        className="text-center p-3 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-                      >
-                        <div className="text-2xl font-bold text-indigo-600">{dashboardData.projectStats.agreed}</div>
-                        <div className="text-xs text-indigo-600">已确认</div>
-                      </button>
-                    )}
-                    {dashboardData.projectStats.escrowed > 0 && (
-                      <button 
-                        onClick={() => {
-                          setStatusFilter('escrowed')
-                          setActiveTab("projects")
-                        }}
-                        className="text-center p-3 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
-                      >
-                        <div className="text-2xl font-bold text-violet-600">{dashboardData.projectStats.escrowed}</div>
-                        <div className="text-xs text-violet-600">已托管</div>
-                      </button>
-                    )}
-                    {dashboardData.projectStats.protection > 0 && (
-                      <button 
-                        onClick={() => {
-                          setStatusFilter('protection')
-                          setActiveTab("projects")
-                        }}
-                        className="text-center p-3 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors"
-                      >
-                        <div className="text-2xl font-bold text-teal-600">{dashboardData.projectStats.protection}</div>
-                        <div className="text-xs text-teal-600">保护期</div>
-                      </button>
-                    )}
-                    {dashboardData.projectStats.disputed > 0 && (
-                      <button 
-                        onClick={() => {
-                          setStatusFilter('disputed')
-                          setActiveTab("projects")
-                        }}
-                        className="text-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        <div className="text-2xl font-bold text-red-600">{dashboardData.projectStats.disputed}</div>
-                        <div className="text-xs text-red-600">争议中</div>
-                      </button>
-                    )}
-                  </div>
-                )}
+                {dashboardData &&
+                  (dashboardData.projectStats.agreed > 0 ||
+                    dashboardData.projectStats.escrowed > 0 ||
+                    dashboardData.projectStats.protection > 0 ||
+                    dashboardData.projectStats.disputed > 0) && (
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                      {dashboardData.projectStats.agreed > 0 && (
+                        <button
+                          onClick={() => {
+                            setStatusFilter("agreed");
+                            setActiveTab("projects");
+                          }}
+                          className="text-center p-3 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                        >
+                          <div className="text-2xl font-bold text-indigo-600">
+                            {dashboardData.projectStats.agreed}
+                          </div>
+                          <div className="text-xs text-indigo-600">已确认</div>
+                        </button>
+                      )}
+                      {dashboardData.projectStats.escrowed > 0 && (
+                        <button
+                          onClick={() => {
+                            setStatusFilter("escrowed");
+                            setActiveTab("projects");
+                          }}
+                          className="text-center p-3 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
+                        >
+                          <div className="text-2xl font-bold text-violet-600">
+                            {dashboardData.projectStats.escrowed}
+                          </div>
+                          <div className="text-xs text-violet-600">已托管</div>
+                        </button>
+                      )}
+                      {dashboardData.projectStats.protection > 0 && (
+                        <button
+                          onClick={() => {
+                            setStatusFilter("protection");
+                            setActiveTab("projects");
+                          }}
+                          className="text-center p-3 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors"
+                        >
+                          <div className="text-2xl font-bold text-teal-600">
+                            {dashboardData.projectStats.protection}
+                          </div>
+                          <div className="text-xs text-teal-600">保护期</div>
+                        </button>
+                      )}
+                      {dashboardData.projectStats.disputed > 0 && (
+                        <button
+                          onClick={() => {
+                            setStatusFilter("disputed");
+                            setActiveTab("projects");
+                          }}
+                          className="text-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <div className="text-2xl font-bold text-red-600">
+                            {dashboardData.projectStats.disputed}
+                          </div>
+                          <div className="text-xs text-red-600">争议中</div>
+                        </button>
+                      )}
+                    </div>
+                  )}
               </CardContent>
             </Card>
 
@@ -673,7 +774,11 @@ export default function OwnerDashboardPage() {
                   <DollarSign className="w-4 h-4 mr-2" />
                   费用说明
                 </Button>
-                <Button variant="ghost" className="w-full justify-start p-0" asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start p-0"
+                  asChild
+                >
                   <Link href="/faq">
                     <Briefcase className="w-4 h-4 mr-2" />
                     常见问题
@@ -685,5 +790,5 @@ export default function OwnerDashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

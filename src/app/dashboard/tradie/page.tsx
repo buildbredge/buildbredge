@@ -1,163 +1,175 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  Wrench, Briefcase, MessageCircle, Star,
-  Settings, DollarSign, TrendingUp,
+  Wrench,
+  Briefcase,
+  MessageCircle,
+  Star,
+  Settings,
+  DollarSign,
+  TrendingUp,
   Clock,
-  Target, Calendar
-} from "lucide-react"
-import Link from "next/link"
-import { apiClient } from "@/lib/services/apiClient"
-import { authService } from "@/lib/services/authService"
-import { RoleStats } from "@/components/ui/role-badges"
-import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion"
-import { AnonymousProjectClaimNotification } from "@/components/AnonymousProjectClaimNotification"
-import { MatchedProjectsList } from "@/components/MatchedProjectsList"
-import { TradieQuotesList } from "@/components/TradieQuotesList"
-import { TradieProjectsList } from "@/components/TradieProjectsList"
-import SubordinateTradiesList from "@/components/SubordinateTradiesList"
-import ParentTradieDisplay from "@/components/ParentTradieDisplay"
-import type { ProjectData, UserProfileData } from "@/lib/services/apiClient"
+  Target,
+  Calendar,
+} from "lucide-react";
+import Link from "next/link";
+import { apiClient } from "@/lib/services/apiClient";
+import { authService } from "@/lib/services/authService";
+import { RoleStats } from "@/components/ui/role-badges";
+import { TradieProfileCompletion } from "@/components/ui/tradie-profile-completion";
+import { MatchedProjectsList } from "@/components/MatchedProjectsList";
+import { TradieQuotesList } from "@/components/TradieQuotesList";
+import { TradieProjectsList } from "@/components/TradieProjectsList";
+import SubordinateTradiesList from "@/components/SubordinateTradiesList";
+import ParentTradieDisplay from "@/components/ParentTradieDisplay";
+import type { ProjectData, UserProfileData } from "@/lib/services/apiClient";
 
 interface UserRole {
-  role_type: 'owner' | 'tradie'
-  is_primary: boolean
-  created_at: string
+  role_type: "owner" | "tradie";
+  is_primary: boolean;
+  created_at: string;
 }
 
 interface DashboardData {
   projectStats: {
-    total: number
-    published: number
-    inProgress: number
-    completed: number
-  }
+    total: number;
+    published: number;
+    inProgress: number;
+    completed: number;
+  };
   recentProjects: Array<{
-    id: string
-    title: string
-    description: string
-    status: string
-    category: string
-    profession: string
-    location: string
-    createdAt: string
-  }>
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    category: string;
+    profession: string;
+    location: string;
+    createdAt: string;
+  }>;
   serviceStats?: {
-    availableJobs: number
-    activeServices: number
-    pendingQuotes: number
-    monthlyRevenue: number
-  }
+    availableJobs: number;
+    activeServices: number;
+    pendingQuotes: number;
+    monthlyRevenue: number;
+  };
   availableCategories: Array<{
-    id: string
-    name: string
-    count: number
-  }>
+    id: string;
+    name: string;
+    count: number;
+  }>;
 }
 
 interface ExtendedUserProfileData extends UserProfileData {
   // All properties are already defined in UserProfileData
-  parent_tradie_id?: string | null
+  parent_tradie_id?: string | null;
 }
 
 interface AuthUser {
-  id: string
-  email: string
-  emailConfirmed: boolean
+  id: string;
+  email: string;
+  emailConfirmed: boolean;
 }
 
 export default function TradieDashboardPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [userProfile, setUserProfile] = useState<ExtendedUserProfileData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [activeTab, setActiveTab] = useState("matched")
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] =
+    useState<ExtendedUserProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null,
+  );
+  const [activeTab, setActiveTab] = useState("matched");
   const [tabCounts, setTabCounts] = useState({
     matched: 0,
     projects: 0,
     quotes: 0,
-    messages: 0
-  })
+    messages: 0,
+  });
 
   useEffect(() => {
-    checkUser()
-  }, [])
+    checkUser();
+  }, []);
 
   const checkUser = async () => {
     try {
-      const session = await authService.getCurrentSession()
+      const session = await authService.getCurrentSession();
 
       if (!session) {
-        router.push('/auth/login')
-        return
+        router.push("/auth/login");
+        return;
       }
 
-      setUser(session.user)
+      setUser(session.user);
 
-      const profileResponse = await apiClient.getUserProfile()
-      
+      const profileResponse = await apiClient.getUserProfile();
+
       if (profileResponse.success && profileResponse.data) {
-        const profile = profileResponse.data as ExtendedUserProfileData
-        console.log('Frontend - Received profile data:', {
+        const profile = profileResponse.data as ExtendedUserProfileData;
+        console.log("Frontend - Received profile data:", {
           phone_verified: profile.phone_verified,
           tradieData: profile.tradieData,
-          specialty: profile.tradieData?.specialty
-        })
-        console.log('API Debug Info:', (profileResponse as any).debug)
-        setUserProfile(profile)
-        
+          specialty: profile.tradieData?.specialty,
+        });
+        console.log("API Debug Info:", (profileResponse as any).debug);
+        setUserProfile(profile);
+
         // Check if user has tradie role
-        const hasTradieRole = profile.roles?.some((r: UserRole) => r.role_type === 'tradie')
+        const hasTradieRole = profile.roles?.some(
+          (r: UserRole) => r.role_type === "tradie",
+        );
         if (!hasTradieRole) {
           // If user doesn't have tradie role, redirect to their appropriate dashboard
-          const hasOwnerRole = profile.roles?.some((r: UserRole) => r.role_type === 'owner')
+          const hasOwnerRole = profile.roles?.some(
+            (r: UserRole) => r.role_type === "owner",
+          );
           if (hasOwnerRole) {
-            router.push('/dashboard/owner')
+            router.push("/dashboard/owner");
           } else {
-            router.push('/dashboard')
+            router.push("/dashboard");
           }
-          return
+          return;
         }
       } else {
-        console.error('Failed to fetch user profile:', profileResponse.error)
+        console.error("Failed to fetch user profile:", profileResponse.error);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error)
+      console.error("Error fetching user data:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return
-    
+    if (!user) return;
+
     try {
-      const sessionResult = await authService.getCurrentSession()
-      const token = sessionResult?.session?.access_token
-      
-      let dashboardResponse = null
+      const sessionResult = await authService.getCurrentSession();
+      const token = sessionResult?.session?.access_token;
+
+      let dashboardResponse = null;
       if (token) {
-        dashboardResponse = await fetch('/api/dashboard/data', {
+        dashboardResponse = await fetch("/api/dashboard/data", {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
       }
-      
+
       if (dashboardResponse && dashboardResponse.ok) {
-        const dashResult = await dashboardResponse.json()
+        const dashResult = await dashboardResponse.json();
         if (dashResult.success) {
-          setDashboardData(dashResult.data)
+          setDashboardData(dashResult.data);
         }
       }
-      
+
       if (!dashboardData) {
         const mockServiceData: DashboardData = {
           projectStats: {
@@ -171,30 +183,34 @@ export default function TradieDashboardPage() {
             availableJobs: 15,
             activeServices: 3,
             pendingQuotes: 5,
-            monthlyRevenue: 2800
+            monthlyRevenue: 2800,
           },
-          availableCategories: []
-        }
-        setDashboardData(mockServiceData)
+          availableCategories: [],
+        };
+        setDashboardData(mockServiceData);
       }
-      
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error("Error fetching data:", error);
       const fallbackData: DashboardData = {
         projectStats: { total: 0, published: 0, inProgress: 0, completed: 0 },
         recentProjects: [],
-        serviceStats: { availableJobs: 0, activeServices: 0, pendingQuotes: 0, monthlyRevenue: 0 },
-        availableCategories: []
-      }
-      setDashboardData(fallbackData)
+        serviceStats: {
+          availableJobs: 0,
+          activeServices: 0,
+          pendingQuotes: 0,
+          monthlyRevenue: 0,
+        },
+        availableCategories: [],
+      };
+      setDashboardData(fallbackData);
     }
-  }, [user])
+  }, [user]);
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData()
+      fetchDashboardData();
     }
-  }, [user, fetchDashboardData])
+  }, [user, fetchDashboardData]);
 
   if (isLoading) {
     return (
@@ -206,7 +222,7 @@ export default function TradieDashboardPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user || !userProfile) {
@@ -215,13 +231,13 @@ export default function TradieDashboardPage() {
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
             <p className="text-red-600">获取用户信息失败</p>
-            <Button onClick={() => router.push('/auth/login')} className="mt-4">
+            <Button onClick={() => router.push("/auth/login")} className="mt-4">
               返回登录
             </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -247,9 +263,6 @@ export default function TradieDashboardPage() {
           </Card>
         )}
 
-        {/* Anonymous Project Claim Notification */}
-        <AnonymousProjectClaimNotification />
-
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -259,9 +272,12 @@ export default function TradieDashboardPage() {
               emailVerified={user.emailConfirmed}
               onProfileUpdate={() => checkUser()}
             />
-            
+
             {/* Primary CTA - Browse Jobs */}
-            <Button className="w-full h-20 flex items-center justify-center space-x-3 bg-green-600 hover:bg-green-700 text-white text-xl font-medium mb-6" asChild>
+            <Button
+              className="w-full h-20 flex items-center justify-center space-x-3 bg-green-600 hover:bg-green-700 text-white text-xl font-medium mb-6"
+              asChild
+            >
               <Link href="/browse-jobs">
                 <Target className="w-8 h-8" />
                 <span>浏览最新项目</span>
@@ -274,7 +290,9 @@ export default function TradieDashboardPage() {
                 <CardTitle className="flex items-center">
                   <Wrench className="w-5 h-5 mr-2 text-green-600" />
                   技师工作台
-                  <Badge className="ml-2 text-xs bg-green-100 text-green-800">专业服务</Badge>
+                  <Badge className="ml-2 text-xs bg-green-100 text-green-800">
+                    专业服务
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -289,14 +307,16 @@ export default function TradieDashboardPage() {
                       }`}
                     >
                       <Target className="w-5 h-5 mb-1 text-green-600" />
-                      <span className="text-xs font-medium text-gray-700">匹配项目</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        匹配项目
+                      </span>
                       {tabCounts.matched > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.matched}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("projects")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -306,14 +326,16 @@ export default function TradieDashboardPage() {
                       }`}
                     >
                       <Briefcase className="w-5 h-5 mb-1 text-blue-600" />
-                      <span className="text-xs font-medium text-gray-700">我的项目</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        我的项目
+                      </span>
                       {tabCounts.projects > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.projects}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("quotes")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -323,14 +345,16 @@ export default function TradieDashboardPage() {
                       }`}
                     >
                       <DollarSign className="w-5 h-5 mb-1 text-yellow-600" />
-                      <span className="text-xs font-medium text-gray-700">我的报价</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        我的报价
+                      </span>
                       {tabCounts.quotes > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-yellow-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.quotes}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("messages")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -340,14 +364,16 @@ export default function TradieDashboardPage() {
                       }`}
                     >
                       <MessageCircle className="w-5 h-5 mb-1 text-orange-600" />
-                      <span className="text-xs font-medium text-gray-700">客户沟通</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        客户沟通
+                      </span>
                       {tabCounts.messages > 0 && (
                         <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center border-2 border-white shadow-sm">
                           {tabCounts.messages}
                         </div>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setActiveTab("schedule")}
                       className={`relative flex flex-col items-center justify-center h-16 rounded-xl border-2 transition-all duration-200 ${
@@ -357,30 +383,38 @@ export default function TradieDashboardPage() {
                       }`}
                     >
                       <Calendar className="w-5 h-5 mb-1 text-purple-600" />
-                      <span className="text-xs font-medium text-gray-700">日程管理</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        日程管理
+                      </span>
                     </button>
                   </div>
 
                   {/* Tab Content */}
                   <div className="mt-6">
                     {activeTab === "matched" && (
-                      <MatchedProjectsList 
-                        tradieId={user.id} 
-                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, matched: count }))}
+                      <MatchedProjectsList
+                        tradieId={user.id}
+                        onCountChange={(count) =>
+                          setTabCounts((prev) => ({ ...prev, matched: count }))
+                        }
                       />
                     )}
 
                     {activeTab === "projects" && (
-                      <TradieProjectsList 
+                      <TradieProjectsList
                         tradieId={user.id}
-                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, projects: count }))}
+                        onCountChange={(count) =>
+                          setTabCounts((prev) => ({ ...prev, projects: count }))
+                        }
                       />
                     )}
 
                     {activeTab === "quotes" && (
-                      <TradieQuotesList 
+                      <TradieQuotesList
                         tradieId={user.id}
-                        onCountChange={(count) => setTabCounts(prev => ({ ...prev, quotes: count }))}
+                        onCountChange={(count) =>
+                          setTabCounts((prev) => ({ ...prev, quotes: count }))
+                        }
                       />
                     )}
 
@@ -394,9 +428,7 @@ export default function TradieDashboardPage() {
                               当有客户联系您时，消息会显示在这里
                             </p>
                             <Button className="mt-4" variant="outline" asChild>
-                              <Link href="/messages">
-                                查看所有消息
-                              </Link>
+                              <Link href="/messages">查看所有消息</Link>
                             </Button>
                           </div>
                         </CardContent>
@@ -408,7 +440,9 @@ export default function TradieDashboardPage() {
                         <CardContent className="p-6">
                           <div className="text-center py-8">
                             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500 mb-2">日程管理功能即将推出</p>
+                            <p className="text-gray-500 mb-2">
+                              日程管理功能即将推出
+                            </p>
                             <p className="text-sm text-gray-400">
                               您将能够在这里管理工作日程和客户预约
                             </p>
@@ -432,19 +466,27 @@ export default function TradieDashboardPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{dashboardData?.serviceStats?.availableJobs || 0}</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {dashboardData?.serviceStats?.availableJobs || 0}
+                    </div>
                     <div className="text-xs text-green-600">可接项目</div>
                   </div>
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{dashboardData?.serviceStats?.activeServices || 0}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {dashboardData?.serviceStats?.activeServices || 0}
+                    </div>
                     <div className="text-xs text-blue-600">活跃服务</div>
                   </div>
                   <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">{dashboardData?.serviceStats?.pendingQuotes || 0}</div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {dashboardData?.serviceStats?.pendingQuotes || 0}
+                    </div>
                     <div className="text-xs text-yellow-600">待处理报价</div>
                   </div>
                   <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">${dashboardData?.serviceStats?.monthlyRevenue || 0}</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      ${dashboardData?.serviceStats?.monthlyRevenue || 0}
+                    </div>
                     <div className="text-xs text-purple-600">本月收入</div>
                   </div>
                 </div>
@@ -457,17 +499,23 @@ export default function TradieDashboardPage() {
                 <CardTitle>账户信息</CardTitle>
               </CardHeader>
               <CardContent>
-                <RoleStats 
+                <RoleStats
                   ownerData={undefined}
                   tradieData={userProfile.tradieData}
                 />
                 <div className="mt-4 pt-4 border-t space-y-3">
                   <div>
                     <label className="text-sm text-gray-500">联系信息</label>
-                    <p className="font-medium text-sm">{userProfile.name || '未填写'}</p>
-                    <p className="text-sm text-gray-600">{userProfile.phone || '未填写'}</p>
+                    <p className="font-medium text-sm">
+                      {userProfile.name || "未填写"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {userProfile.phone || "未填写"}
+                    </p>
                     {userProfile.tradieData && (
-                      <p className="text-sm text-gray-600">{userProfile.tradieData.company || '未填写公司'}</p>
+                      <p className="text-sm text-gray-600">
+                        {userProfile.tradieData.company || "未填写公司"}
+                      </p>
                     )}
                   </div>
                   <Button className="w-full" variant="outline" asChild>
@@ -485,8 +533,8 @@ export default function TradieDashboardPage() {
 
             {/* Team Management - Only show for main tradies (not subordinate tradies) */}
             {!userProfile.parent_tradie_id && (
-              <SubordinateTradiesList 
-                parentTradieId={user.id} 
+              <SubordinateTradiesList
+                parentTradieId={user.id}
                 parentCompany={userProfile.tradieData?.company}
                 onRefresh={() => checkUser()}
               />
@@ -506,7 +554,7 @@ export default function TradieDashboardPage() {
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-medium">
-                      {userProfile.tradieData?.rating?.toFixed(1) || '5.0'}
+                      {userProfile.tradieData?.rating?.toFixed(1) || "5.0"}
                     </span>
                   </div>
                 </div>
@@ -538,7 +586,11 @@ export default function TradieDashboardPage() {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   提升技巧
                 </Button>
-                <Button variant="ghost" className="w-full justify-start p-0" asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start p-0"
+                  asChild
+                >
                   <Link href="/faq">
                     <Briefcase className="w-4 h-4 mr-2" />
                     常见问题
@@ -550,5 +602,5 @@ export default function TradieDashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

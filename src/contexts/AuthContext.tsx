@@ -11,8 +11,16 @@ interface AuthContextType {
   user: User | null
   authUser: AuthUser | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
-  register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>
+  login: (email: string, password: string) => Promise<{
+    success: boolean
+    message: string
+    user?: AuthUser
+  }>
+  register: (userData: RegisterData) => Promise<{
+    success: boolean
+    message: string
+    user?: AuthUser
+  }>
   logout: () => void
   sendEmailVerification: (email: string) => Promise<{ success: boolean; message: string }>
   updateUser: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>
@@ -68,7 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; message: string; user?: AuthUser }> => {
     const result = await authService.login(email, password)
     if (result.success && result.user) {
       setAuthUser(result.user)
@@ -77,7 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return result
   }
 
-  const register = async (userData: RegisterData): Promise<{ success: boolean; message: string }> => {
+  const register = async (
+    userData: RegisterData,
+  ): Promise<{ success: boolean; message: string; user?: AuthUser }> => {
     const result = await authService.register(userData)
     if (result.success && result.user) {
       setAuthUser(result.user)

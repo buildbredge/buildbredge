@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,14 @@ import {
   fetchServiceAreasByCity,
   ServiceAreaRecord,
 } from "@/lib/serviceAreas";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface JobForm {
   subject: string;
@@ -81,10 +89,26 @@ type ServiceAreaStatus =
   | "not_found"
   | "error";
 
+interface RegisterFormState {
+  name: string;
+  email: string;
+  phone: string;
+  language: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface LoginFormState {
+  email: string;
+  password: string;
+}
+
+type AuthDialogMode = "prompt" | "login" | "register";
+
 export default function PostJobPage() {
   console.log("=== POST JOB PAGE LOADED ===", new Date().toISOString());
 
-  const { user } = useAuth();
+  const { user, login, register: registerUser } = useAuth();
   const router = useRouter();
 
   const [jobForm, setJobForm] = useState<JobForm>({
@@ -134,6 +158,24 @@ export default function PostJobPage() {
   const [manualAreaLoading, setManualAreaLoading] = useState(false);
   const [selectedManualCity, setSelectedManualCity] = useState("");
   const [selectedManualAreaId, setSelectedManualAreaId] = useState("");
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogMode, setAuthDialogMode] =
+    useState<AuthDialogMode>("prompt");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [loginForm, setLoginForm] = useState<LoginFormState>({
+    email: "",
+    password: "",
+  });
+  const [registerForm, setRegisterForm] = useState<RegisterFormState>({
+    name: "",
+    email: "",
+    phone: "",
+    language: user?.language || "中/EN",
+    password: "",
+    confirmPassword: "",
+  });
+  const languageOptions = ["中文", "English", "中/EN"] as const;
 
   const resetManualSelection = () => {
     manualCityFetchIdRef.current += 1;
@@ -180,6 +222,38 @@ export default function PostJobPage() {
     };
   }, [serviceAreaStatus, manualCityOptions.length]);
 
+  useEffect(() => {
+    if (!authDialogOpen) {
+      return;
+    }
+
+    setAuthError("");
+
+    if (authDialogMode === "login") {
+      setLoginForm((prev) => ({
+        ...prev,
+        email: jobForm.email || "",
+      }));
+    }
+
+    if (authDialogMode === "register") {
+      setRegisterForm({
+        name: "",
+        email: jobForm.email || "",
+        phone: jobForm.phone || "",
+        language: jobForm.language || "中/EN",
+        password: "",
+        confirmPassword: "",
+      });
+    }
+  }, [
+    authDialogMode,
+    authDialogOpen,
+    jobForm.email,
+    jobForm.phone,
+    jobForm.language,
+  ]);
+
   const handleSubmit = async () => {
     // 第一步：表单验证
     const errors = validateForm();
@@ -194,12 +268,26 @@ export default function PostJobPage() {
 
     // 第二步：根据登录状态保存项目
     if (user) {
-      // 已登录用户：保存项目并关联用户ID
       await saveProject(user.id);
-    } else {
-      // 未登录用户：保存匿名项目
-      await saveProject(null);
+      return;
     }
+
+    setAuthLoading(false);
+    setAuthError("");
+    setLoginForm({
+      email: jobForm.email || "",
+      password: "",
+    });
+    setRegisterForm({
+      name: "",
+      email: jobForm.email || "",
+      phone: jobForm.phone || "",
+      language: jobForm.language || "中/EN",
+      password: "",
+      confirmPassword: "",
+    });
+    setAuthDialogMode("prompt");
+    setAuthDialogOpen(true);
   };
 
   // 保存项目的核心函数
@@ -339,7 +427,7 @@ export default function PostJobPage() {
       }
 
       // 保存成功，显示成功提示或跳转
-      if (!user) {
+      if (!userId) {
         // 匿名用户显示特别的成功信息
         setShowSuccessModal(true);
       } else {
@@ -564,6 +652,139 @@ export default function PostJobPage() {
     (serviceAreaStatus === "matched" &&
       serviceAreaMatch?.matchedBy === "manual_selection");
 
+  const handleAuthDialogChange = (open: boolean) => {
+    if (!open && authLoading) {
+      return;
+    }
+    setAuthDialogOpen(open);
+    if (!open) {
+      setAuthDialogMode("prompt");
+      setAuthError("");
+    }
+  };
+
+  const handleAuthSuccess = async (userId: string | null) => {
+    setAuthDialogOpen(false);
+    setAuthDialogMode("prompt");
+    setAuthError("");
+    await saveProject(userId);
+  };
+
+  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (authLoading) {
+      return;
+    }
+
+    if (!loginForm.email.trim() || !loginForm.password) {
+      setAuthError("请输入邮箱和密码");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const result = await login(loginForm.email.trim(), loginForm.password);
+      if (!result.success) {
+        setAuthError(result.message || "登录失败，请稍后重试");
+        return;
+      }
+
+      setJobForm((prev) => ({
+        ...prev,
+        email: loginForm.email.trim(),
+      }));
+
+      await handleAuthSuccess(result.user?.id || user?.id || null);
+    } catch (error) {
+      console.error("Login from post job failed", error);
+      setAuthError("登录失败，请稍后重试");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (authLoading) {
+      return;
+    }
+
+    if (!registerForm.name.trim()) {
+      setAuthError("请输入姓名");
+      return;
+    }
+    if (!registerForm.email.trim()) {
+      setAuthError("请输入邮箱地址");
+      return;
+    }
+    if (!registerForm.phone.trim()) {
+      setAuthError("请输入电话号码");
+      return;
+    }
+    if (!registerForm.password || registerForm.password.length < 6) {
+      setAuthError("密码至少需要6个字符");
+      return;
+    }
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setAuthError("两次输入的密码不一致");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const result = await registerUser({
+        name: registerForm.name.trim(),
+        email: registerForm.email.trim(),
+        password: registerForm.password,
+        phone: registerForm.phone.trim(),
+        userType: "homeowner",
+        language: registerForm.language,
+      });
+
+      if (!result.success || !result.user) {
+        setAuthError(result.message || "注册失败，请稍后重试");
+        return;
+      }
+
+      setJobForm((prev) => ({
+        ...prev,
+        email: registerForm.email.trim(),
+        phone: registerForm.phone.trim(),
+        language: registerForm.language,
+      }));
+
+      let resolvedUserId: string | null = result.user.id;
+
+      try {
+        const loginResult = await login(
+          registerForm.email.trim(),
+          registerForm.password,
+        );
+        if (loginResult.success && loginResult.user) {
+          resolvedUserId = loginResult.user.id;
+        } else if (!loginResult.success) {
+          console.warn(
+            "Auto login after registration failed:",
+            loginResult.message,
+          );
+        }
+      } catch (loginError) {
+        console.warn("Auto login after registration threw error", loginError);
+      }
+
+      await handleAuthSuccess(resolvedUserId);
+    } catch (error) {
+      console.error("Registration from post job failed", error);
+      setAuthError("注册失败，请稍后重试");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || isUploading) return;
 
@@ -754,6 +975,9 @@ export default function PostJobPage() {
 
     return isValid;
   };
+
+  const formIsValid = isFormValid();
+  const isSubmitDisabled = !formIsValid || isUploading || authLoading;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1332,10 +1556,9 @@ export default function PostJobPage() {
                               ? "✅"
                               : "❌"}
                           </div>
-                          <div>表单有效: {isFormValid() ? "✅" : "❌"}</div>
+                          <div>表单有效: {formIsValid ? "✅" : "❌"}</div>
                           <div>
-                            按钮状态:{" "}
-                            {!isFormValid() || isUploading ? "禁用" : "启用"}
+                            按钮状态: {isSubmitDisabled ? "禁用" : "启用"}
                           </div>
                         </div>
                       </div>
@@ -1348,12 +1571,17 @@ export default function PostJobPage() {
                         onClick={handleSubmit}
                         className="bg-green-600 hover:bg-green-700 px-12 py-3 text-lg"
                         size="lg"
-                        disabled={!isFormValid() || isUploading}
+                        disabled={isSubmitDisabled}
                       >
                         {isUploading ? (
                           <div className="flex items-center space-x-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             <span>发布中...</span>
+                          </div>
+                        ) : authLoading ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>处理中...</span>
                           </div>
                         ) : (
                           "发布需求"
@@ -1416,6 +1644,243 @@ export default function PostJobPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={authDialogOpen} onOpenChange={handleAuthDialogChange}>
+        <DialogContent className="max-w-lg">
+          {authDialogMode === "prompt" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>请先登录</DialogTitle>
+                <DialogDescription>
+                  为了能够顺利发布需求，请先登录。如果没有账户请先注册。
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-6 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setAuthDialogMode("login")}
+                >
+                  登录
+                </Button>
+                <Button onClick={() => setAuthDialogMode("register")}>
+                  注册
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {authDialogMode === "login" && (
+            <form onSubmit={handleLoginSubmit} className="space-y-5">
+              <DialogHeader>
+                <DialogTitle>登录并发布需求</DialogTitle>
+                <DialogDescription>
+                  输入您的账号信息后将自动继续发布当前需求。
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="auth-login-email">邮箱地址</Label>
+                  <Input
+                    id="auth-login-email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(event) =>
+                      setLoginForm((prev) => ({
+                        ...prev,
+                        email: event.target.value,
+                      }))
+                    }
+                    autoComplete="email"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="auth-login-password">密码</Label>
+                  <Input
+                    id="auth-login-password"
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(event) =>
+                      setLoginForm((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                      }))
+                    }
+                    autoComplete="current-password"
+                    placeholder="请输入密码"
+                  />
+                </div>
+                {authError && (
+                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+                    {authError}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="mt-2 flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setAuthDialogMode("register")}
+                  disabled={authLoading}
+                >
+                  没有账户？注册
+                </Button>
+                <Button type="submit" disabled={authLoading}>
+                  {authLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>登录中...</span>
+                    </div>
+                  ) : (
+                    "登录并继续"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+
+          {authDialogMode === "register" && (
+            <form onSubmit={handleRegisterSubmit} className="space-y-5">
+              <DialogHeader>
+                <DialogTitle>注册账户后继续发布</DialogTitle>
+                <DialogDescription>
+                  快速注册成为业主账户，完成后我们会继续提交您的需求。
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="auth-register-name">姓名</Label>
+                  <Input
+                    id="auth-register-name"
+                    value={registerForm.name}
+                    onChange={(event) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        name: event.target.value,
+                      }))
+                    }
+                    placeholder="请输入姓名"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="auth-register-email">邮箱地址</Label>
+                  <Input
+                    id="auth-register-email"
+                    type="email"
+                    value={registerForm.email}
+                    onChange={(event) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        email: event.target.value,
+                      }))
+                    }
+                    placeholder="your.email@example.com"
+                    autoComplete="email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="auth-register-phone">电话号码</Label>
+                  <Input
+                    id="auth-register-phone"
+                    value={registerForm.phone}
+                    onChange={(event) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        phone: event.target.value,
+                      }))
+                    }
+                    placeholder="请输入联系电话"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="auth-register-language">语言偏好</Label>
+                  <Select
+                    value={registerForm.language}
+                    onValueChange={(value) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        language: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="auth-register-language">
+                      <SelectValue placeholder="选择语言偏好" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languageOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="auth-register-password">密码</Label>
+                  <Input
+                    id="auth-register-password"
+                    type="password"
+                    value={registerForm.password}
+                    onChange={(event) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                      }))
+                    }
+                    placeholder="至少6位密码"
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="auth-register-confirm">确认密码</Label>
+                  <Input
+                    id="auth-register-confirm"
+                    type="password"
+                    value={registerForm.confirmPassword}
+                    onChange={(event) =>
+                      setRegisterForm((prev) => ({
+                        ...prev,
+                        confirmPassword: event.target.value,
+                      }))
+                    }
+                    placeholder="再次输入密码"
+                    autoComplete="new-password"
+                  />
+                </div>
+                {authError && (
+                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+                    {authError}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="mt-2 flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setAuthDialogMode("login")}
+                  disabled={authLoading}
+                >
+                  已有账户？登录
+                </Button>
+                <Button type="submit" disabled={authLoading}>
+                  {authLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>注册中...</span>
+                    </div>
+                  ) : (
+                    "注册并发布"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
