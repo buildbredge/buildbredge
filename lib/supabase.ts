@@ -326,6 +326,7 @@ export type Database = {
           time_option: 'urgent' | 'recent' | 'flexible' | null
           priority_need: 'cost' | 'quality' | null
           accepted_quote_id: string | null
+          service_area_id: string | null
           created_at: string
           updated_at: string
         }
@@ -348,6 +349,7 @@ export type Database = {
           time_option?: 'urgent' | 'recent' | 'flexible' | null
           priority_need?: 'cost' | 'quality' | null
           accepted_quote_id?: string | null
+          service_area_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -370,6 +372,7 @@ export type Database = {
           time_option?: 'urgent' | 'recent' | 'flexible' | null
           priority_need?: 'cost' | 'quality' | null
           accepted_quote_id?: string | null
+          service_area_id?: string | null
         }
       }
       quotes: {
